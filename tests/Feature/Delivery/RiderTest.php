@@ -33,6 +33,7 @@ beforeEach(function (): void {
         'branch_id' => $this->branch->id,
         'customer_id' => $this->customer->id,
         'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
         'delivery_status' => 'pending',
         'status' => 'active',
     ]);
@@ -86,7 +87,11 @@ it('shows rider active deliveries', function (): void {
 });
 
 it('rejects rider assignment for dine-in orders', function (): void {
-    $this->order->update(['channel' => 'dine_in', 'delivery_status' => null]);
+    $this->order->update([
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+        'delivery_status' => null,
+    ]);
 
     $this->withToken($this->token)
         ->postJson("/api/v1/orders/{$this->order->id}/assign-rider", [

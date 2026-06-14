@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Tables\Http\Controllers;
 
+use App\Modules\POS\Tables\Http\Requests\IndexTableRequest;
+use App\Modules\POS\Tables\Http\Requests\StoreTableRequest;
+use App\Modules\POS\Tables\Http\Requests\UpdateTableRequest;
+use App\Modules\POS\Tables\Http\Requests\UpdateTableStatusRequest;
+use App\Modules\POS\Tables\Http\Resources\FloorTableResource;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -15,54 +19,42 @@ use Illuminate\Routing\Controller;
  */
 class TableController extends Controller
 {
-    public function index(Request $request): JsonResponse
+    public function index(IndexTableRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $tables = FloorTable::query()
-            ->when($request->query('branch_id'), fn ($q, $id) => $q->where('branch_id', $id))
-            ->when($request->query('section'), fn ($q, $s) => $q->where('section', $s))
+            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
+            ->when($validated['section'] ?? null, fn ($q, $s) => $q->where('section', $s))
             ->with('activeOrder')
             ->orderBy('section')
             ->orderBy('name')
             ->get();
 
-        return ApiResponse::success($tables);
+        return ApiResponse::success(FloorTableResource::collection($tables));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreTableRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'branch_id' => ['required', 'integer'],
-            'name' => ['required', 'string', 'max:20'],
-            'section' => ['nullable', 'string', 'max:50'],
-            'capacity' => ['integer', 'min:1', 'max:50'],
-            'position_x' => ['integer', 'min:0'],
-            'position_y' => ['integer', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
         $table = FloorTable::create($validated);
 
-        return ApiResponse::created($table, 'Table created.');
+        return ApiResponse::created(new FloorTableResource($table), 'Table created.');
     }
 
     public function show(FloorTable $table): JsonResponse
     {
-        return ApiResponse::success($table->load('activeOrder.items'));
+        return ApiResponse::success(new FloorTableResource($table->load('activeOrder.items')));
     }
 
-    public function update(Request $request, FloorTable $table): JsonResponse
+    public function update(UpdateTableRequest $request, FloorTable $table): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:20'],
-            'section' => ['nullable', 'string', 'max:50'],
-            'capacity' => ['sometimes', 'integer', 'min:1'],
-            'position_x' => ['sometimes', 'integer', 'min:0'],
-            'position_y' => ['sometimes', 'integer', 'min:0'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $table->update($validated);
 
-        return ApiResponse::success($table, 'Table updated.');
+        return ApiResponse::success(new FloorTableResource($table), 'Table updated.');
     }
 
     public function destroy(FloorTable $table): JsonResponse
@@ -72,14 +64,12 @@ class TableController extends Controller
         return ApiResponse::noContent();
     }
 
-    public function updateStatus(Request $request, FloorTable $table): JsonResponse
+    public function updateStatus(UpdateTableStatusRequest $request, FloorTable $table): JsonResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:free,occupied,reserved,unavailable'],
-        ]);
+        $validated = $request->validated();
 
         $table->update($validated);
 
-        return ApiResponse::success($table, 'Table status updated.');
+        return ApiResponse::success(new FloorTableResource($table), 'Table status updated.');
     }
 }

@@ -32,12 +32,20 @@ class CustomerService
         return $customer->fresh();
     }
 
-    public function recordOrder(Customer $customer, Order $order): void
+    public function recordPayment(Customer $customer, Order $order): void
     {
         $customer->update([
             'visit_count' => $customer->visit_count + 1,
-            'total_spent' => $customer->total_spent + $order->total,
+            'total_spent' => (float) $customer->total_spent + (float) $order->total,
             'last_order_at' => now(),
+        ]);
+    }
+
+    public function reversePayment(Customer $customer, Order $order): void
+    {
+        $customer->update([
+            'visit_count' => max(0, $customer->visit_count - 1),
+            'total_spent' => max(0, round((float) $customer->total_spent - (float) $order->total, 2)),
         ]);
     }
 

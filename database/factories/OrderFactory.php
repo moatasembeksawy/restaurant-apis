@@ -25,6 +25,7 @@ class OrderFactory extends Factory
             'waiter_id' => null,
             'customer_id' => null,
             'channel' => fake()->randomElement(['dine_in', 'qr', 'whatsapp']),
+            'fulfillment_type' => 'dine_in',
             'status' => 'active',
             'subtotal' => 100.00,
             'discount' => 0.00,

@@ -9,4 +9,6 @@ return [
         'name' => env('PLATFORM_ADMIN_NAME', 'Platform Admin'),
     ],
 
+    'impersonation_ttl_minutes' => (int) env('PLATFORM_IMPERSONATION_TTL_MINUTES', 60),
+
 ];

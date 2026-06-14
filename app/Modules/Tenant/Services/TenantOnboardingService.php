@@ -27,13 +27,7 @@ class TenantOnboardingService
      */
     public function register(array $data): array
     {
-        $subdomain = Str::lower(Str::slug($data['subdomain']));
-
-        $this->validateSubdomain($subdomain);
-
-        if (Tenant::query()->where('subdomain', $subdomain)->exists()) {
-            throw new InvalidArgumentException('This subdomain is already taken.');
-        }
+        $subdomain = $this->resolveSubdomain($data);
 
         if (User::query()->withoutGlobalScopes()->where('email', $data['owner_email'])->exists()) {
             throw new InvalidArgumentException('This email is already registered.');
@@ -85,6 +79,8 @@ class TenantOnboardingService
                 'branch_id' => $branch->id,
             ]);
 
+            $owner->sendEmailVerificationNotification();
+
             return [
                 'tenant' => $tenant,
                 'branch' => $branch,
@@ -92,6 +88,67 @@ class TenantOnboardingService
                 'kitchen_device_secret' => $kitchenSecret,
             ];
         });
+    }
+
+    /** @param  array<string, mixed>  $data */
+    private function resolveSubdomain(array $data): string
+    {
+        $provided = trim((string) ($data['subdomain'] ?? ''));
+
+        if ($provided !== '') {
+            $subdomain = Str::lower(Str::slug($provided));
+            $this->validateSubdomain($subdomain);
+
+            if (Tenant::query()->where('subdomain', $subdomain)->exists()) {
+                throw new InvalidArgumentException('This subdomain is already taken.');
+            }
+
+            return $subdomain;
+        }
+
+        return $this->ensureAvailableSubdomain(
+            $this->generateSubdomainFromName((string) $data['restaurant_name']),
+        );
+    }
+
+    private function generateSubdomainFromName(string $restaurantName): string
+    {
+        $slug = Str::lower(Str::slug($restaurantName));
+        $slug = trim(preg_replace('/-+/', '-', $slug) ?? '', '-');
+
+        if (strlen($slug) < 3) {
+            $slug = 'restaurant-'.Str::lower(Str::random(6));
+        }
+
+        return rtrim(Str::limit($slug, 50, ''), '-');
+    }
+
+    private function ensureAvailableSubdomain(string $base): string
+    {
+        $candidate = $base;
+
+        for ($attempt = 0; $attempt < 20; $attempt++) {
+            if ($this->isSubdomainAvailable($candidate)) {
+                return $candidate;
+            }
+
+            $suffix = Str::lower(Str::random(4));
+            $maxBaseLength = max(3, 50 - strlen($suffix) - 1);
+            $candidate = rtrim(Str::limit(rtrim($base, '-'), $maxBaseLength, ''), '-').'-'.$suffix;
+        }
+
+        throw new InvalidArgumentException('Unable to generate an available subdomain. Please provide one manually.');
+    }
+
+    private function isSubdomainAvailable(string $subdomain): bool
+    {
+        try {
+            $this->validateSubdomain($subdomain);
+        } catch (InvalidArgumentException) {
+            return false;
+        }
+
+        return ! Tenant::query()->where('subdomain', $subdomain)->exists();
     }
 
     private function validateSubdomain(string $subdomain): void

@@ -4,15 +4,10 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Shared\Support\Http\Requests\ApiFormRequest;
 
-class AdminLoginRequest extends FormRequest
+class AdminLoginRequest extends ApiFormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {

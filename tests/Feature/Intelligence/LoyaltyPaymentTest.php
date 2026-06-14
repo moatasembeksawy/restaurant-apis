@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
+use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\Order;
@@ -11,7 +12,6 @@ use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Queue;
-use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create(['plan' => 'enterprise', 'status' => 'active']);
@@ -56,6 +56,7 @@ beforeEach(function (): void {
     ]);
 
     app()->instance('tenant', $this->tenant);
+    startCashierShift($this->cashier);
     $this->token = $this->cashier->createToken('test', ['billing:*'])->plainTextToken;
 });
 

@@ -161,4 +161,47 @@ class LoyaltyService
             ->limit($limit)
             ->get();
     }
+
+    public function reverseForOrder(Order $order): void
+    {
+        if (! $order->customer_id) {
+            return;
+        }
+
+        $transactions = LoyaltyTransaction::query()
+            ->where('order_id', $order->id)
+            ->whereIn('type', ['earn', 'redeem'])
+            ->get();
+
+        if ($transactions->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($order, $transactions): void {
+            $customer = Customer::query()->lockForUpdate()->findOrFail($order->customer_id);
+            $balance = $customer->loyalty_points;
+
+            foreach ($transactions as $transaction) {
+                if ($transaction->type === 'earn') {
+                    $points = -$transaction->points;
+                    $balance = max(0, $balance + $points);
+                } else {
+                    $points = abs($transaction->points);
+                    $balance += $points;
+                }
+
+                LoyaltyTransaction::create([
+                    'customer_id' => $customer->id,
+                    'order_id' => $order->id,
+                    'type' => 'adjustment',
+                    'points' => $points,
+                    'balance_after' => $balance,
+                    'monetary_value' => $transaction->monetary_value,
+                    'notes' => "Reversed {$transaction->type} for refunded order #{$order->id}",
+                ]);
+            }
+
+            $customer->update(['loyalty_points' => $balance]);
+        });
+    }
 }

@@ -20,6 +20,7 @@ class ETACredentialResolver
             clientSecret: $clientSecret,
             taxpayerId: $taxpayerId,
             branchId: $branchId,
+            certPath: $tenant->eta_cert_path,
         );
     }
 }

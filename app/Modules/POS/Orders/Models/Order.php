@@ -6,6 +6,7 @@ namespace App\Modules\POS\Orders\Models;
 
 use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
+use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
@@ -24,6 +25,7 @@ class Order extends BaseModel
     {
         return OrderFactory::new();
     }
+
     protected $fillable = [
         'tenant_id',
         'branch_id',
@@ -32,6 +34,7 @@ class Order extends BaseModel
         'customer_id',
         'rider_id',
         'channel',
+        'fulfillment_type',
         'status',
         'delivery_status',
         'external_ref',
@@ -61,7 +64,8 @@ class Order extends BaseModel
             'cooking' => ['ready', 'cancelled'],
             'ready' => ['completed', 'cancelled'],
             'completed' => ['paid'],
-            'paid' => [],
+            'paid' => ['refunded'],
+            'refunded' => [],
             'cancelled' => [],
         ];
 
@@ -109,6 +113,11 @@ class Order extends BaseModel
 
     public function payment(): HasOne
     {
-        return $this->hasOne(\App\Modules\POS\Billing\Models\Payment::class);
+        return $this->hasOne(Payment::class);
+    }
+
+    public function isDelivery(): bool
+    {
+        return $this->fulfillment_type === 'delivery';
     }
 }

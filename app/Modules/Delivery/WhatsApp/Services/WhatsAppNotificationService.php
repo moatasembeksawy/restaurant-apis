@@ -94,6 +94,59 @@ class WhatsAppNotificationService
         }
     }
 
+    /**
+     * @param  array<string, mixed>  $context
+     */
+    public function sendBillingAlert(string $phone, string $event, Tenant $tenant, array $context = []): void
+    {
+        if (! $tenant->whatsapp_phone_number_id) {
+            return;
+        }
+
+        $templateName = match ($event) {
+            'trial_expired' => config('whatsapp.templates.billing_trial_expired'),
+            'grace_expired' => config('whatsapp.templates.billing_grace_expired'),
+            'payment_failed' => config('whatsapp.templates.billing_payment_failed'),
+            'renewal_reminder' => config('whatsapp.templates.billing_renewal_reminder'),
+            'subscription_expired' => config('whatsapp.templates.billing_subscription_expired'),
+            default => null,
+        };
+
+        if (! $templateName) {
+            return;
+        }
+
+        try {
+            $parameters = match ($event) {
+                'trial_expired' => [$tenant->name, (string) $tenant->grace_period_ends_at?->format('Y-m-d')],
+                'grace_expired' => [$tenant->name],
+                'payment_failed' => [
+                    $tenant->name,
+                    strtoupper((string) ($context['gateway'] ?? 'unknown')),
+                ],
+                'renewal_reminder' => [
+                    $tenant->name,
+                    (string) ($context['period_end'] ?? ''),
+                ],
+                'subscription_expired' => [$tenant->name],
+                default => [$tenant->name],
+            };
+
+            $this->clientForTenant($tenant)->sendTemplate(
+                to: $phone,
+                templateName: $templateName,
+                languageCode: config('whatsapp.language', 'ar'),
+                parameters: $parameters,
+            );
+        } catch (RuntimeException $e) {
+            Log::warning('WhatsApp billing alert could not be sent', [
+                'tenant_id' => $tenant->id,
+                'event' => $event,
+                'error' => $e->getMessage(),
+            ]);
+        }
+    }
+
     private function canNotify(Order $order): bool
     {
         $order->loadMissing('customer', 'tenant');

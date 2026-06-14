@@ -12,7 +12,7 @@ trait BelongsToTenant
 {
     protected static function bootBelongsToTenant(): void
     {
-        static::addGlobalScope(new TenantScope());
+        static::addGlobalScope(new TenantScope);
 
         static::creating(function (self $model): void {
             if (empty($model->tenant_id) && app()->bound('tenant')) {

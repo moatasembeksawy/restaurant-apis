@@ -6,6 +6,7 @@ namespace App\Modules\Auth\Services;
 
 use App\Models\User;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Scopes\TenantScope;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
 use Laravel\Sanctum\NewAccessToken;
@@ -21,7 +22,7 @@ class AuthService
     public function loginWithPassword(string $email, string $password, string $deviceName): array
     {
         $user = User::query()
-            ->withoutGlobalScope(\App\Shared\Support\Scopes\TenantScope::class)
+            ->withoutGlobalScope(TenantScope::class)
             ->where('email', $email)
             ->where('is_active', true)
             ->first();

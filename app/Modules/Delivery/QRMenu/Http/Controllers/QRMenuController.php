@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Delivery\QRMenu\Http\Controllers;
 
+use App\Modules\Delivery\QRMenu\Http\Requests\PlaceQRMenuOrderRequest;
+use App\Modules\Delivery\QRMenu\Http\Resources\QRMenuOrderResource;
+use App\Modules\Delivery\QRMenu\Http\Resources\QRMenuResource;
 use App\Modules\Delivery\QRMenu\Services\QRMenuService;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use InvalidArgumentException;
 use RuntimeException;
@@ -15,26 +17,24 @@ use RuntimeException;
 /**
  * @group QR Menu (Public)
  *
- * Public endpoints — no authentication required. Tenant is resolved from the table QR token.
+ * Public endpoints — no authentication required.
+ * Token may be a branch menu link (social/print) or a table QR (dine-in).
  *
  * @unauthenticated
  */
 class QRMenuController extends Controller
 {
-    public function __construct(
-        private readonly QRMenuService $qrMenu,
-        private readonly \App\Modules\Delivery\Customers\Services\CustomerService $customers,
-    ) {}
+    public function __construct(private readonly QRMenuService $qrMenu) {}
 
     /**
-     * Get menu for a table
+     * Get public menu
      */
     public function show(string $token): JsonResponse
     {
         try {
-            $table = $this->qrMenu->resolveTable($token);
+            $context = $this->qrMenu->resolve($token);
 
-            return ApiResponse::success($this->qrMenu->menuForTable($table));
+            return ApiResponse::success(new QRMenuResource($this->qrMenu->menuFor($context)));
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'INVALID_QR_TOKEN', 404);
         } catch (RuntimeException $e) {
@@ -43,44 +43,34 @@ class QRMenuController extends Controller
     }
 
     /**
-     * Place order from QR menu
+     * Place order from public QR menu
      */
-    public function placeOrder(Request $request, string $token): JsonResponse
+    public function placeOrder(PlaceQRMenuOrderRequest $request, string $token): JsonResponse
     {
-        $validated = $request->validate([
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.menu_item_id' => ['required', 'integer'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.notes' => ['nullable', 'string', 'max:255'],
-            'customer_name' => ['nullable', 'string', 'max:100'],
-            'customer_phone' => ['nullable', 'string', 'max:20'],
-            'notes' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         try {
-            $table = $this->qrMenu->resolveTable($token);
+            $context = $this->qrMenu->resolve($token);
 
             $order = $this->qrMenu->placeOrder(
-                table: $table,
+                context: $context,
                 items: $validated['items'],
                 customerName: $validated['customer_name'] ?? null,
                 customerPhone: $validated['customer_phone'] ?? null,
                 notes: $validated['notes'] ?? null,
+                tableLabel: $validated['table_label'] ?? null,
+                fulfillmentType: $validated['fulfillment_type'] ?? null,
+                deliveryAddress: $validated['delivery_address'] ?? null,
             );
 
-            if (! empty($validated['customer_phone'])) {
-                $customer = $order->customer;
-                if ($customer) {
-                    $this->customers->recordOrder($customer, $order);
-                }
-            }
-
-            return ApiResponse::created([
+            return ApiResponse::created(new QRMenuOrderResource([
                 'order_id' => $order->id,
                 'status' => $order->status,
                 'total' => $order->total,
+                'fulfillment_type' => $order->fulfillment_type,
                 'items' => $order->items,
-            ], 'Order placed successfully.');
+                'source' => $context->isTableLinked() ? 'table' : 'branch',
+            ]), 'Order placed successfully.');
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'ORDER_ERROR', 422);
         } catch (RuntimeException $e) {

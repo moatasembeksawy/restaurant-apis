@@ -23,7 +23,7 @@ class DeliveryService
 
     public function assignRider(Order $order, User $rider): Order
     {
-        if (! in_array($order->channel, ['own_delivery', 'whatsapp', 'talabat', 'elmenus'])) {
+        if (! $order->isDelivery()) {
             throw new InvalidArgumentException('Only delivery orders can be assigned to a rider.');
         }
 

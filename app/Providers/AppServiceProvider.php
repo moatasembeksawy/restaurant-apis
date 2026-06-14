@@ -4,8 +4,12 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Shared\Infrastructure\Dns\CustomDomainVerifierInterface;
+use App\Shared\Infrastructure\Dns\DnsCustomDomainVerifier;
+use App\Shared\Infrastructure\Dns\FakeCustomDomainVerifier;
 use App\Shared\Infrastructure\ETA\ETAAdapter;
 use App\Shared\Infrastructure\ETA\ETAAdapterInterface;
+use App\Shared\Infrastructure\Fawry\FawryAdapter;
 use App\Shared\Infrastructure\Paymob\PaymobAdapter;
 use App\Shared\Infrastructure\PrintJob\EscPosBuilder;
 use App\Shared\Infrastructure\WhatsAppClient\WhatsAppClient;
@@ -44,13 +48,21 @@ class AppServiceProvider extends ServiceProvider
         ));
 
         // Fawry billing adapter
-        $this->app->singleton(\App\Shared\Infrastructure\Fawry\FawryAdapter::class, fn () => new \App\Shared\Infrastructure\Fawry\FawryAdapter(
+        $this->app->singleton(FawryAdapter::class, fn () => new FawryAdapter(
             merchantCode: (string) config('services.fawry.merchant_code'),
             securityKey: (string) config('services.fawry.security_key'),
             baseUrl: (string) config('services.fawry.base_url'),
         ));
 
         $this->app->singleton(EscPosBuilder::class, fn () => new EscPosBuilder);
+
+        $this->app->singleton(CustomDomainVerifierInterface::class, function (): CustomDomainVerifierInterface {
+            if ($this->app->environment('testing')) {
+                return new FakeCustomDomainVerifier;
+            }
+
+            return new DnsCustomDomainVerifier;
+        });
     }
 
     public function boot(): void

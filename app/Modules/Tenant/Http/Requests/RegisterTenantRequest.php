@@ -4,21 +4,16 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Http\Requests;
 
-use Illuminate\Foundation\Http\FormRequest;
+use App\Shared\Support\Http\Requests\ApiFormRequest;
 
-class RegisterTenantRequest extends FormRequest
+class RegisterTenantRequest extends ApiFormRequest
 {
-    public function authorize(): bool
-    {
-        return true;
-    }
-
     /** @return array<string, mixed> */
     public function rules(): array
     {
         return [
             'restaurant_name' => ['required', 'string', 'max:150'],
-            'subdomain' => ['required', 'string', 'max:50', 'alpha_dash'],
+            'subdomain' => ['nullable', 'string', 'max:50', 'alpha_dash'],
             'locale' => ['nullable', 'in:ar,en'],
             'owner_name' => ['required', 'string', 'max:100'],
             'owner_email' => ['required', 'email', 'max:255'],

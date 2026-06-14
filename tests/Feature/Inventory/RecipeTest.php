@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Modules\Inventory\Recipes\Models\Recipe;
 use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Services\StockService;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\Tenant\Models\Branch;
@@ -56,6 +57,7 @@ it('syncs recipe and calculates food cost', function (): void {
         ->assertJsonPath('data.menu_price', 120);
 
     expect(Recipe::query()->where('menu_item_id', $this->menuItem->id)->count())->toBe(2);
+    expect((float) $this->menuItem->fresh()->cost_price)->toBe(11.0);
 });
 
 it('calculates profit margin from recipe cost', function (): void {
@@ -72,4 +74,24 @@ it('calculates profit margin from recipe cost', function (): void {
 
     expect((float) $response->json('data.total_cost'))->toBe(25.0);
     expect((float) $response->json('data.profit_margin'))->toBeGreaterThan(0);
+});
+
+it('updates menu item cost price when ingredient cost changes', function (): void {
+    $this->beef->update(['current_stock' => 0]);
+
+    Recipe::create([
+        'tenant_id' => $this->tenant->id,
+        'menu_item_id' => $this->menuItem->id,
+        'ingredient_id' => $this->beef->id,
+        'quantity' => 0.2,
+    ]);
+
+    app(StockService::class)->recordMovement(
+        ingredient: $this->beef,
+        type: 'purchase',
+        quantity: 10,
+        unitCost: 60.00,
+    );
+
+    expect((float) $this->menuItem->fresh()->cost_price)->toBe(12.0);
 });

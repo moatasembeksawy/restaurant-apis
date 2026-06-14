@@ -4,19 +4,23 @@ declare(strict_types=1);
 
 namespace App\Shared\Support\Http\Middleware;
 
-use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\SubscriptionService;
+use App\Shared\Support\Tenant\TenantResolver;
 use Closure;
 use Illuminate\Http\Request;
+use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Response;
 
 class TenantMiddleware
 {
-    public function __construct(private readonly SubscriptionService $subscriptions) {}
+    public function __construct(
+        private readonly SubscriptionService $subscriptions,
+        private readonly TenantResolver $tenantResolver,
+    ) {}
 
     public function handle(Request $request, Closure $next): Response
     {
-        $tenant = $this->resolveTenant($request);
+        $tenant = $this->tenantResolver->resolve($request);
 
         if (! $tenant) {
             return response()->json([
@@ -45,29 +49,9 @@ class TenantMiddleware
         }
 
         app()->instance('tenant', $tenant);
+        app(PermissionRegistrar::class)->setPermissionsTeamId($tenant->id);
 
         return $next($request);
-    }
-
-    private function resolveTenant(Request $request): ?Tenant
-    {
-        if ($user = $request->user()) {
-            return $user->tenant;
-        }
-
-        $host = $request->getHost();
-        $parts = explode('.', $host);
-
-        if (count($parts) >= 2) {
-            $subdomain = $parts[0];
-
-            return Tenant::query()
-                ->where('subdomain', $subdomain)
-                ->orWhere('custom_domain', $host)
-                ->first();
-        }
-
-        return null;
     }
 
     private function allowsSuspendedAccess(Request $request): bool

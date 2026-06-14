@@ -7,12 +7,14 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
+use Spatie\Permission\PermissionRegistrar;
 
 class RolesAndPermissionsSeeder extends Seeder
 {
     public function run(): void
     {
-        app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+        app()[PermissionRegistrar::class]->forgetCachedPermissions();
+        setPermissionsTeamId(null);
 
         $permissions = [
             // Tables
@@ -28,7 +30,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'kitchen.view', 'kitchen.update',
 
             // Payments
-            'payments.process', 'payments.discount', 'payments.void',
+            'payments.process', 'payments.discount', 'payments.refund',
 
             // Reports
             'reports.view', 'reports.export',
@@ -49,7 +51,7 @@ class RolesAndPermissionsSeeder extends Seeder
             'branches.view', 'branches.manage',
 
             // Subscription
-            'subscription.view', 'subscription.manage',
+            'subscription.view', 'subscription.manage', 'subscription.cancel',
         ];
 
         foreach ($permissions as $permission) {
@@ -67,12 +69,14 @@ class RolesAndPermissionsSeeder extends Seeder
                 'menu.view', 'menu.create', 'menu.update',
                 'orders.view', 'orders.create', 'orders.update', 'orders.cancel',
                 'kitchen.view', 'kitchen.update',
-                'payments.process', 'payments.discount', 'payments.void',
+                'payments.process', 'payments.discount', 'payments.refund',
                 'reports.view', 'reports.export',
                 'audit.view',
                 'inventory.view', 'inventory.manage',
-                'staff.view',
+                'staff.view', 'staff.manage',
                 'users.view',
+                'subscription.view', 'subscription.manage',
+                'suppliers.manage',
             ]);
 
         Role::firstOrCreate(['name' => 'cashier', 'guard_name' => 'web'])

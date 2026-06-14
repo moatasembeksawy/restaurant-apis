@@ -7,8 +7,8 @@ namespace App\Modules\POS\Billing\Services;
 use App\Modules\POS\Billing\Jobs\NotifyETAInvoiceFailureJob;
 use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\Invoice;
-use App\Shared\Infrastructure\ETA\ETACredentialResolver;
 use App\Shared\Infrastructure\ETA\ETAAdapterInterface;
+use App\Shared\Infrastructure\ETA\ETACredentialResolver;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -48,8 +48,8 @@ class ETAService
 
         try {
             $document = $this->eta->buildInvoiceDocument($payment, $tenant);
-            $token = $this->eta->getAccessToken($creds->clientId, $creds->clientSecret);
-            $result = $this->eta->submitInvoice($document, $token);
+            $token = $this->eta->getAccessToken($creds);
+            $result = $this->eta->submitInvoice($document, $creds, $token);
 
             $invoice->update([
                 'eta_uuid' => $result['uuid'] ?? null,

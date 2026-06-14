@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Intelligence\Marketing\Http\Controllers;
 
+use App\Modules\Intelligence\Marketing\Http\Requests\BroadcastMarketingRequest;
+use App\Modules\Intelligence\Marketing\Http\Resources\MarketingCampaignResource;
+use App\Modules\Intelligence\Marketing\Http\Resources\MarketingSegmentResource;
 use App\Modules\Intelligence\Marketing\Models\MarketingCampaign;
 use App\Modules\Intelligence\Marketing\Services\WhatsAppMarketingService;
 use App\Shared\Support\Http\Resources\ApiResponse;
@@ -22,7 +25,7 @@ class MarketingController extends Controller
 
     public function segments(): JsonResponse
     {
-        return ApiResponse::success([
+        return ApiResponse::success(new MarketingSegmentResource([
             'segments' => $this->marketing->availableSegments(),
             'descriptions' => [
                 'all' => 'All customers with a phone number',
@@ -30,7 +33,7 @@ class MarketingController extends Controller
                 'high_spenders' => 'Total spent >= 1000 EGP',
                 'recent_visitors' => 'Ordered within the last 7 days',
             ],
-        ]);
+        ]));
     }
 
     public function index(): JsonResponse
@@ -40,19 +43,14 @@ class MarketingController extends Controller
             ->limit(50)
             ->get();
 
-        return ApiResponse::success($campaigns);
+        return ApiResponse::success(MarketingCampaignResource::collection($campaigns));
     }
 
-    public function broadcast(Request $request): JsonResponse
+    public function broadcast(BroadcastMarketingRequest $request): JsonResponse
     {
         $this->authorizeMarketing($request);
 
-        $validated = $request->validate([
-            'template_name' => ['required', 'string', 'max:100'],
-            'segment' => ['required', 'in:all,inactive_30d,high_spenders,recent_visitors'],
-            'parameters' => ['nullable', 'array'],
-            'parameters.*' => ['string', 'max:255'],
-        ]);
+        $validated = $request->validated();
 
         try {
             $campaign = $this->marketing->broadcast(
@@ -66,7 +64,7 @@ class MarketingController extends Controller
             return ApiResponse::error($e->getMessage(), 'MARKETING_BROADCAST_FAILED', 422);
         }
 
-        return ApiResponse::created($campaign, 'Marketing broadcast queued.');
+        return ApiResponse::created(new MarketingCampaignResource($campaign), 'Marketing broadcast queued.');
     }
 
     private function authorizeMarketing(Request $request): void

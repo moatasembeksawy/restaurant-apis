@@ -5,6 +5,10 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Http\Controllers;
 
 use App\Models\User;
+use App\Modules\Tenant\Http\Requests\IndexStaffRequest;
+use App\Modules\Tenant\Http\Requests\StoreStaffRequest;
+use App\Modules\Tenant\Http\Requests\UpdateStaffRequest;
+use App\Modules\Tenant\Http\Resources\StaffResource;
 use App\Modules\Tenant\Services\StaffService;
 use App\Modules\Tenant\Subscription\Exceptions\PlanLimitExceededException;
 use App\Shared\Support\Http\Resources\ApiResponse;
@@ -21,71 +25,54 @@ class StaffController extends Controller
 {
     public function __construct(private readonly StaffService $staff) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexStaffRequest $request): JsonResponse
     {
         $this->authorizeStaffManagement($request);
 
+        $validated = $request->validated();
+
         return ApiResponse::success(
-            $this->staff->list(
-                branchId: $request->query('branch_id') ? (int) $request->query('branch_id') : null,
+            StaffResource::collection(
+                $this->staff->list(
+                    branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+                ),
             ),
         );
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreStaffRequest $request): JsonResponse
     {
         $this->authorizeStaffManagement($request);
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'role' => ['required', 'in:manager,cashier,waiter,cook,rider'],
-            'branch_id' => ['required', 'integer'],
-            'password' => ['nullable', 'string', 'min:8', 'max:100'],
-            'pin' => ['nullable', 'string', 'regex:/^\d{4}$/'],
-        ]);
-
         try {
-            $user = $this->staff->create($validated, $request->user());
+            $user = $this->staff->create($request->validated(), $request->user());
         } catch (PlanLimitExceededException $e) {
             throw $e;
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'STAFF_CREATE_FAILED', 422);
         }
 
-        return ApiResponse::created($user, 'Staff member created.');
+        return ApiResponse::created(new StaffResource($user), 'Staff member created.');
     }
 
     public function show(Request $request, User $staff): JsonResponse
     {
         $this->authorizeStaffManagement($request);
 
-        return ApiResponse::success($this->staff->formatUser($staff));
+        return ApiResponse::success(new StaffResource($this->staff->formatUser($staff)));
     }
 
-    public function update(Request $request, User $staff): JsonResponse
+    public function update(UpdateStaffRequest $request, User $staff): JsonResponse
     {
         $this->authorizeStaffManagement($request);
 
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:100'],
-            'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'role' => ['sometimes', 'in:manager,cashier,waiter,cook,rider'],
-            'branch_id' => ['sometimes', 'integer'],
-            'password' => ['nullable', 'string', 'min:8', 'max:100'],
-            'pin' => ['nullable', 'string', 'regex:/^\d{4}$/'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
-
         try {
-            $user = $this->staff->update($staff, $validated, $request->user());
+            $user = $this->staff->update($staff, $request->validated(), $request->user());
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'STAFF_UPDATE_FAILED', 422);
         }
 
-        return ApiResponse::success($user, 'Staff member updated.');
+        return ApiResponse::success(new StaffResource($user), 'Staff member updated.');
     }
 
     public function deactivate(Request $request, User $staff): JsonResponse
@@ -98,14 +85,14 @@ class StaffController extends Controller
             return ApiResponse::error($e->getMessage(), 'STAFF_DEACTIVATE_FAILED', 422);
         }
 
-        return ApiResponse::success($user, 'Staff member deactivated.');
+        return ApiResponse::success(new StaffResource($user), 'Staff member deactivated.');
     }
 
     private function authorizeStaffManagement(Request $request): void
     {
-        if (! in_array($request->user()->role, ['owner', 'manager'], true)) {
+        if (! $request->user()->can('staff.manage')) {
             throw new HttpResponseException(
-                ApiResponse::error('Only owners or managers can manage staff.', 'FORBIDDEN', 403),
+                ApiResponse::error('You do not have permission to manage staff.', 'FORBIDDEN', 403),
             );
         }
     }

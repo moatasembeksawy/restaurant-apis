@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Http\Controllers;
 
+use App\Modules\Tenant\Http\Resources\OpsHealthResource;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
@@ -11,6 +12,7 @@ use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redis;
+use Laravel\Horizon\Horizon;
 
 /**
  * @group Operations
@@ -37,7 +39,7 @@ class OpsController extends Controller
 
         $horizonStatus = $this->horizonStatus();
 
-        return ApiResponse::success([
+        return ApiResponse::success(new OpsHealthResource([
             'app' => [
                 'environment' => app()->environment(),
                 'debug' => (bool) config('app.debug'),
@@ -59,7 +61,7 @@ class OpsController extends Controller
                 'scheme' => config('broadcasting.connections.reverb.options.scheme', 'http'),
             ],
             'checked_at' => now()->toIso8601String(),
-        ]);
+        ]));
     }
 
     private function authorizeOwner(Request $request): void
@@ -96,7 +98,7 @@ class OpsController extends Controller
     /** @return array{available: bool, status: string} */
     private function horizonStatus(): array
     {
-        if (! class_exists(\Laravel\Horizon\Horizon::class)) {
+        if (! class_exists(Horizon::class)) {
             return ['available' => false, 'status' => 'not_installed'];
         }
 

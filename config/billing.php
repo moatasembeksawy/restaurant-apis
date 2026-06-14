@@ -20,6 +20,8 @@ return [
 
     'trial_days' => (int) env('BILLING_TRIAL_DAYS', 14),
 
+    'renewal_reminder_days' => (int) env('BILLING_RENEWAL_REMINDER_DAYS', 3),
+
     'plans' => [
         'starter' => [
             'name' => 'Starter',

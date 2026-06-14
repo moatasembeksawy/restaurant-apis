@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Http\Controllers;
 
 use App\Modules\Platform\Http\Requests\AdminLoginRequest;
+use App\Modules\Platform\Http\Resources\AdminAuthResource;
+use App\Modules\Platform\Http\Resources\PlatformAdminResource;
 use App\Modules\Platform\Models\PlatformAdmin;
 use App\Modules\Platform\Services\PlatformAdminAuthService;
 use App\Shared\Support\Http\Resources\ApiResponse;
@@ -32,7 +34,7 @@ class AdminAuthController extends Controller
             return ApiResponse::error('Invalid credentials.', 'INVALID_CREDENTIALS', 401);
         }
 
-        return ApiResponse::success($result, 'Admin login successful.');
+        return ApiResponse::success(new AdminAuthResource($result), 'Admin login successful.');
     }
 
     public function me(Request $request): JsonResponse
@@ -40,7 +42,7 @@ class AdminAuthController extends Controller
         /** @var PlatformAdmin $admin */
         $admin = $request->user();
 
-        return ApiResponse::success($this->auth->formatAdmin($admin));
+        return ApiResponse::success(new PlatformAdminResource($this->auth->formatAdmin($admin)));
     }
 
     public function logout(Request $request): JsonResponse

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Print\Http\Controllers;
 
-use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\POS\Print\Http\Resources\PrintJobResource;
 use App\Shared\Infrastructure\PrintJob\EscPosBuilder;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -32,12 +32,12 @@ class PrintController extends Controller
             return ApiResponse::error('Branch not found for this order.', 'BRANCH_NOT_FOUND', 422);
         }
 
-        return ApiResponse::success([
+        return ApiResponse::success(new PrintJobResource([
             'order_id' => $order->id,
             'format' => 'escpos',
             'encoding' => 'binary',
             'bytes' => base64_encode($this->escPos->buildKitchenTicket($order, $branch)),
-        ]);
+        ]));
     }
 
     /**
@@ -59,12 +59,12 @@ class PrintController extends Controller
             return ApiResponse::error('Branch not found for this order.', 'BRANCH_NOT_FOUND', 422);
         }
 
-        return ApiResponse::success([
+        return ApiResponse::success(new PrintJobResource([
             'order_id' => $order->id,
             'payment_id' => $payment->id,
             'format' => 'escpos',
             'encoding' => 'binary',
             'bytes' => base64_encode($this->escPos->buildReceipt($order, $payment, $tenant, $branch)),
-        ]);
+        ]));
     }
 }

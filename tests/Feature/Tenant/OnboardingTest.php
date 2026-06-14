@@ -33,6 +33,35 @@ it('registers a new restaurant with trial and owner token', function (): void {
     expect(User::query()->where('tenant_id', $tenant->id)->where('role', 'owner')->count())->toBe(1);
 });
 
+it('auto-generates a subdomain from the restaurant name when omitted', function (): void {
+    $response = $this->postJson('/api/v1/onboarding/register', [
+        'restaurant_name' => 'Sunset Grill',
+        'owner_name' => 'Owner',
+        'owner_email' => 'sunset@example.com',
+        'owner_password' => 'password123',
+    ])->assertCreated();
+
+    expect($response->json('data.tenant.subdomain'))->toBe('sunset-grill');
+    expect(Tenant::query()->where('subdomain', 'sunset-grill')->exists())->toBeTrue();
+});
+
+it('auto-generates a unique subdomain when the base slug is taken', function (): void {
+    Tenant::factory()->create(['subdomain' => 'sunset-grill']);
+
+    $response = $this->postJson('/api/v1/onboarding/register', [
+        'restaurant_name' => 'Sunset Grill',
+        'owner_name' => 'Owner Two',
+        'owner_email' => 'sunset-two@example.com',
+        'owner_password' => 'password123',
+    ])->assertCreated();
+
+    $subdomain = $response->json('data.tenant.subdomain');
+
+    expect($subdomain)->not->toBe('sunset-grill');
+    expect($subdomain)->toStartWith('sunset-grill-');
+    expect(Tenant::query()->where('subdomain', $subdomain)->exists())->toBeTrue();
+});
+
 it('rejects duplicate subdomains', function (): void {
     Tenant::factory()->create(['subdomain' => 'taken']);
 

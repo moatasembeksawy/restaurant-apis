@@ -9,9 +9,13 @@ use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Queue;
+use Illuminate\Support\Facades\Storage;
 
 beforeEach(function (): void {
+    Storage::fake('local');
+
     config([
         'services.eta.client_id' => 'global-client',
         'services.eta.client_secret' => 'global-secret',
@@ -77,6 +81,27 @@ it('updates tenant eta credentials', function (): void {
         ->assertOk()
         ->assertJsonPath('data.eta_taxpayer_id', 'TX-999')
         ->assertJsonPath('data.eta_branch_id', '2');
+});
+
+it('uploads and deletes eta certificate', function (): void {
+    $file = UploadedFile::fake()->create('eta-cert.pem', 100, 'application/x-pem-file');
+
+    $this->withToken($this->token)
+        ->post('/api/v1/settings/eta/certificate', [
+            'certificate' => $file,
+        ], ['Accept' => 'application/json'])
+        ->assertOk()
+        ->assertJsonPath('data.has_certificate', true);
+
+    expect($this->tenant->fresh()->eta_cert_path)->not->toBeNull();
+    Storage::disk('local')->assertExists($this->tenant->fresh()->eta_cert_path);
+
+    $this->withToken($this->token)
+        ->deleteJson('/api/v1/settings/eta/certificate')
+        ->assertOk()
+        ->assertJsonPath('data.has_certificate', false);
+
+    expect($this->tenant->fresh()->eta_cert_path)->toBeNull();
 });
 
 it('resubmits a failed eta invoice', function (): void {

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Http\Controllers;
 
+use App\Modules\Tenant\Http\Requests\StoreBranchRequest;
+use App\Modules\Tenant\Http\Requests\UpdateBranchRequest;
+use App\Modules\Tenant\Http\Resources\BranchResource;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Subscription\Exceptions\PlanLimitExceededException;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
@@ -23,10 +26,14 @@ class BranchController extends Controller
 
     public function index(): JsonResponse
     {
-        return ApiResponse::success(Branch::query()->orderBy('name')->get());
+        $branches = Branch::query()
+            ->orderBy('name')
+            ->get();
+
+        return ApiResponse::success(BranchResource::collection($branches));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreBranchRequest $request): JsonResponse
     {
         $this->authorizeBranchManagement($request);
 
@@ -36,13 +43,7 @@ class BranchController extends Controller
             throw $e;
         }
 
-        $validated = $request->validate([
-            'name' => ['required', 'string', 'max:100'],
-            'name_ar' => ['required', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'timezone' => ['nullable', 'timezone'],
-        ]);
+        $validated = $request->validated();
 
         $branch = Branch::create([
             ...$validated,
@@ -53,27 +54,18 @@ class BranchController extends Controller
 
         AuditLogger::log('branch.created', $branch, ['created_by' => $request->user()->id]);
 
-        return ApiResponse::created($branch, 'Branch created.');
+        return ApiResponse::created(new BranchResource($branch), 'Branch created.');
     }
 
-    public function update(Request $request, Branch $branch): JsonResponse
+    public function update(UpdateBranchRequest $request, Branch $branch): JsonResponse
     {
         $this->authorizeBranchManagement($request);
 
-        $validated = $request->validate([
-            'name' => ['sometimes', 'string', 'max:100'],
-            'name_ar' => ['sometimes', 'string', 'max:100'],
-            'address' => ['nullable', 'string', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
-            'timezone' => ['nullable', 'timezone'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
-
-        $branch->update($validated);
+        $branch->update($request->validated());
 
         AuditLogger::log('branch.updated', $branch, ['updated_by' => $request->user()->id]);
 
-        return ApiResponse::success($branch, 'Branch updated.');
+        return ApiResponse::success(new BranchResource($branch), 'Branch updated.');
     }
 
     private function authorizeBranchManagement(Request $request): void

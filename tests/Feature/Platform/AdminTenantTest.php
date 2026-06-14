@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Platform\Models\PlatformAdmin;
+use App\Modules\Platform\Services\TenantManagementService;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Services\StaffService;
 
 beforeEach(function (): void {
     $this->admin = PlatformAdmin::create([
@@ -75,6 +77,12 @@ it('creates a tenant from admin panel', function (): void {
 });
 
 it('updates tenant plan and status', function (): void {
+    $staff = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'role' => 'manager',
+        'is_active' => true,
+    ]);
+
     $this->withToken($this->token)
         ->patchJson("/api/v1/admin/tenants/{$this->tenant->id}/plan", ['plan' => 'enterprise'])
         ->assertOk()
@@ -86,6 +94,51 @@ it('updates tenant plan and status', function (): void {
         ->assertJsonPath('data.status', 'suspended');
 
     expect($this->tenant->fresh()->status)->toBe('suspended');
+    expect($staff->fresh()->is_active)->toBeFalse();
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/admin/tenants/{$this->tenant->id}/status", ['status' => 'active'])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'active');
+
+    expect($staff->fresh()->is_active)->toBeTrue();
+});
+
+it('only reactivates tenant-suspended users when unsuspending', function (): void {
+    $owner = User::query()
+        ->where('tenant_id', $this->tenant->id)
+        ->where('role', 'owner')
+        ->first();
+
+    $staff = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'role' => 'manager',
+        'is_active' => true,
+    ]);
+
+    $manuallyDeactivated = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'role' => 'cashier',
+        'is_active' => true,
+    ]);
+
+    app(StaffService::class)->deactivate($manuallyDeactivated, $owner);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/admin/tenants/{$this->tenant->id}/status", ['status' => 'suspended'])
+        ->assertOk();
+
+    expect($staff->fresh()->is_active)->toBeFalse();
+    expect($staff->fresh()->deactivation_reason)->toBe('tenant_suspended');
+    expect($manuallyDeactivated->fresh()->is_active)->toBeFalse();
+    expect($manuallyDeactivated->fresh()->deactivation_reason)->toBe('manual');
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/admin/tenants/{$this->tenant->id}/status", ['status' => 'active'])
+        ->assertOk();
+
+    expect($staff->fresh()->is_active)->toBeTrue();
+    expect($manuallyDeactivated->fresh()->is_active)->toBeFalse();
 });
 
 it('updates tenant feature flags', function (): void {
@@ -106,4 +159,27 @@ it('returns platform dashboard stats', function (): void {
 
     expect($response->json('data.tenants.total'))->toBeGreaterThan(0);
     expect($response->json('data.revenue'))->toHaveKeys(['mrr_egp', 'active_subscriptions']);
+});
+
+it('issues impersonation token for tenant owner', function (): void {
+    $result = app(TenantManagementService::class)
+        ->impersonate($this->tenant, $this->admin);
+
+    expect($result['user']['email'])->toBe('owner@cairo.eg');
+    expect($result['impersonated_by']['email'])->toBe('admin@restoapp.eg');
+    expect($result['token'])->not->toBeEmpty();
+
+    $this->withToken($result['token'])
+        ->getJson('/api/v1/subscription')
+        ->assertOk()
+        ->assertJsonPath('data.plan', 'growth');
+});
+
+it('issues impersonation token via admin api', function (): void {
+    $this->withToken($this->token)
+        ->postJson("/api/v1/admin/tenants/{$this->tenant->id}/impersonate")
+        ->assertOk()
+        ->assertJsonPath('data.user.email', 'owner@cairo.eg')
+        ->assertJsonPath('data.impersonated_by.email', 'admin@restoapp.eg')
+        ->assertJsonStructure(['data' => ['token', 'expires_at', 'tenant']]);
 });

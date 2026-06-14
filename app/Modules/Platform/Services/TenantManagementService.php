@@ -201,11 +201,25 @@ class TenantManagementService
         }
 
         if ($status === 'suspended') {
-            $tenant->users()->update(['is_active' => false]);
+            $tenant->users()
+                ->where('is_active', true)
+                ->update([
+                    'is_active' => false,
+                    'deactivation_reason' => 'tenant_suspended',
+                ]);
             DB::table('personal_access_tokens')
                 ->whereIn('tokenable_id', $tenant->users()->pluck('id'))
                 ->where('tokenable_type', User::class)
                 ->delete();
+        }
+
+        if ($tenant->status === 'suspended' && $status !== 'suspended') {
+            $tenant->users()
+                ->where('deactivation_reason', 'tenant_suspended')
+                ->update([
+                    'is_active' => true,
+                    'deactivation_reason' => null,
+                ]);
         }
 
         $tenant->update($updates);
@@ -224,6 +238,59 @@ class TenantManagementService
         $this->logAdminAction($admin, 'admin.tenant.features_updated', $tenant, ['feature_flags' => $featureFlags]);
 
         return $this->show($tenant->fresh());
+    }
+
+    /** @return array<string, mixed> */
+    public function impersonate(Tenant $tenant, PlatformAdmin $admin): array
+    {
+        $owner = User::query()
+            ->withoutGlobalScopes()
+            ->where('tenant_id', $tenant->id)
+            ->where('role', 'owner')
+            ->where('is_active', true)
+            ->first();
+
+        if (! $owner) {
+            throw new InvalidArgumentException('Tenant has no active owner.');
+        }
+
+        $expiresAt = now()->addMinutes((int) config('platform.impersonation_ttl_minutes', 60));
+
+        $token = $owner->createToken(
+            "admin-impersonation:{$admin->id}",
+            $owner->tokenAbilities(),
+            $expiresAt,
+        );
+
+        $this->logAdminAction($admin, 'admin.tenant.impersonated', $tenant, [
+            'owner_id' => $owner->id,
+            'expires_at' => $expiresAt->toIso8601String(),
+        ]);
+
+        return [
+            'token' => $token->plainTextToken,
+            'token_type' => 'Bearer',
+            'expires_at' => $expiresAt->toIso8601String(),
+            'abilities' => $token->accessToken->abilities,
+            'impersonated_by' => [
+                'id' => $admin->id,
+                'email' => $admin->email,
+            ],
+            'user' => [
+                'id' => $owner->id,
+                'name' => $owner->name,
+                'email' => $owner->email,
+                'role' => $owner->role,
+                'tenant_id' => $owner->tenant_id,
+            ],
+            'tenant' => [
+                'id' => $tenant->id,
+                'name' => $tenant->name,
+                'subdomain' => $tenant->subdomain,
+                'plan' => $tenant->plan,
+                'status' => $tenant->status,
+            ],
+        ];
     }
 
     /** @return array<string, mixed> */

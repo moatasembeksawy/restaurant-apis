@@ -76,11 +76,8 @@ class AggregatorOrderService
             notes: $payload['notes'] ?? null,
             deliveryAddress: $payload['delivery_address'] ?? null,
             externalRef: $externalRef,
+            fulfillmentType: 'delivery',
         );
-
-        if (in_array($channel, ['talabat', 'elmenus', 'own_delivery'], true)) {
-            $order->update(['delivery_status' => 'pending']);
-        }
 
         AuditLogger::log('aggregator.order_received', $order, [
             'channel' => $channel,

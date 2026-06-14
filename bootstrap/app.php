@@ -3,6 +3,8 @@
 declare(strict_types=1);
 
 use App\Modules\Tenant\Subscription\Exceptions\PlanLimitExceededException;
+use App\Shared\Support\Http\Middleware\EnsureEmailVerified;
+use App\Shared\Support\Http\Middleware\EnsurePermission;
 use App\Shared\Support\Http\Middleware\EnsurePlanFeature;
 use App\Shared\Support\Http\Middleware\EnsurePlatformAdmin;
 use App\Shared\Support\Http\Middleware\TenantMiddleware;
@@ -28,6 +30,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'feature' => EnsurePlanFeature::class,
             'tenant.rate_limit' => TenantRateLimitMiddleware::class,
             'platform.admin' => EnsurePlatformAdmin::class,
+            'verified.email' => EnsureEmailVerified::class,
+            'permission' => EnsurePermission::class,
         ]);
 
         $middleware->statefulApi();

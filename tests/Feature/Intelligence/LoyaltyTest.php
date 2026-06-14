@@ -105,6 +105,8 @@ it('accrues loyalty points when an order is paid', function (): void {
         'is_active' => true,
     ]);
 
+    startCashierShift($cashier);
+
     $order = Order::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,

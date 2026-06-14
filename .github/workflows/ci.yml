@@ -60,3 +60,9 @@ jobs:
           DB_DATABASE: restaurant_test
           DB_USERNAME: root
           DB_PASSWORD: root
+
+      - name: Run Laravel Pint
+        run: ./vendor/bin/pint --test app/Models app/Shared config/tenant.php routes/api.php bootstrap/app.php
+
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse --memory-limit=512M -c phpstan.neon --no-progress

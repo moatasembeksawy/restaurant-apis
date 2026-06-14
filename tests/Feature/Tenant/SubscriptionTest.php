@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Models\Subscription;
 use App\Modules\Tenant\Subscription\Models\SubscriptionTransaction;
+use App\Modules\Tenant\Subscription\Services\SubscriptionService;
+use App\Shared\Infrastructure\Fawry\FawryAdapter;
 use App\Shared\Infrastructure\Paymob\PaymobAdapter;
 
 beforeEach(function (): void {
@@ -19,8 +21,8 @@ beforeEach(function (): void {
     ]);
 
     app()->forgetInstance(PaymobAdapter::class);
-    app()->forgetInstance(\App\Shared\Infrastructure\Fawry\FawryAdapter::class);
-    app()->forgetInstance(\App\Modules\Tenant\Subscription\Services\SubscriptionService::class);
+    app()->forgetInstance(FawryAdapter::class);
+    app()->forgetInstance(SubscriptionService::class);
 
     $this->tenant = Tenant::factory()->create([
         'plan' => 'starter',
@@ -69,30 +71,6 @@ function buildPaymobPayload(int $tenantId, string $plan, int $amountCents, int $
             'success' => true,
         ],
     ];
-}
-
-function paymobHmac(array $payload, string $secret): string
-{
-    $obj = $payload['obj'];
-    $fields = [
-        'amount_cents', 'created_at', 'currency', 'error_occured',
-        'has_parent_transaction', 'id', 'integration_id', 'is_3d_secure',
-        'is_auth', 'is_capture', 'is_refunded', 'is_standalone_payment',
-        'is_voided', 'order.id', 'owner', 'pending', 'source_data.pan',
-        'source_data.sub_type', 'source_data.type', 'success',
-    ];
-
-    $concatenated = '';
-    foreach ($fields as $field) {
-        $keys = explode('.', $field);
-        $value = $obj;
-        foreach ($keys as $key) {
-            $value = $value[$key] ?? '';
-        }
-        $concatenated .= (string) $value;
-    }
-
-    return hash_hmac('sha512', $concatenated, $secret);
 }
 
 it('shows current subscription details', function (): void {

@@ -6,8 +6,8 @@ use App\Models\User;
 use App\Modules\Inventory\Recipes\Models\Recipe;
 use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\Inventory\Stock\Models\StockMovement;
-use App\Modules\Inventory\Stock\Models\Supplier;
-use App\Modules\Inventory\Stock\Models\PurchaseOrder;
+use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
+use App\Modules\Inventory\Suppliers\Models\Supplier;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\Order;
@@ -68,6 +68,7 @@ beforeEach(function (): void {
     ]);
 
     app()->instance('tenant', $this->tenant);
+    startCashierShift($this->cashier);
     $this->token = $this->cashier->createToken('test')->plainTextToken;
 });
 

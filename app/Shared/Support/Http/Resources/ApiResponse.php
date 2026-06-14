@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Shared\Support\Http\Resources;
 
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ApiResponse
@@ -15,11 +17,9 @@ class ApiResponse
         int $status = 200,
         array $meta = [],
     ): JsonResponse {
-        $payload = ['data' => $data];
-
         if ($data instanceof LengthAwarePaginator) {
-            $payload = [
-                'data' => $data->items(),
+            return response()->json([
+                'data' => self::resolve($data->items()),
                 'meta' => array_merge([
                     'current_page' => $data->currentPage(),
                     'last_page' => $data->lastPage(),
@@ -27,12 +27,34 @@ class ApiResponse
                     'total' => $data->total(),
                     'message' => $message,
                 ], $meta),
-            ];
-        } else {
-            $payload['meta'] = array_merge(['message' => $message], $meta);
+            ], $status);
         }
 
-        return response()->json($payload, $status);
+        return response()->json([
+            'data' => self::resolve($data),
+            'meta' => array_merge(['message' => $message], $meta),
+        ], $status);
+    }
+
+    /**
+     * @param  class-string<JsonResource>  $resourceClass
+     */
+    public static function paginated(
+        LengthAwarePaginator $paginator,
+        string $resourceClass,
+        string $message = 'OK',
+        array $meta = [],
+    ): JsonResponse {
+        return response()->json([
+            'data' => $resourceClass::collection($paginator->items())->resolve(request()),
+            'meta' => array_merge([
+                'current_page' => $paginator->currentPage(),
+                'last_page' => $paginator->lastPage(),
+                'per_page' => $paginator->perPage(),
+                'total' => $paginator->total(),
+                'message' => $message,
+            ], $meta),
+        ]);
     }
 
     public static function created(mixed $data = null, string $message = 'Created.'): JsonResponse
@@ -68,5 +90,14 @@ class ApiResponse
                 'field' => $field,
             ])->values()->all(),
         ], 422);
+    }
+
+    private static function resolve(mixed $data): mixed
+    {
+        if ($data instanceof JsonResource || $data instanceof ResourceCollection) {
+            return $data->resolve(request());
+        }
+
+        return $data;
     }
 }

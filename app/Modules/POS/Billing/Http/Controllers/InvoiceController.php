@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Billing\Http\Controllers;
 
+use App\Modules\POS\Billing\Http\Resources\InvoiceResource;
 use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Services\ETAService;
 use App\Shared\Support\Http\Resources\ApiResponse;
@@ -21,7 +22,7 @@ class InvoiceController extends Controller
 
     public function show(Invoice $invoice): JsonResponse
     {
-        return ApiResponse::success($invoice->load('payment.order'));
+        return ApiResponse::success(new InvoiceResource($invoice->load('payment.order')));
     }
 
     public function resubmit(Request $request, Invoice $invoice): JsonResponse
@@ -36,7 +37,7 @@ class InvoiceController extends Controller
             return ApiResponse::error($e->getMessage(), 'ETA_RESUBMIT_FAILED', 422);
         }
 
-        return ApiResponse::success($invoice, 'ETA submission queued for retry.');
+        return ApiResponse::success(new InvoiceResource($invoice), 'ETA submission queued for retry.');
     }
 
     public function failed(): JsonResponse
@@ -48,6 +49,6 @@ class InvoiceController extends Controller
             ->limit(50)
             ->get();
 
-        return ApiResponse::success($invoices);
+        return ApiResponse::success(InvoiceResource::collection($invoices));
     }
 }

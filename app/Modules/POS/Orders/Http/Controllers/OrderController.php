@@ -4,11 +4,17 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Orders\Http\Controllers;
 
+use App\Modules\POS\Orders\Http\Requests\IndexOrderRequest;
+use App\Modules\POS\Orders\Http\Requests\StoreOrderRequest;
+use App\Modules\POS\Orders\Http\Requests\UpdateOrderRequest;
+use App\Modules\POS\Orders\Http\Requests\UpdateOrderStatusRequest;
+use App\Modules\POS\Orders\Http\Resources\OrderResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Services\OrderPlacementService;
+use App\Modules\POS\Tables\Models\FloorTable;
+use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -18,70 +24,63 @@ class OrderController extends Controller
 {
     public function __construct(private readonly OrderPlacementService $orderPlacement) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexOrderRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $orders = Order::query()
-            ->when($request->query('status'), fn ($q, $s) => $q->where('status', $s))
-            ->when($request->query('branch_id'), fn ($q, $id) => $q->where('branch_id', $id))
-            ->when($request->query('table_id'), fn ($q, $id) => $q->where('floor_table_id', $id))
-            ->when($request->query('channel'), fn ($q, $c) => $q->where('channel', $c))
+            ->when($validated['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
+            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
+            ->when($validated['table_id'] ?? null, fn ($q, $id) => $q->where('floor_table_id', $id))
+            ->when($validated['channel'] ?? null, fn ($q, $c) => $q->where('channel', $c))
+            ->when($validated['fulfillment_type'] ?? null, fn ($q, $type) => $q->where('fulfillment_type', $type))
             ->with(['items', 'table', 'waiter'])
             ->orderByDesc('created_at')
-            ->paginate((int) $request->query('per_page', '25'));
+            ->paginate((int) ($validated['per_page'] ?? 25));
 
-        return ApiResponse::success($orders);
+        return ApiResponse::paginated($orders, OrderResource::class);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreOrderRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'branch_id' => ['required', 'integer'],
-            'floor_table_id' => ['nullable', 'integer'],
-            'channel' => ['required', 'in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery'],
-            'notes' => ['nullable', 'string'],
-            'delivery_address' => ['nullable', 'string', 'max:500'],
-            'customer_id' => ['nullable', 'integer'],
-            'items' => ['required', 'array', 'min:1'],
-            'items.*.menu_item_id' => ['required', 'integer'],
-            'items.*.quantity' => ['required', 'integer', 'min:1'],
-            'items.*.notes' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
-        $order = $this->orderPlacement->place(
-            branchId: (int) $validated['branch_id'],
-            channel: $validated['channel'],
-            items: $validated['items'],
-            floorTableId: $validated['floor_table_id'] ?? null,
-            waiterId: $request->user()->id,
-            customerId: $validated['customer_id'] ?? null,
-            notes: $validated['notes'] ?? null,
-            deliveryAddress: $validated['delivery_address'] ?? null,
-        );
+        try {
+            $order = $this->orderPlacement->place(
+                branchId: (int) $validated['branch_id'],
+                channel: $validated['channel'],
+                items: $validated['items'],
+                floorTableId: $validated['floor_table_id'] ?? null,
+                waiterId: $request->user()->id,
+                customerId: $validated['customer_id'] ?? null,
+                notes: $validated['notes'] ?? null,
+                deliveryAddress: $validated['delivery_address'] ?? null,
+                fulfillmentType: $validated['fulfillment_type'] ?? null,
+            );
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'ORDER_VALIDATION_FAILED', 422);
+        }
 
-        return ApiResponse::created($order, 'Order placed.');
+        return ApiResponse::created(new OrderResource($order), 'Order placed.');
     }
 
     public function show(Order $order): JsonResponse
     {
-        return ApiResponse::success($order->load(['items.menuItem', 'table', 'waiter', 'payment', 'customer', 'rider']));
+        return ApiResponse::success(new OrderResource($order->load(['items.menuItem', 'table', 'waiter', 'payment', 'customer', 'rider'])));
     }
 
-    public function update(Request $request, Order $order): JsonResponse
+    public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
-        $validated = $request->validate([
-            'notes' => ['nullable', 'string'],
-        ]);
+        $validated = $request->validated();
 
         $order->update($validated);
 
-        return ApiResponse::success($order, 'Order updated.');
+        return ApiResponse::success(new OrderResource($order), 'Order updated.');
     }
 
-    public function updateStatus(Request $request, Order $order): JsonResponse
+    public function updateStatus(UpdateOrderStatusRequest $request, Order $order): JsonResponse
     {
-        $validated = $request->validate([
-            'status' => ['required', 'in:active,cooking,ready,completed,paid,cancelled'],
-        ]);
+        $validated = $request->validated();
 
         if (! $order->canTransitionTo($validated['status'])) {
             return ApiResponse::error(
@@ -94,13 +93,13 @@ class OrderController extends Controller
         $order->update(['status' => $validated['status']]);
 
         if ($validated['status'] === 'completed' && $order->floor_table_id) {
-            \App\Modules\POS\Tables\Models\FloorTable::find($order->floor_table_id)?->update(['status' => 'free']);
+            FloorTable::find($order->floor_table_id)?->update(['status' => 'free']);
         }
 
         if ($validated['status'] === 'cancelled') {
-            \App\Shared\Support\Audit\AuditLogger::log('order.cancelled', $order);
+            AuditLogger::log('order.cancelled', $order);
         }
 
-        return ApiResponse::success($order, 'Order status updated.');
+        return ApiResponse::success(new OrderResource($order), 'Order status updated.');
     }
 }

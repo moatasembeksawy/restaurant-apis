@@ -24,7 +24,7 @@ Route::prefix('v1')->group(function (): void {
     });
 
     // ── Authenticated + tenant-resolved routes ─────────────────────────────────
-    Route::middleware(['auth:sanctum', 'tenant', 'tenant.rate_limit'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'tenant', 'tenant.rate_limit', 'verified.email'])->group(function (): void {
 
         // Phase 1 — POS
         require base_path('app/Modules/POS/routes/api.php');

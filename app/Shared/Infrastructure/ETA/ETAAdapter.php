@@ -6,8 +6,10 @@ namespace App\Shared\Infrastructure\ETA;
 
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Storage;
 use RuntimeException;
 
 class ETAAdapter implements ETAAdapterInterface
@@ -17,14 +19,14 @@ class ETAAdapter implements ETAAdapterInterface
         private readonly string $tokenUrl,
     ) {}
 
-    public function getAccessToken(string $clientId, string $clientSecret): string
+    public function getAccessToken(ETACredentials $credentials): string
     {
-        $response = Http::asForm()
-            ->timeout(15)
+        $response = $this->httpClient($credentials)
+            ->asForm()
             ->post($this->tokenUrl, [
                 'grant_type' => 'client_credentials',
-                'client_id' => $clientId,
-                'client_secret' => $clientSecret,
+                'client_id' => $credentials->clientId,
+                'client_secret' => $credentials->clientSecret,
             ]);
 
         if ($response->failed()) {
@@ -34,9 +36,10 @@ class ETAAdapter implements ETAAdapterInterface
         return $response->json('access_token');
     }
 
-    public function submitInvoice(array $invoiceDocument, string $accessToken): array
+    public function submitInvoice(array $invoiceDocument, ETACredentials $credentials, string $accessToken): array
     {
-        $response = Http::withToken($accessToken)
+        $response = $this->httpClient($credentials)
+            ->withToken($accessToken)
             ->timeout(30)
             ->post("{$this->portalUrl}/api/v1/documentsubmissions", [
                 'documents' => [$invoiceDocument],
@@ -48,7 +51,6 @@ class ETAAdapter implements ETAAdapterInterface
 
         $body = $response->json();
 
-        // ETA returns rejectedDocuments or acceptedDocuments
         if (! empty($body['rejectedDocuments'])) {
             $reason = $body['rejectedDocuments'][0]['error']['details'][0]['message'] ?? 'Unknown rejection reason';
             throw new RuntimeException("ETA rejected invoice: {$reason}");
@@ -97,7 +99,7 @@ class ETAAdapter implements ETAAdapterInterface
 
         return [
             'issuer' => [
-                'type' => 'B', // Business
+                'type' => 'B',
                 'id' => $tenant->eta_taxpayer_id ?: config('services.eta.client_id'),
                 'name' => $tenant->name,
                 'address' => [
@@ -110,8 +112,8 @@ class ETAAdapter implements ETAAdapterInterface
                 ],
             ],
             'receiver' => [
-                'type' => 'P', // Person (consumer)
-                'id' => '0000000000', // Anonymous consumer
+                'type' => 'P',
+                'id' => '0000000000',
                 'name' => 'Cash Customer',
                 'address' => [
                     'country' => 'EG',
@@ -124,7 +126,7 @@ class ETAAdapter implements ETAAdapterInterface
             'documentType' => 'I',
             'documentTypeVersion' => '1.0',
             'dateTimeIssued' => $issuedAt,
-            'taxpayerActivityCode' => '5610', // Restaurant activity code
+            'taxpayerActivityCode' => '5610',
             'internalID' => (string) $payment->id,
             'invoiceLines' => $invoiceLines,
             'taxTotals' => [[
@@ -139,5 +141,38 @@ class ETAAdapter implements ETAAdapterInterface
             'extraDiscountAmount' => 0,
             'totalItemsDiscountAmount' => 0,
         ];
+    }
+
+    private function httpClient(ETACredentials $credentials): PendingRequest
+    {
+        $client = Http::timeout(15);
+        $options = $this->tlsOptions($credentials);
+
+        if ($options !== []) {
+            $client = $client->withOptions($options);
+        }
+
+        return $client;
+    }
+
+    /** @return array<string, mixed> */
+    private function tlsOptions(ETACredentials $credentials): array
+    {
+        if (! $credentials->usesMutualTls()) {
+            return [];
+        }
+
+        if (! Storage::disk('local')->exists($credentials->certPath)) {
+            return [];
+        }
+
+        $path = Storage::disk('local')->path($credentials->certPath);
+        $extension = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+
+        if (in_array($extension, ['p12', 'pfx'], true)) {
+            return ['cert' => [$path, '']];
+        }
+
+        return ['cert' => $path];
     }
 }

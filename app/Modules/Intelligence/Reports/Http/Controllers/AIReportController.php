@@ -4,12 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\Intelligence\Reports\Http\Controllers;
 
+use App\Modules\Intelligence\Reports\Http\Requests\WeeklyAIReportRequest;
+use App\Modules\Intelligence\Reports\Http\Resources\AIReportResource;
 use App\Modules\Intelligence\Reports\Services\AIReportService;
 use App\Modules\Intelligence\Reports\Services\LLMNarrativeService;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -19,13 +20,9 @@ class AIReportController extends Controller
 {
     public function __construct(private readonly AIReportService $reports) {}
 
-    public function weekly(Request $request): JsonResponse
+    public function weekly(WeeklyAIReportRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'branch_id' => ['nullable', 'integer'],
-            'week_start' => ['nullable', 'date'],
-            'narrative' => ['nullable', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $weekStart = isset($validated['week_start'])
             ? Carbon::parse($validated['week_start'])->startOfWeek()
@@ -40,6 +37,6 @@ class AIReportController extends Controller
             $summary = app(LLMNarrativeService::class)->enhance($summary);
         }
 
-        return ApiResponse::success($summary, 'Weekly AI summary generated.');
+        return ApiResponse::success(new AIReportResource($summary), 'Weekly AI summary generated.');
     }
 }

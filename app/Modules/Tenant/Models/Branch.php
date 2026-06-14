@@ -10,6 +10,7 @@ use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Str;
 
 class Branch extends Model
 {
@@ -29,6 +30,7 @@ class Branch extends Model
         'is_default',
         'timezone',
         'is_active',
+        'qr_menu_token',
     ];
 
     protected function casts(): array
@@ -42,5 +44,23 @@ class Branch extends Model
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class);
+    }
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $branch): void {
+            if (empty($branch->qr_menu_token)) {
+                $branch->qr_menu_token = Str::random(48);
+            }
+        });
+    }
+
+    public function qrMenuUrl(): ?string
+    {
+        if (! $this->qr_menu_token) {
+            return null;
+        }
+
+        return rtrim((string) config('app.url'), '/')."/api/v1/qr/{$this->qr_menu_token}/menu";
     }
 }

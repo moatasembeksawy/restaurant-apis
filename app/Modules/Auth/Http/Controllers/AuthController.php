@@ -5,9 +5,15 @@ declare(strict_types=1);
 namespace App\Modules\Auth\Http\Controllers;
 
 use App\Modules\Auth\Http\Requests\DeviceLoginRequest;
+use App\Modules\Auth\Http\Requests\ForgotPasswordRequest;
 use App\Modules\Auth\Http\Requests\KitchenDeviceRequest;
 use App\Modules\Auth\Http\Requests\LoginRequest;
+use App\Modules\Auth\Http\Requests\ResetPasswordRequest;
+use App\Modules\Auth\Http\Resources\AuthenticatedUserResource;
+use App\Modules\Auth\Http\Resources\AuthTokenResource;
 use App\Modules\Auth\Services\AuthService;
+use App\Modules\Auth\Services\EmailVerificationService;
+use App\Modules\Auth\Services\PasswordResetService;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Http\JsonResponse;
@@ -40,7 +46,7 @@ class AuthController extends Controller
                 deviceName: $request->string('device_name', 'web')->toString(),
             );
 
-            return ApiResponse::success($result, 'Login successful.');
+            return ApiResponse::success(new AuthTokenResource($result), 'Login successful.');
         } catch (AuthenticationException) {
             return ApiResponse::error('Invalid credentials.', 'INVALID_CREDENTIALS', 401);
         }
@@ -63,7 +69,7 @@ class AuthController extends Controller
                 deviceName: $request->string('device_name', 'tablet')->toString(),
             );
 
-            return ApiResponse::success($result, 'Device login successful.');
+            return ApiResponse::success(new AuthTokenResource($result), 'Device login successful.');
         } catch (AuthenticationException) {
             return ApiResponse::error('Invalid PIN or branch.', 'INVALID_PIN', 401);
         }
@@ -86,7 +92,7 @@ class AuthController extends Controller
                 deviceName: $request->string('device_name', 'kitchen-display')->toString(),
             );
 
-            return ApiResponse::success($result, 'Kitchen device registered.');
+            return ApiResponse::success(new AuthTokenResource($result), 'Kitchen device registered.');
         } catch (AuthenticationException) {
             return ApiResponse::error('Invalid device secret.', 'INVALID_DEVICE_SECRET', 401);
         }
@@ -101,10 +107,11 @@ class AuthController extends Controller
     {
         $user = $request->user()->load('tenant', 'branch');
 
-        return ApiResponse::success([
+        return ApiResponse::success(new AuthenticatedUserResource([
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at?->toISOString(),
             'phone' => $user->phone,
             'role' => $user->role,
             'abilities' => $user->currentAccessToken()->abilities,
@@ -120,7 +127,7 @@ class AuthController extends Controller
                 'status' => $user->tenant->status,
                 'locale' => $user->tenant->locale,
             ],
-        ]);
+        ]));
     }
 
     /**
@@ -133,5 +140,57 @@ class AuthController extends Controller
         $this->authService->revokeCurrentToken($request->user());
 
         return ApiResponse::success(null, 'Logged out successfully.');
+    }
+
+    public function forgotPassword(ForgotPasswordRequest $request, PasswordResetService $passwordReset): JsonResponse
+    {
+        $passwordReset->sendResetLink($request->string('email')->toString());
+
+        return ApiResponse::success(
+            null,
+            'If that email exists, a password reset link has been sent.',
+        );
+    }
+
+    public function resetPassword(ResetPasswordRequest $request, PasswordResetService $passwordReset): JsonResponse
+    {
+        try {
+            $passwordReset->resetPassword(
+                email: $request->string('email')->toString(),
+                token: $request->string('token')->toString(),
+                password: $request->string('password')->toString(),
+            );
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'PASSWORD_RESET_FAILED', 422);
+        }
+
+        return ApiResponse::success(null, 'Password has been reset.');
+    }
+
+    public function verifyEmail(Request $request, EmailVerificationService $verification): JsonResponse
+    {
+        try {
+            $user = $verification->verify($request);
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'EMAIL_VERIFICATION_FAILED', 422);
+        }
+
+        return ApiResponse::success([
+            'email' => $user->email,
+            'email_verified_at' => $user->email_verified_at?->toISOString(),
+        ], 'Email verified.');
+    }
+
+    public function sendVerificationNotification(Request $request, EmailVerificationService $verification): JsonResponse
+    {
+        $user = $request->user();
+
+        if ($user->hasVerifiedEmail()) {
+            return ApiResponse::success(null, 'Email already verified.');
+        }
+
+        $verification->sendVerificationLink($user);
+
+        return ApiResponse::success(null, 'Verification link sent.');
     }
 }

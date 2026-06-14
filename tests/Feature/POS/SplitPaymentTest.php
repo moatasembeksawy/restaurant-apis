@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\PaymentSplit;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
@@ -12,7 +13,6 @@ use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Queue;
-use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create(['plan' => 'pro', 'status' => 'active']);
@@ -57,6 +57,7 @@ beforeEach(function (): void {
     ]);
 
     app()->instance('tenant', $this->tenant);
+    startCashierShift($this->cashier);
     $this->token = $this->cashier->createToken('test', ['billing:*'])->plainTextToken;
 });
 

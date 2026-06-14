@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Platform\Http\Controllers;
 
+use App\Modules\Platform\Http\Resources\AdminDashboardResource;
 use App\Modules\Platform\Services\TenantManagementService;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -18,6 +19,6 @@ class AdminDashboardController extends Controller
 
     public function stats(): JsonResponse
     {
-        return ApiResponse::success($this->tenants->dashboardStats());
+        return ApiResponse::success(new AdminDashboardResource($this->tenants->dashboardStats()));
     }
 }

@@ -5,16 +5,20 @@ declare(strict_types=1);
 namespace App\Modules\POS\Billing\Services;
 
 use App\Models\User;
+use App\Modules\Delivery\Customers\Models\Customer;
+use App\Modules\Delivery\Customers\Services\CustomerService;
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\Intelligence\Loyalty\Services\LoyaltyService;
 use App\Modules\Inventory\Stock\Services\StockService;
 use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\POS\Billing\Models\PaymentRefund;
 use App\Modules\POS\Billing\Models\PaymentSplit;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Staff\Services\StaffShiftService;
 use App\Shared\Support\Audit\AuditLogger;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -24,6 +28,8 @@ class PaymentSettlementService
     public function __construct(
         private readonly StockService $stock,
         private readonly LoyaltyService $loyalty,
+        private readonly CustomerService $customers,
+        private readonly StaffShiftService $shifts,
     ) {}
 
     /**
@@ -87,6 +93,13 @@ class PaymentSettlementService
                 $changeDue = max(0, (float) $validated['cash_tendered'] - $amount);
             }
 
+            $staffShiftId = null;
+
+            if ($tenant->hasFeature('staff_shifts')) {
+                $shift = $this->shifts->resolveShiftForPayment($cashier);
+                $staffShiftId = $shift?->id;
+            }
+
             $payment = Payment::create([
                 'method' => $method,
                 'amount' => $amount,
@@ -98,6 +111,7 @@ class PaymentSettlementService
                 'reference' => $validated['reference'] ?? null,
                 'order_id' => $order->id,
                 'cashier_id' => $cashier->id,
+                'staff_shift_id' => $staffShiftId,
             ]);
 
             if ($method === 'split') {
@@ -132,6 +146,13 @@ class PaymentSettlementService
                 $this->loyalty->accrueForOrder($order);
             }
 
+            if ($order->customer_id) {
+                $customer = Customer::query()->find($order->customer_id);
+                if ($customer) {
+                    $this->customers->recordPayment($customer, $order->fresh());
+                }
+            }
+
             if (
                 $tenant->hasFeature('whatsapp_ordering')
                 && $order->customer_id
@@ -142,6 +163,7 @@ class PaymentSettlementService
 
             AuditLogger::log('payment.settled', $order, [
                 'payment_id' => $payment->id,
+                'staff_shift_id' => $staffShiftId,
                 'method' => $payment->method,
                 'amount' => $payment->amount,
                 'discount' => $order->discount,
@@ -188,5 +210,84 @@ class PaymentSettlementService
         if (round($total, 2) !== round((float) $order->total, 2)) {
             throw new InvalidArgumentException('Split amounts must sum to the order total.');
         }
+    }
+
+    /**
+     * @param  array<string, mixed>  $validated
+     * @return array{refund: PaymentRefund, payment: Payment, order: Order}
+     */
+    public function refund(Order $order, array $validated, User $refundedBy): array
+    {
+        $payment = $order->payment;
+
+        if (! $payment) {
+            throw new InvalidArgumentException('No payment found for this order.');
+        }
+
+        if ($payment->isRefunded() || $order->status === 'refunded') {
+            throw new InvalidArgumentException('This payment has already been refunded.');
+        }
+
+        if ($order->status !== 'paid') {
+            throw new InvalidArgumentException('Only paid orders can be refunded.');
+        }
+
+        return DB::transaction(function () use ($order, $payment, $validated, $refundedBy): array {
+            /** @var Tenant $tenant */
+            $tenant = app('tenant');
+
+            $refundShiftId = $tenant->hasFeature('staff_shifts')
+                ? $this->shifts->resolveActiveShift($refundedBy)?->id
+                : null;
+
+            $refund = PaymentRefund::create([
+                'tenant_id' => $tenant->id,
+                'payment_id' => $payment->id,
+                'order_id' => $order->id,
+                'refunded_by' => $refundedBy->id,
+                'staff_shift_id' => $refundShiftId,
+                'amount' => $payment->amount,
+                'reason' => $validated['reason'] ?? null,
+            ]);
+
+            $payment->update(['refunded_at' => now()]);
+            $order->update(['status' => 'refunded']);
+
+            $invoice = $payment->invoice()->first();
+
+            if ($invoice) {
+                $invoice->update(['eta_status' => 'voided']);
+            }
+
+            if ($tenant->hasFeature('inventory')) {
+                $this->stock->restoreForOrder($order->load('items'), $refundedBy);
+            }
+
+            if ($tenant->hasFeature('loyalty') && $order->customer_id) {
+                $this->loyalty->reverseForOrder($order);
+            }
+
+            if ($order->customer_id) {
+                $customer = Customer::query()->find($order->customer_id);
+
+                if ($customer) {
+                    $this->customers->reversePayment($customer, $order);
+                }
+            }
+
+            AuditLogger::log('payment.refunded', $order, [
+                'payment_id' => $payment->id,
+                'refund_id' => $refund->id,
+                'amount' => $refund->amount,
+                'reason' => $refund->reason,
+                'refunded_by' => $refundedBy->id,
+            ]);
+
+            return [
+                'refund' => $refund,
+                'payment' => $payment->fresh(['invoice', 'refund']),
+                'order' => $order->fresh(),
+            ];
+        });
     }
 }

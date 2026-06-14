@@ -7,8 +7,8 @@ namespace App\Modules\Inventory\Stock\Services;
 use App\Models\User;
 use App\Modules\Inventory\Recipes\Models\Recipe;
 use App\Modules\Inventory\Stock\Models\Ingredient;
-use App\Modules\Inventory\Stock\Models\PurchaseOrder;
 use App\Modules\Inventory\Stock\Models\StockMovement;
+use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\Order;
 use App\Shared\Support\Audit\AuditLogger;
@@ -26,6 +26,7 @@ class StockService
         'waste' => -1,
         'sale' => -1,
         'adjustment' => 1,
+        'refund' => 1,
     ];
 
     public function recordMovement(
@@ -77,6 +78,7 @@ class StockService
 
             if ($type === 'purchase' && $unitCost !== null) {
                 $this->updateWeightedAverageCost($ingredient, $quantity, $unitCost);
+                $this->refreshMenuItemsCostForIngredient($ingredient->fresh());
             }
 
             AuditLogger::log("inventory.{$type}", $movement, [
@@ -124,6 +126,47 @@ class StockService
                         notes: "Order #{$order->id} — {$orderItem->item_name_ar}",
                     );
                 }
+            }
+        });
+    }
+
+    public function restoreForOrder(Order $order, ?User $user = null): void
+    {
+        if (StockMovement::query()
+            ->where('reference_type', Order::class)
+            ->where('reference_id', $order->id)
+            ->where('type', 'refund')
+            ->exists()) {
+            return;
+        }
+
+        $saleMovements = StockMovement::query()
+            ->where('reference_type', Order::class)
+            ->where('reference_id', $order->id)
+            ->where('type', 'sale')
+            ->get();
+
+        if ($saleMovements->isEmpty()) {
+            return;
+        }
+
+        DB::transaction(function () use ($saleMovements, $order, $user): void {
+            foreach ($saleMovements as $movement) {
+                $ingredient = Ingredient::query()->find($movement->ingredient_id);
+
+                if (! $ingredient) {
+                    continue;
+                }
+
+                $this->recordMovement(
+                    ingredient: $ingredient,
+                    type: 'refund',
+                    quantity: (float) $movement->quantity,
+                    user: $user,
+                    reference: $order,
+                    branchId: $movement->branch_id,
+                    notes: "Refund for order #{$order->id}",
+                );
             }
         });
     }
@@ -228,10 +271,39 @@ class StockService
             ]));
         }
 
+        $this->syncMenuItemCostPrice($menuItem->fresh());
+
         return Recipe::query()
             ->with('ingredient')
             ->whereIn('id', $created->pluck('id'))
             ->get();
+    }
+
+    private function syncMenuItemCostPrice(MenuItem $menuItem): void
+    {
+        $totalCost = round(
+            Recipe::query()
+                ->where('menu_item_id', $menuItem->id)
+                ->with('ingredient')
+                ->get()
+                ->sum(fn (Recipe $recipe) => $recipe->lineCost()),
+            2,
+        );
+
+        $menuItem->update(['cost_price' => $totalCost]);
+    }
+
+    private function refreshMenuItemsCostForIngredient(Ingredient $ingredient): void
+    {
+        $menuItemIds = Recipe::query()
+            ->where('ingredient_id', $ingredient->id)
+            ->distinct()
+            ->pluck('menu_item_id');
+
+        MenuItem::query()
+            ->whereIn('id', $menuItemIds)
+            ->get()
+            ->each(fn (MenuItem $item) => $this->syncMenuItemCostPrice($item));
     }
 
     private function updateWeightedAverageCost(Ingredient $ingredient, float $incomingQty, float $incomingCost): void

@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Recipes\Http\Controllers;
 
+use App\Modules\Inventory\Recipes\Http\Requests\SyncRecipeRequest;
+use App\Modules\Inventory\Recipes\Http\Resources\RecipeCostResource;
 use App\Modules\Inventory\Stock\Services\StockService;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -20,28 +21,25 @@ class RecipeController extends Controller
 
     public function show(MenuItem $item): JsonResponse
     {
-        return ApiResponse::success($this->stock->recipeCost($item));
+        return ApiResponse::success(new RecipeCostResource($this->stock->recipeCost($item)));
     }
 
     public function cost(MenuItem $item): JsonResponse
     {
-        return ApiResponse::success($this->stock->recipeCost($item));
+        return ApiResponse::success(new RecipeCostResource($this->stock->recipeCost($item)));
     }
 
-    public function sync(Request $request, MenuItem $item): JsonResponse
+    public function sync(SyncRecipeRequest $request, MenuItem $item): JsonResponse
     {
         if (! app('tenant')->hasFeature('recipe_costing')) {
             return ApiResponse::error('Recipe costing requires Pro plan.', 'FEATURE_NOT_AVAILABLE', 402);
         }
 
-        $validated = $request->validate([
-            'lines' => ['required', 'array', 'min:1'],
-            'lines.*.ingredient_id' => ['required', 'integer'],
-            'lines.*.quantity' => ['required', 'numeric', 'min:0.0001'],
-        ]);
+        $this->stock->syncRecipe($item, $request->validated('lines'));
 
-        $this->stock->syncRecipe($item, $validated['lines']);
-
-        return ApiResponse::success($this->stock->recipeCost($item->fresh()), 'Recipe saved.');
+        return ApiResponse::success(
+            new RecipeCostResource($this->stock->recipeCost($item->fresh())),
+            'Recipe saved.',
+        );
     }
 }

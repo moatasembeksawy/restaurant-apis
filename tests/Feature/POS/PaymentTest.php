@@ -69,6 +69,7 @@ beforeEach(function (): void {
     ]);
 
     app()->instance('tenant', $this->tenant);
+    startCashierShift($this->cashier);
     $this->token = $this->cashier->createToken('test', ['billing:*', 'orders:*'])->plainTextToken;
 });
 

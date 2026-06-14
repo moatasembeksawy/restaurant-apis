@@ -5,14 +5,16 @@ declare(strict_types=1);
 namespace App\Modules\POS\Kitchen\Http\Controllers;
 
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
+use App\Modules\POS\Kitchen\Http\Requests\KitchenQueueRequest;
+use App\Modules\POS\Kitchen\Http\Resources\KitchenQueueResource;
 use App\Modules\POS\Orders\Events\OrderItemReady;
 use App\Modules\POS\Orders\Events\OrderReady;
+use App\Modules\POS\Orders\Http\Resources\OrderItemResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -26,18 +28,18 @@ class KitchenController extends Controller
      * Returns all active orders with pending/cooking items.
      * This is the REST fallback — the primary path is WebSocket via Reverb.
      */
-    public function queue(Request $request): JsonResponse
+    public function queue(KitchenQueueRequest $request): JsonResponse
     {
-        $branchId = $request->query('branch_id');
+        $validated = $request->validated();
 
         $orders = Order::query()
-            ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
+            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
             ->whereIn('status', ['active', 'cooking'])
             ->with(['items' => fn ($q) => $q->whereIn('status', ['pending', 'cooking']), 'table'])
             ->orderBy('created_at')
             ->get();
 
-        return ApiResponse::success($orders);
+        return ApiResponse::success(KitchenQueueResource::collection($orders));
     }
 
     /**
@@ -77,6 +79,6 @@ class KitchenController extends Controller
             'item_name_ar' => $item->item_name_ar,
         ]);
 
-        return ApiResponse::success($item, 'Item marked as ready.');
+        return ApiResponse::success(new OrderItemResource($item), 'Item marked as ready.');
     }
 }

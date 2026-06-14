@@ -91,8 +91,6 @@ class WhatsAppOrderService
             externalRef: (string) ($message['id'] ?? null),
         );
 
-        $this->customers->recordOrder($customer, $order);
-
         Log::info('WhatsApp order created', [
             'tenant_id' => $tenant->id,
             'order_id' => $order->id,

@@ -19,7 +19,9 @@ class Subscription extends Model
         'amount_cents',
         'current_period_start',
         'current_period_end',
+        'renewal_reminder_sent_at',
         'cancelled_at',
+        'pending_plan',
     ];
 
     protected function casts(): array

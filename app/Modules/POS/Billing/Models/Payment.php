@@ -4,8 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Billing\Models;
 
-use App\Modules\POS\Orders\Models\Order;
 use App\Models\User;
+use App\Modules\POS\Orders\Models\Order;
+use App\Modules\Tenant\Staff\Models\StaffShift;
 use App\Shared\Support\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -20,6 +21,7 @@ class Payment extends Model
         'tenant_id',
         'order_id',
         'cashier_id',
+        'staff_shift_id',
         'method',
         'amount',
         'cash_tendered',
@@ -28,6 +30,7 @@ class Payment extends Model
         'discount_value',
         'discount_reason',
         'reference',
+        'refunded_at',
     ];
 
     protected function casts(): array
@@ -37,6 +40,7 @@ class Payment extends Model
             'cash_tendered' => 'decimal:2',
             'change_due' => 'decimal:2',
             'discount_value' => 'decimal:2',
+            'refunded_at' => 'datetime',
         ];
     }
 
@@ -50,6 +54,11 @@ class Payment extends Model
         return $this->belongsTo(User::class, 'cashier_id');
     }
 
+    public function staffShift(): BelongsTo
+    {
+        return $this->belongsTo(StaffShift::class);
+    }
+
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
@@ -59,5 +68,15 @@ class Payment extends Model
     public function splits(): HasMany
     {
         return $this->hasMany(PaymentSplit::class);
+    }
+
+    public function refund(): HasOne
+    {
+        return $this->hasOne(PaymentRefund::class);
+    }
+
+    public function isRefunded(): bool
+    {
+        return $this->refunded_at !== null;
     }
 }

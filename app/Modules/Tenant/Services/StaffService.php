@@ -114,6 +114,16 @@ class StaffService
             'is_active' => $data['is_active'] ?? null,
         ], fn ($value) => $value !== null);
 
+        if (isset($data['is_active'])) {
+            $updates['is_active'] = $data['is_active'];
+
+            if ($data['is_active'] === false) {
+                $updates['deactivation_reason'] = 'manual';
+            } else {
+                $updates['deactivation_reason'] = null;
+            }
+        }
+
         if (isset($data['password'])) {
             $updates['password'] = $data['password'];
         }
@@ -142,7 +152,10 @@ class StaffService
             throw new InvalidArgumentException('You cannot deactivate your own account.');
         }
 
-        $user->update(['is_active' => false]);
+        $user->update([
+            'is_active' => false,
+            'deactivation_reason' => 'manual',
+        ]);
         $user->tokens()->delete();
 
         AuditLogger::log('staff.deactivated', $user, ['deactivated_by' => $deactivatedBy->id]);

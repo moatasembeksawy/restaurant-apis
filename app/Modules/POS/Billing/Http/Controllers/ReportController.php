@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Billing\Http\Controllers;
 
+use App\Modules\POS\Billing\Http\Requests\CashSummaryReportRequest;
+use App\Modules\POS\Billing\Http\Requests\DailyReportRequest;
+use App\Modules\POS\Billing\Http\Requests\TopItemsReportRequest;
+use App\Modules\POS\Billing\Http\Resources\ReportResource;
+use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -16,10 +20,11 @@ use Illuminate\Routing\Controller;
  */
 class ReportController extends Controller
 {
-    public function daily(Request $request): JsonResponse
+    public function daily(DailyReportRequest $request): JsonResponse
     {
-        $date = $request->query('date', now()->toDateString());
-        $branchId = $request->query('branch_id');
+        $validated = $request->validated();
+        $date = $validated['date'] ?? now()->toDateString();
+        $branchId = $validated['branch_id'] ?? null;
 
         $query = Order::query()
             ->whereDate('created_at', $date)
@@ -27,7 +32,7 @@ class ReportController extends Controller
 
         $orders = $query->get();
 
-        return ApiResponse::success([
+        return ApiResponse::success(new ReportResource([
             'date' => $date,
             'total_orders' => $orders->count(),
             'paid_orders' => $orders->where('status', 'paid')->count(),
@@ -38,22 +43,23 @@ class ReportController extends Controller
                 'count' => $g->count(),
                 'revenue' => $g->where('status', 'paid')->sum('total'),
             ]),
-        ]);
+        ]));
     }
 
-    public function cashSummary(Request $request): JsonResponse
+    public function cashSummary(CashSummaryReportRequest $request): JsonResponse
     {
-        $date = $request->query('date', now()->toDateString());
-        $branchId = $request->query('branch_id');
+        $validated = $request->validated();
+        $date = $validated['date'] ?? now()->toDateString();
+        $branchId = $validated['branch_id'] ?? null;
 
-        $payments = \App\Modules\POS\Billing\Models\Payment::query()
+        $payments = Payment::query()
             ->whereHas('order', fn ($q) => $q
                 ->whereDate('created_at', $date)
                 ->when($branchId, fn ($q2, $id) => $q2->where('branch_id', $id))
             )
             ->get();
 
-        return ApiResponse::success([
+        return ApiResponse::success(new ReportResource([
             'date' => $date,
             'by_method' => $payments->groupBy('method')->map(fn ($g) => [
                 'count' => $g->count(),
@@ -62,15 +68,16 @@ class ReportController extends Controller
             'total_cash' => $payments->where('method', 'cash')->sum('amount'),
             'total_all_methods' => $payments->sum('amount'),
             'total_discounts' => $payments->whereNotNull('discount_value')->sum('discount_value'),
-        ]);
+        ]));
     }
 
-    public function topItems(Request $request): JsonResponse
+    public function topItems(TopItemsReportRequest $request): JsonResponse
     {
-        $startDate = $request->query('start_date', now()->startOfWeek()->toDateString());
-        $endDate = $request->query('end_date', now()->toDateString());
-        $limit = (int) $request->query('limit', '10');
-        $branchId = $request->query('branch_id');
+        $validated = $request->validated();
+        $startDate = $validated['start_date'] ?? now()->startOfWeek()->toDateString();
+        $endDate = $validated['end_date'] ?? now()->toDateString();
+        $limit = (int) ($validated['limit'] ?? 10);
+        $branchId = $validated['branch_id'] ?? null;
 
         $items = OrderItem::query()
             ->whereHas('order', fn ($q) => $q
@@ -92,6 +99,6 @@ class ReportController extends Controller
                 'profit_margin' => $item->menuItem?->profitMargin(),
             ]);
 
-        return ApiResponse::success($items);
+        return ApiResponse::success(new ReportResource($items));
     }
 }

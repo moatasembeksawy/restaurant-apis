@@ -4,11 +4,15 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Stock\Http\Controllers;
 
+use App\Modules\Inventory\Stock\Http\Requests\IndexIngredientRequest;
+use App\Modules\Inventory\Stock\Http\Requests\LowStockIngredientRequest;
+use App\Modules\Inventory\Stock\Http\Requests\StoreIngredientRequest;
+use App\Modules\Inventory\Stock\Http\Requests\UpdateIngredientRequest;
+use App\Modules\Inventory\Stock\Http\Resources\IngredientResource;
 use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\Inventory\Stock\Services\StockService;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -18,28 +22,22 @@ class IngredientController extends Controller
 {
     public function __construct(private readonly StockService $stock) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexIngredientRequest $request): JsonResponse
     {
-        $ingredients = Ingredient::query()
-            ->when($request->query('branch_id'), fn ($q, $id) => $q->where('branch_id', $id))
-            ->when($request->query('active'), fn ($q) => $q->where('is_active', true))
-            ->orderBy('name_ar')
-            ->paginate((int) $request->query('per_page', '50'));
+        $validated = $request->validated();
 
-        return ApiResponse::success($ingredients);
+        $ingredients = Ingredient::query()
+            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
+            ->when($validated['active'] ?? null, fn ($q) => $q->where('is_active', true))
+            ->orderBy('name_ar')
+            ->paginate((int) ($validated['per_page'] ?? 50));
+
+        return ApiResponse::paginated($ingredients, IngredientResource::class);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreIngredientRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'branch_id' => ['nullable', 'integer'],
-            'name_ar' => ['required', 'string', 'max:100'],
-            'name_en' => ['nullable', 'string', 'max:100'],
-            'unit' => ['required', 'in:kg,g,l,ml,piece'],
-            'current_stock' => ['nullable', 'numeric', 'min:0'],
-            'reorder_level' => ['nullable', 'numeric', 'min:0'],
-            'unit_cost' => ['nullable', 'numeric', 'min:0'],
-        ]);
+        $validated = $request->validated();
 
         $ingredient = Ingredient::create([
             ...$validated,
@@ -48,35 +46,29 @@ class IngredientController extends Controller
             'unit_cost' => $validated['unit_cost'] ?? 0,
         ]);
 
-        return ApiResponse::created($ingredient, 'Ingredient created.');
+        return ApiResponse::created(new IngredientResource($ingredient), 'Ingredient created.');
     }
 
     public function show(Ingredient $ingredient): JsonResponse
     {
-        return ApiResponse::success($ingredient->load('branch'));
+        return ApiResponse::success(new IngredientResource($ingredient->load('branch')));
     }
 
-    public function update(Request $request, Ingredient $ingredient): JsonResponse
+    public function update(UpdateIngredientRequest $request, Ingredient $ingredient): JsonResponse
     {
-        $validated = $request->validate([
-            'name_ar' => ['sometimes', 'string', 'max:100'],
-            'name_en' => ['nullable', 'string', 'max:100'],
-            'unit' => ['sometimes', 'in:kg,g,l,ml,piece'],
-            'reorder_level' => ['sometimes', 'numeric', 'min:0'],
-            'is_active' => ['sometimes', 'boolean'],
-        ]);
+        $ingredient->update($request->validated());
 
-        $ingredient->update($validated);
-
-        return ApiResponse::success($ingredient, 'Ingredient updated.');
+        return ApiResponse::success(new IngredientResource($ingredient), 'Ingredient updated.');
     }
 
-    public function lowStock(Request $request): JsonResponse
+    public function lowStock(LowStockIngredientRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $items = $this->stock->lowStockIngredients(
-            branchId: $request->query('branch_id') ? (int) $request->query('branch_id') : null,
+            branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
         );
 
-        return ApiResponse::success($items);
+        return ApiResponse::success(IngredientResource::collection($items));
     }
 }

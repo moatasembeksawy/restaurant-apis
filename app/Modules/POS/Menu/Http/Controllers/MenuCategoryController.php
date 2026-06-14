@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Menu\Http\Controllers;
 
+use App\Modules\POS\Menu\Http\Requests\StoreMenuCategoryRequest;
+use App\Modules\POS\Menu\Http\Requests\UpdateMenuCategoryRequest;
+use App\Modules\POS\Menu\Http\Resources\MenuCategoryResource;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -23,42 +25,30 @@ class MenuCategoryController extends Controller
             ->orderBy('sort_order')
             ->get();
 
-        return ApiResponse::success($categories);
+        return ApiResponse::success(MenuCategoryResource::collection($categories));
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreMenuCategoryRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'name_ar' => ['required', 'string', 'max:100'],
-            'name_en' => ['nullable', 'string', 'max:100'],
-            'description_ar' => ['nullable', 'string'],
-            'sort_order' => ['integer', 'min:0'],
-            'branch_id' => ['nullable', 'integer'],
-        ]);
+        $validated = $request->validated();
 
         $category = MenuCategory::create($validated);
 
-        return ApiResponse::created($category, 'Category created.');
+        return ApiResponse::created(new MenuCategoryResource($category), 'Category created.');
     }
 
     public function show(MenuCategory $category): JsonResponse
     {
-        return ApiResponse::success($category->load('items'));
+        return ApiResponse::success(new MenuCategoryResource($category->load('items')));
     }
 
-    public function update(Request $request, MenuCategory $category): JsonResponse
+    public function update(UpdateMenuCategoryRequest $request, MenuCategory $category): JsonResponse
     {
-        $validated = $request->validate([
-            'name_ar' => ['sometimes', 'string', 'max:100'],
-            'name_en' => ['nullable', 'string', 'max:100'],
-            'description_ar' => ['nullable', 'string'],
-            'sort_order' => ['sometimes', 'integer', 'min:0'],
-            'is_visible' => ['sometimes', 'boolean'],
-        ]);
+        $validated = $request->validated();
 
         $category->update($validated);
 
-        return ApiResponse::success($category, 'Category updated.');
+        return ApiResponse::success(new MenuCategoryResource($category), 'Category updated.');
     }
 
     public function destroy(MenuCategory $category): JsonResponse

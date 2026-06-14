@@ -4,12 +4,16 @@ declare(strict_types=1);
 
 namespace App\Modules\Delivery\Customers\Http\Controllers;
 
+use App\Modules\Delivery\Customers\Http\Requests\IndexCustomerRequest;
+use App\Modules\Delivery\Customers\Http\Requests\StoreCustomerRequest;
+use App\Modules\Delivery\Customers\Http\Requests\UpdateCustomerRequest;
+use App\Modules\Delivery\Customers\Http\Resources\CustomerResource;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Delivery\Customers\Services\CustomerService;
+use App\Modules\POS\Orders\Http\Resources\OrderResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 
 /**
@@ -19,27 +23,25 @@ class CustomerController extends Controller
 {
     public function __construct(private readonly CustomerService $customers) {}
 
-    public function index(Request $request): JsonResponse
+    public function index(IndexCustomerRequest $request): JsonResponse
     {
+        $validated = $request->validated();
+
         $customers = Customer::query()
-            ->when($request->query('phone'), fn ($q, $phone) => $q->where('phone', 'like', "%{$phone}%"))
-            ->when($request->query('search'), fn ($q, $search) => $q->where(function ($q2) use ($search): void {
+            ->when($validated['phone'] ?? null, fn ($q, $phone) => $q->where('phone', 'like', "%{$phone}%"))
+            ->when($validated['search'] ?? null, fn ($q, $search) => $q->where(function ($q2) use ($search): void {
                 $q2->where('name', 'like', "%{$search}%")
                     ->orWhere('phone', 'like', "%{$search}%");
             }))
             ->orderByDesc('last_order_at')
-            ->paginate((int) $request->query('per_page', '25'));
+            ->paginate((int) ($validated['per_page'] ?? 25));
 
-        return ApiResponse::success($customers);
+        return ApiResponse::paginated($customers, CustomerResource::class);
     }
 
-    public function store(Request $request): JsonResponse
+    public function store(StoreCustomerRequest $request): JsonResponse
     {
-        $validated = $request->validate([
-            'phone' => ['required', 'string', 'max:20'],
-            'name' => ['nullable', 'string', 'max:100'],
-            'default_address' => ['nullable', 'string', 'max:500'],
-        ]);
+        $validated = $request->validated();
 
         $customer = $this->customers->findOrCreate(
             phone: $validated['phone'],
@@ -47,24 +49,19 @@ class CustomerController extends Controller
             address: $validated['default_address'] ?? null,
         );
 
-        return ApiResponse::created($customer, 'Customer saved.');
+        return ApiResponse::created(new CustomerResource($customer), 'Customer saved.');
     }
 
     public function show(Customer $customer): JsonResponse
     {
-        return ApiResponse::success($customer);
+        return ApiResponse::success(new CustomerResource($customer));
     }
 
-    public function update(Request $request, Customer $customer): JsonResponse
+    public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $validated = $request->validate([
-            'name' => ['nullable', 'string', 'max:100'],
-            'default_address' => ['nullable', 'string', 'max:500'],
-        ]);
+        $customer->update($request->validated());
 
-        $customer->update($validated);
-
-        return ApiResponse::success($customer, 'Customer updated.');
+        return ApiResponse::success(new CustomerResource($customer), 'Customer updated.');
     }
 
     public function orders(Customer $customer): JsonResponse
@@ -75,6 +72,6 @@ class CustomerController extends Controller
             ->orderByDesc('created_at')
             ->paginate(20);
 
-        return ApiResponse::success($orders);
+        return ApiResponse::paginated($orders, OrderResource::class);
     }
 }

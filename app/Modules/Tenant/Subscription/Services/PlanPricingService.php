@@ -55,4 +55,14 @@ class PlanPricingService
     {
         return (bool) config("billing.plans.{$plan}");
     }
+
+    public function rank(string $plan): int
+    {
+        return $this->plan($plan)['rank'];
+    }
+
+    public function isDowngrade(string $currentPlan, string $targetPlan): bool
+    {
+        return $this->rank($targetPlan) < $this->rank($currentPlan);
+    }
 }

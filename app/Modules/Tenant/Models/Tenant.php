@@ -26,6 +26,8 @@ class Tenant extends Model
         'name',
         'subdomain',
         'custom_domain',
+        'custom_domain_verification_token',
+        'custom_domain_verified_at',
         'locale',
         'plan',
         'status',
@@ -49,6 +51,7 @@ class Tenant extends Model
             'feature_flags' => 'array',
             'trial_ends_at' => 'datetime',
             'grace_period_ends_at' => 'datetime',
+            'custom_domain_verified_at' => 'datetime',
             'eta_client_secret' => 'encrypted',
         ];
     }
