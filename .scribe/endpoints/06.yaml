@@ -1,0 +1,98 @@
+name: 'Kitchen Display'
+description: ''
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/kitchen/queue
+    metadata:
+      custom: []
+      groupName: 'Kitchen Display'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Kitchen queue'
+      description: |-
+        Returns all active orders with pending/cooking items.
+        This is the REST fallback — the primary path is WebSocket via Reverb.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"errors":[{"message":"Unauthenticated.","code":"UNAUTHENTICATED"}]}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: 'api/v1/kitchen/items/{item_id}/done'
+    metadata:
+      custom: []
+      groupName: 'Kitchen Display'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Mark item as done'
+      description: |-
+        Marks an order item as ready. When all items in an order are ready,
+        the order status automatically transitions to 'ready'.
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      item_id:
+        custom: []
+        name: item_id
+        description: 'The ID of the item.'
+        required: true
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      item_id: 16
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

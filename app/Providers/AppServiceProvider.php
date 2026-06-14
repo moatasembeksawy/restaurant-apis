@@ -1,24 +1,57 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Providers;
 
+use App\Shared\Infrastructure\ETA\ETAAdapter;
+use App\Shared\Infrastructure\ETA\ETAAdapterInterface;
+use App\Shared\Infrastructure\Paymob\PaymobAdapter;
+use App\Shared\Infrastructure\PrintJob\EscPosBuilder;
+use App\Shared\Infrastructure\WhatsAppClient\WhatsAppClient;
+use App\Shared\Infrastructure\WhatsAppClient\WhatsAppClientInterface;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
     public function register(): void
     {
-        //
+        // ETA adapter — bound by interface for testability
+        $this->app->singleton(ETAAdapterInterface::class, fn () => new ETAAdapter(
+            portalUrl: config('services.eta.portal_url'),
+            tokenUrl: config('services.eta.token_url'),
+        ));
+
+        // WhatsApp Meta Business API client
+        $this->app->singleton(WhatsAppClientInterface::class, fn () => new WhatsAppClient(
+            phoneNumberId: config('services.whatsapp.phone_number_id'),
+            accessToken: config('services.whatsapp.access_token'),
+            webhookSecret: config('services.whatsapp.webhook_secret'),
+            apiVersion: config('services.whatsapp.api_version', 'v19.0'),
+        ));
+
+        // Paymob webhook verifier
+        $this->app->singleton(PaymobAdapter::class, fn () => new PaymobAdapter(
+            hmacSecret: config('services.paymob.hmac_secret'),
+        ));
+
+        $this->app->singleton(EscPosBuilder::class, fn () => new EscPosBuilder);
     }
 
-    /**
-     * Bootstrap any application services.
-     */
     public function boot(): void
     {
-        //
+        // Strict mode in development — catches N+1, lazy loads, mass assignment issues
+        Model::shouldBeStrict(! app()->isProduction());
+
+        // Disable wrapping JSON resources in a 'data' key — we handle that in ApiResponse
+        JsonResource::withoutWrapping();
+
+        // Register broadcasting channel routes
+        Route::middleware('api')
+            ->prefix('api')
+            ->group(base_path('routes/channels.php'));
     }
 }
