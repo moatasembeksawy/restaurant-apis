@@ -5,12 +5,15 @@ declare(strict_types=1);
 namespace App\Shared\Support\Http\Middleware;
 
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Subscription\Services\SubscriptionService;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
 class TenantMiddleware
 {
+    public function __construct(private readonly SubscriptionService $subscriptions) {}
+
     public function handle(Request $request, Closure $next): Response
     {
         $tenant = $this->resolveTenant($request);
@@ -21,14 +24,24 @@ class TenantMiddleware
             ], Response::HTTP_NOT_FOUND);
         }
 
-        if ($tenant->status === 'suspended') {
+        $tenant = $this->subscriptions->resolveBillingState($tenant);
+
+        if ($tenant->status === 'suspended' && ! $this->allowsSuspendedAccess($request)) {
             return response()->json([
-                'errors' => [['message' => 'Account suspended. Contact support.', 'code' => 'ACCOUNT_SUSPENDED']],
+                'errors' => [[
+                    'message' => 'Account suspended. Please renew your subscription.',
+                    'code' => 'ACCOUNT_SUSPENDED',
+                    'upgrade_url' => url('/api/v1/subscription/upgrade'),
+                ]],
             ], Response::HTTP_FORBIDDEN);
         }
 
         if ($tenant->status === 'grace_period') {
             $request->headers->set('X-Account-Warning', 'grace_period');
+            $request->headers->set(
+                'X-Grace-Period-Ends-At',
+                $tenant->grace_period_ends_at?->toISOString() ?? '',
+            );
         }
 
         app()->instance('tenant', $tenant);
@@ -38,12 +51,10 @@ class TenantMiddleware
 
     private function resolveTenant(Request $request): ?Tenant
     {
-        // Primary: resolve from the authenticated user's token
         if ($user = $request->user()) {
             return $user->tenant;
         }
 
-        // Fallback: resolve from subdomain (used for public QR / webhook routes)
         $host = $request->getHost();
         $parts = explode('.', $host);
 
@@ -53,10 +64,14 @@ class TenantMiddleware
             return Tenant::query()
                 ->where('subdomain', $subdomain)
                 ->orWhere('custom_domain', $host)
-                ->where('status', '!=', 'suspended')
                 ->first();
         }
 
         return null;
+    }
+
+    private function allowsSuspendedAccess(Request $request): bool
+    {
+        return $request->is('api/v1/subscription', 'api/v1/subscription/*');
     }
 }

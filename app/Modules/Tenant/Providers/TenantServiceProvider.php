@@ -6,12 +6,15 @@ namespace App\Modules\Tenant\Providers;
 
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
+use App\Modules\Tenant\Subscription\Services\SubscriptionService;
 use Illuminate\Support\ServiceProvider;
 
 class TenantServiceProvider extends ServiceProvider
 {
     public function register(): void
     {
+        $this->app->singleton(SubscriptionService::class);
+
         $this->app->bind(PlanLimitService::class, function (): PlanLimitService {
             $tenant = app()->bound('tenant') ? app('tenant') : new Tenant();
 

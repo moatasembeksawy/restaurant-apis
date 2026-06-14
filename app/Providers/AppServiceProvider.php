@@ -33,9 +33,21 @@ class AppServiceProvider extends ServiceProvider
             apiVersion: config('services.whatsapp.api_version', 'v19.0'),
         ));
 
-        // Paymob webhook verifier
+        // Paymob billing adapter
         $this->app->singleton(PaymobAdapter::class, fn () => new PaymobAdapter(
-            hmacSecret: config('services.paymob.hmac_secret'),
+            apiKey: (string) config('services.paymob.api_key'),
+            hmacSecret: (string) config('services.paymob.hmac_secret'),
+            baseUrl: (string) config('services.paymob.base_url'),
+            integrationId: config('services.paymob.integration_id') ? (int) config('services.paymob.integration_id') : null,
+            iframeId: config('services.paymob.iframe_id') ? (int) config('services.paymob.iframe_id') : null,
+            currency: (string) config('services.paymob.currency', 'EGP'),
+        ));
+
+        // Fawry billing adapter
+        $this->app->singleton(\App\Shared\Infrastructure\Fawry\FawryAdapter::class, fn () => new \App\Shared\Infrastructure\Fawry\FawryAdapter(
+            merchantCode: (string) config('services.fawry.merchant_code'),
+            securityKey: (string) config('services.fawry.security_key'),
+            baseUrl: (string) config('services.fawry.base_url'),
         ));
 
         $this->app->singleton(EscPosBuilder::class, fn () => new EscPosBuilder);

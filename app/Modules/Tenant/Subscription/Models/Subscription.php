@@ -16,6 +16,7 @@ class Subscription extends Model
         'status',
         'payment_gateway',
         'gateway_subscription_id',
+        'amount_cents',
         'current_period_start',
         'current_period_end',
         'cancelled_at',
@@ -38,6 +39,7 @@ class Subscription extends Model
     public function isActive(): bool
     {
         return $this->status === 'active'
+            && $this->current_period_end !== null
             && $this->current_period_end->isFuture();
     }
 }

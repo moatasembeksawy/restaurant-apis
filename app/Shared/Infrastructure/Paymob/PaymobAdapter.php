@@ -4,25 +4,106 @@ declare(strict_types=1);
 
 namespace App\Shared\Infrastructure\Paymob;
 
+use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
 class PaymobAdapter
 {
     public function __construct(
+        private readonly string $apiKey,
         private readonly string $hmacSecret,
+        private readonly string $baseUrl,
+        private readonly ?int $integrationId = null,
+        private readonly ?int $iframeId = null,
+        private readonly string $currency = 'EGP',
     ) {}
 
     /**
-     * Verify Paymob HMAC signature on inbound webhook.
-     * Paymob concatenates specific fields in a defined order and signs with HMAC-SHA512.
+     * Create a Paymob Accept checkout session for subscription billing.
      *
-     * @param  array<string, mixed>  $data  Parsed webhook payload
+     * @param  array<string, mixed>  $billingData
+     * @return array{checkout_url: string, payment_token: string, paymob_order_id: int, merchant_reference: string}
+     */
+    public function createCheckoutSession(
+        int $amountCents,
+        string $merchantOrderId,
+        array $billingData,
+    ): array {
+        if (empty($this->apiKey) || empty($this->integrationId) || empty($this->iframeId)) {
+            throw new RuntimeException('Paymob is not configured. Set PAYMOB_API_KEY, PAYMOB_INTEGRATION_ID, and PAYMOB_IFRAME_ID.');
+        }
+
+        $authToken = $this->authenticate();
+
+        $orderResponse = Http::timeout(15)
+            ->post("{$this->baseUrl}/ecommerce/orders", [
+                'auth_token' => $authToken,
+                'delivery_needed' => false,
+                'amount_cents' => $amountCents,
+                'currency' => $this->currency,
+                'merchant_order_id' => $merchantOrderId,
+                'items' => [],
+            ]);
+
+        if ($orderResponse->failed()) {
+            throw new RuntimeException('Paymob order creation failed: '.$orderResponse->body());
+        }
+
+        $paymobOrderId = (int) $orderResponse->json('id');
+
+        $keyResponse = Http::timeout(15)
+            ->post("{$this->baseUrl}/acceptance/payment_keys", [
+                'auth_token' => $authToken,
+                'amount_cents' => $amountCents,
+                'expiration' => 3600,
+                'order_id' => $paymobOrderId,
+                'billing_data' => array_merge([
+                    'apartment' => 'NA',
+                    'email' => 'billing@restoapp.eg',
+                    'floor' => 'NA',
+                    'first_name' => 'Restaurant',
+                    'street' => 'NA',
+                    'building' => 'NA',
+                    'phone_number' => '01000000000',
+                    'shipping_method' => 'NA',
+                    'postal_code' => 'NA',
+                    'city' => 'Cairo',
+                    'country' => 'EG',
+                    'last_name' => 'Owner',
+                    'state' => 'Cairo',
+                ], $billingData),
+                'currency' => $this->currency,
+                'integration_id' => $this->integrationId,
+            ]);
+
+        if ($keyResponse->failed()) {
+            throw new RuntimeException('Paymob payment key creation failed: '.$keyResponse->body());
+        }
+
+        $paymentToken = (string) $keyResponse->json('token');
+        $checkoutUrl = rtrim($this->baseUrl, '/')."/acceptance/iframes/{$this->iframeId}?payment_token={$paymentToken}";
+
+        return [
+            'checkout_url' => $checkoutUrl,
+            'payment_token' => $paymentToken,
+            'paymob_order_id' => $paymobOrderId,
+            'merchant_reference' => $merchantOrderId,
+        ];
+    }
+
+    /**
+     * Verify Paymob HMAC signature on inbound webhook.
+     *
+     * @param  array<string, mixed>  $data
      */
     public function verifyHmac(array $data, string $receivedHmac): bool
     {
+        if ($this->hmacSecret === '') {
+            return false;
+        }
+
         $obj = $data['obj'] ?? [];
 
-        // Paymob HMAC fields in required concatenation order
         $fields = [
             'amount_cents', 'created_at', 'currency', 'error_occured',
             'has_parent_transaction', 'id', 'integration_id', 'is_3d_secure',
@@ -47,7 +128,7 @@ class PaymobAdapter
     }
 
     /**
-     * Extract whether the payment was successful from webhook payload.
+     * @param  array<string, mixed>  $data
      */
     public function isSuccessful(array $data): bool
     {
@@ -55,15 +136,13 @@ class PaymobAdapter
     }
 
     /**
-     * Extract order metadata from webhook payload.
-     *
-     * @return array{tenant_id: int, plan: string, amount: int}
+     * @param  array<string, mixed>  $data
+     * @return array{tenant_id: int, plan: string, amount_cents: int, transaction_id: string}
      */
-    public function extractOrderMeta(array $data): array
+    public function extractPaymentMeta(array $data): array
     {
-        $merchant = $data['obj']['order']['merchant_order_id'] ?? '';
+        $merchant = (string) ($data['obj']['order']['merchant_order_id'] ?? '');
 
-        // Format: tenant_{id}_{plan} e.g. "tenant_5_pro"
         $parts = explode('_', $merchant);
 
         if (count($parts) < 3 || $parts[0] !== 'tenant') {
@@ -73,7 +152,22 @@ class PaymobAdapter
         return [
             'tenant_id' => (int) $parts[1],
             'plan' => $parts[2],
-            'amount' => (int) ($data['obj']['amount_cents'] ?? 0),
+            'amount_cents' => (int) ($data['obj']['amount_cents'] ?? 0),
+            'transaction_id' => (string) ($data['obj']['id'] ?? $merchant),
         ];
+    }
+
+    private function authenticate(): string
+    {
+        $response = Http::timeout(15)
+            ->post("{$this->baseUrl}/auth/tokens", [
+                'api_key' => $this->apiKey,
+            ]);
+
+        if ($response->failed()) {
+            throw new RuntimeException('Paymob authentication failed: '.$response->body());
+        }
+
+        return (string) $response->json('token');
     }
 }

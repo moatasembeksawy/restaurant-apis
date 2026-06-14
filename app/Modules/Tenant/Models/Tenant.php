@@ -30,6 +30,7 @@ class Tenant extends Model
         'eta_cert_path',
         'kitchen_device_secret',
         'feature_flags',
+        'trial_ends_at',
         'grace_period_ends_at',
     ];
 
@@ -37,6 +38,7 @@ class Tenant extends Model
     {
         return [
             'feature_flags' => 'array',
+            'trial_ends_at' => 'datetime',
             'grace_period_ends_at' => 'datetime',
         ];
     }
