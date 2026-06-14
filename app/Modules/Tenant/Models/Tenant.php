@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Models;
 
+use App\Models\User;
 use App\Modules\Tenant\Subscription\Models\Subscription;
 use Database\Factories\TenantFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -20,6 +21,7 @@ class Tenant extends Model
     {
         return TenantFactory::new();
     }
+
     protected $fillable = [
         'name',
         'subdomain',
@@ -28,8 +30,14 @@ class Tenant extends Model
         'plan',
         'status',
         'eta_cert_path',
+        'eta_client_id',
+        'eta_client_secret',
+        'eta_taxpayer_id',
+        'eta_branch_id',
         'kitchen_device_secret',
         'whatsapp_phone_number_id',
+        'talabat_webhook_secret',
+        'elmenus_webhook_secret',
         'feature_flags',
         'trial_ends_at',
         'grace_period_ends_at',
@@ -41,6 +49,7 @@ class Tenant extends Model
             'feature_flags' => 'array',
             'trial_ends_at' => 'datetime',
             'grace_period_ends_at' => 'datetime',
+            'eta_client_secret' => 'encrypted',
         ];
     }
 
@@ -102,6 +111,11 @@ class Tenant extends Model
     public function branches(): HasMany
     {
         return $this->hasMany(Branch::class);
+    }
+
+    public function users(): HasMany
+    {
+        return $this->hasMany(User::class);
     }
 
     public function defaultBranch(): HasOne

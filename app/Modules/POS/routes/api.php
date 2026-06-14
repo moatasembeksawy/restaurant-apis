@@ -21,6 +21,8 @@ Route::patch('tables/{table}/status', [TableController::class, 'updateStatus']);
 Route::apiResource('menu/categories', MenuCategoryController::class);
 Route::apiResource('menu/items', MenuItemController::class);
 Route::patch('menu/items/{item}/toggle', [MenuItemController::class, 'toggle']);
+Route::post('menu/items/{item}/photo', [MenuItemController::class, 'uploadPhoto']);
+Route::delete('menu/items/{item}/photo', [MenuItemController::class, 'deletePhoto']);
 
 // ── Orders ─────────────────────────────────────────────────────────────────────
 Route::apiResource('orders', OrderController::class)->except(['destroy']);
@@ -36,6 +38,9 @@ Route::middleware('feature:kitchen_display')->group(function (): void {
 
 // ── Payments & Billing ─────────────────────────────────────────────────────────
 Route::post('orders/{order}/pay', [PaymentController::class, 'settle']);
+Route::get('invoices/failed', [\App\Modules\POS\Billing\Http\Controllers\InvoiceController::class, 'failed']);
+Route::get('invoices/{invoice}', [\App\Modules\POS\Billing\Http\Controllers\InvoiceController::class, 'show']);
+Route::post('invoices/{invoice}/resubmit', [\App\Modules\POS\Billing\Http\Controllers\InvoiceController::class, 'resubmit']);
 Route::get('orders/{order}/print/kitchen', [PrintController::class, 'kitchenTicket']);
 Route::get('orders/{order}/print/receipt', [PrintController::class, 'receipt']);
 Route::get('reports/daily', [ReportController::class, 'daily']);

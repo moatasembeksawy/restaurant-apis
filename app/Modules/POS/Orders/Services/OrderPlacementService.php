@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Orders\Services;
 
+use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
@@ -80,6 +81,17 @@ class OrderPlacementService
             'total' => $order->total,
             'items_count' => $order->items->count(),
         ]);
+
+        $tenant = app('tenant');
+
+        if (
+            in_array($order->channel, ['whatsapp', 'qr', 'own_delivery'], true)
+            && $order->customer_id
+            && $tenant->hasFeature('whatsapp_ordering')
+            && $tenant->whatsapp_phone_number_id
+        ) {
+            SendWhatsAppNotificationJob::dispatch($order->load('customer'), 'order_confirmed');
+        }
 
         return $order->load('items');
     }

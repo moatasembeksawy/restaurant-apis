@@ -58,7 +58,33 @@ class LoyaltyService
     /**
      * @return array{points_redeemed: int, discount_egp: float, balance: int, transaction: LoyaltyTransaction}
      */
-    public function redeem(Customer $customer, int $points, ?string $notes = null): array
+    public function redeemForOrder(Order $order, int $points): array
+    {
+        if (! $order->customer_id) {
+            throw new InvalidArgumentException('Order has no customer for loyalty redemption.');
+        }
+
+        $customer = Customer::query()->findOrFail($order->customer_id);
+
+        $result = $this->redeem(
+            $customer,
+            $points,
+            "Redeemed on order #{$order->id}",
+            $order->id,
+        );
+
+        $order->update([
+            'discount' => (float) $order->discount + $result['discount_egp'],
+        ]);
+        $order->recalculateTotals();
+
+        return $result;
+    }
+
+    /**
+     * @return array{points_redeemed: int, discount_egp: float, balance: int, transaction: LoyaltyTransaction}
+     */
+    public function redeem(Customer $customer, int $points, ?string $notes = null, ?int $orderId = null): array
     {
         $minPoints = (int) config('intelligence.loyalty.min_redeem_points', 50);
 
@@ -70,7 +96,7 @@ class LoyaltyService
             throw new InvalidArgumentException('Insufficient loyalty points.');
         }
 
-        return DB::transaction(function () use ($customer, $points, $notes): array {
+        return DB::transaction(function () use ($customer, $points, $notes, $orderId): array {
             $locked = Customer::query()->lockForUpdate()->findOrFail($customer->id);
             $newBalance = $locked->loyalty_points - $points;
             $discountEgp = $this->redeemValue($points);
@@ -79,6 +105,7 @@ class LoyaltyService
 
             $transaction = LoyaltyTransaction::create([
                 'customer_id' => $locked->id,
+                'order_id' => $orderId,
                 'type' => 'redeem',
                 'points' => -$points,
                 'balance_after' => $newBalance,

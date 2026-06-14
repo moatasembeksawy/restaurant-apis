@@ -98,10 +98,10 @@ class ETAAdapter implements ETAAdapterInterface
         return [
             'issuer' => [
                 'type' => 'B', // Business
-                'id' => config('services.eta.client_id'),
+                'id' => $tenant->eta_taxpayer_id ?: config('services.eta.client_id'),
                 'name' => $tenant->name,
                 'address' => [
-                    'branchID' => '0',
+                    'branchID' => $tenant->eta_branch_id ?? '0',
                     'country' => 'EG',
                     'governate' => 'Cairo',
                     'regionCity' => 'Cairo',

@@ -4,39 +4,23 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Billing\Http\Controllers;
 
-use App\Modules\Inventory\Stock\Services\StockService;
-use App\Modules\Intelligence\Loyalty\Services\LoyaltyService;
-use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
-use App\Modules\POS\Billing\Models\Invoice;
-use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\POS\Billing\Services\PaymentSettlementService;
 use App\Modules\POS\Orders\Models\Order;
-use App\Modules\POS\Tables\Models\FloorTable;
-use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use InvalidArgumentException;
 
 /**
  * @group Payments & Billing
  */
 class PaymentController extends Controller
 {
-    public function __construct(
-        private readonly StockService $stock,
-        private readonly LoyaltyService $loyalty,
-    ) {}
+    public function __construct(private readonly PaymentSettlementService $settlement) {}
 
     public function settle(Request $request, Order $order): JsonResponse
     {
-        if ($order->status === 'paid') {
-            return ApiResponse::error('This order has already been paid.', 'ORDER_ALREADY_PAID', 422);
-        }
-
-        if (! in_array($order->status, ['active', 'cooking', 'ready', 'completed'])) {
-            return ApiResponse::error('Order must be active or completed before payment.', 'ORDER_NOT_PAYABLE', 422);
-        }
-
         $validated = $request->validate([
             'method' => ['required', 'in:cash,card,vodafone_cash,instapay,meeza,valu,split'],
             'amount' => ['required', 'numeric', 'min:0'],
@@ -45,64 +29,21 @@ class PaymentController extends Controller
             'discount_value' => ['nullable', 'numeric', 'min:0'],
             'discount_reason' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:100'],
+            'splits' => ['required_if:method,split', 'array', 'min:2'],
+            'splits.*.method' => ['required', 'in:cash,card,vodafone_cash,instapay,meeza,valu'],
+            'splits.*.amount' => ['required', 'numeric', 'min:0.01'],
+            'splits.*.reference' => ['nullable', 'string', 'max:100'],
+            'loyalty_points' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        if (! empty($validated['discount_type']) && isset($validated['discount_value'])) {
-            $discount = $validated['discount_type'] === 'percentage'
-                ? round((float) $order->subtotal * ((float) $validated['discount_value'] / 100), 2)
-                : (float) $validated['discount_value'];
+        try {
+            $result = $this->settlement->settle($order, $validated, $request->user());
+        } catch (InvalidArgumentException $e) {
+            $code = str_contains($e->getMessage(), 'already been paid') ? 'ORDER_ALREADY_PAID' : 'PAYMENT_FAILED';
 
-            $order->update([
-                'discount' => $discount,
-            ]);
-            $order->recalculateTotals();
+            return ApiResponse::error($e->getMessage(), $code, 422);
         }
 
-        $changeDue = null;
-        if ($validated['method'] === 'cash' && isset($validated['cash_tendered'])) {
-            $changeDue = max(0, $validated['cash_tendered'] - $validated['amount']);
-        }
-
-        $payment = Payment::create([
-            ...$validated,
-            'order_id' => $order->id,
-            'cashier_id' => $request->user()->id,
-            'change_due' => $changeDue,
-        ]);
-
-        $order->update(['status' => 'paid']);
-
-        if ($order->floor_table_id) {
-            FloorTable::find($order->floor_table_id)?->update(['status' => 'free']);
-        }
-
-        $invoice = Invoice::create([
-            'payment_id' => $payment->id,
-            'eta_status' => 'pending',
-        ]);
-
-        SubmitETAInvoiceJob::dispatch($invoice);
-
-        $tenant = app('tenant');
-        if ($tenant->hasFeature('inventory')) {
-            $this->stock->deductForOrder($order->load('items'));
-        }
-
-        if ($tenant->hasFeature('loyalty') && $order->customer_id) {
-            $this->loyalty->accrueForOrder($order);
-        }
-
-        AuditLogger::log('payment.settled', $order, [
-            'payment_id' => $payment->id,
-            'method' => $payment->method,
-            'amount' => $payment->amount,
-            'discount' => $order->discount,
-        ]);
-
-        return ApiResponse::success([
-            'payment' => $payment->load('invoice'),
-            'invoice' => $invoice,
-            'change_due' => $changeDue,
-        ], 'Payment settled successfully.');
+        return ApiResponse::success($result, 'Payment settled successfully.');
     }
 }

@@ -2,15 +2,24 @@
 
 declare(strict_types=1);
 
+use App\Modules\Delivery\Aggregators\Http\Controllers\AggregatorWebhookController;
+use App\Modules\Delivery\QRMenu\Http\Controllers\QRMenuController;
+use App\Modules\Delivery\WhatsApp\Http\Controllers\WhatsAppWebhookController;
+use App\Modules\Tenant\Http\Controllers\FawryWebhookController;
+use App\Modules\Tenant\Http\Controllers\OnboardingController;
+use App\Modules\Tenant\Http\Controllers\PaymobWebhookController;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('v1')->group(function (): void {
+
+    // ── Public onboarding ──────────────────────────────────────────────────────
+    Route::post('onboarding/register', [OnboardingController::class, 'register']);
 
     // ── Auth (public + authenticated — handled inside module) ──────────────────
     require base_path('app/Modules/Auth/routes/api.php');
 
     // ── Authenticated + tenant-resolved routes ─────────────────────────────────
-    Route::middleware(['auth:sanctum', 'tenant'])->group(function (): void {
+    Route::middleware(['auth:sanctum', 'tenant', 'tenant.rate_limit'])->group(function (): void {
 
         // Phase 1 — POS
         require base_path('app/Modules/POS/routes/api.php');
@@ -30,14 +39,16 @@ Route::prefix('v1')->group(function (): void {
 
     // ── Public routes (no auth — QR menus, webhook receivers) ─────────────────
     Route::prefix('qr')->group(function (): void {
-        Route::get('{token}/menu', [\App\Modules\Delivery\QRMenu\Http\Controllers\QRMenuController::class, 'show']);
-        Route::post('{token}/orders', [\App\Modules\Delivery\QRMenu\Http\Controllers\QRMenuController::class, 'placeOrder']);
+        Route::get('{token}/menu', [QRMenuController::class, 'show']);
+        Route::post('{token}/orders', [QRMenuController::class, 'placeOrder']);
     });
 
     // ── Inbound webhooks ───────────────────────────────────────────────────────
     Route::prefix('webhook')->group(function (): void {
-        Route::any('whatsapp', [\App\Modules\Delivery\WhatsApp\Http\Controllers\WhatsAppWebhookController::class, 'handle']);
-        Route::post('paymob', [\App\Modules\Tenant\Http\Controllers\PaymobWebhookController::class, 'handle']);
-        Route::post('fawry', [\App\Modules\Tenant\Http\Controllers\FawryWebhookController::class, 'handle']);
+        Route::any('whatsapp', [WhatsAppWebhookController::class, 'handle']);
+        Route::post('paymob', [PaymobWebhookController::class, 'handle']);
+        Route::post('fawry', [FawryWebhookController::class, 'handle']);
+        Route::post('aggregators/talabat', [AggregatorWebhookController::class, 'talabat']);
+        Route::post('aggregators/elmenus', [AggregatorWebhookController::class, 'elmenus']);
     });
 });

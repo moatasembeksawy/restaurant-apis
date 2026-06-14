@@ -70,11 +70,13 @@ class ReportController extends Controller
         $startDate = $request->query('start_date', now()->startOfWeek()->toDateString());
         $endDate = $request->query('end_date', now()->toDateString());
         $limit = (int) $request->query('limit', '10');
+        $branchId = $request->query('branch_id');
 
         $items = OrderItem::query()
             ->whereHas('order', fn ($q) => $q
                 ->where('status', 'paid')
                 ->whereBetween('created_at', [$startDate, $endDate])
+                ->when($branchId, fn ($q2, $id) => $q2->where('branch_id', $id))
             )
             ->with('menuItem:id,name_ar,price,cost_price')
             ->selectRaw('menu_item_id, SUM(quantity) as total_qty, SUM(subtotal) as total_revenue')

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Kitchen\Http\Controllers;
 
+use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\POS\Orders\Events\OrderItemReady;
 use App\Modules\POS\Orders\Events\OrderReady;
 use App\Modules\POS\Orders\Models\Order;
@@ -59,7 +60,12 @@ class KitchenController extends Controller
 
         if ($allReady) {
             $order->update(['status' => 'ready']);
-            broadcast(new OrderReady($order->fresh(['table'])))->toOthers();
+            $order = $order->fresh(['table', 'customer', 'tenant']);
+            broadcast(new OrderReady($order))->toOthers();
+
+            if ($order->customer_id && $order->tenant->whatsapp_phone_number_id && $order->tenant->hasFeature('whatsapp_ordering')) {
+                SendWhatsAppNotificationJob::dispatch($order, 'order_ready');
+            }
         } else {
             $order->update(['status' => 'cooking']);
         }

@@ -9,6 +9,7 @@ use App\Models\User;
 use App\Shared\Support\Traits\BelongsToTenant;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Payment extends Model
@@ -52,5 +53,11 @@ class Payment extends Model
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    /** @return HasMany<PaymentSplit, $this> */
+    public function splits(): HasMany
+    {
+        return $this->hasMany(PaymentSplit::class);
     }
 }

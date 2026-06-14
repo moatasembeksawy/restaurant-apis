@@ -42,4 +42,17 @@ return [
 
     'own_channels' => ['dine_in', 'qr', 'whatsapp', 'own_delivery'],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Optional LLM narrative layer (OpenAI)
+    |--------------------------------------------------------------------------
+    */
+
+    'llm' => [
+        'enabled' => (bool) env('OPENAI_ENABLED', false),
+        'api_key' => env('OPENAI_API_KEY'),
+        'model' => env('OPENAI_MODEL', 'gpt-4o-mini'),
+        'timeout' => (int) env('OPENAI_TIMEOUT', 30),
+    ],
+
 ];

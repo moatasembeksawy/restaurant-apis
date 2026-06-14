@@ -266,7 +266,7 @@ return [
         'local' => [
             'supervisor-1' => [
                 'connection' => 'redis',
-                'queue' => ['default', 'eta', 'whatsapp', 'reports'],
+                'queue' => ['default', 'eta', 'whatsapp', 'reports', 'notifications'],
                 'balance' => 'simple',
                 'maxProcesses' => 3,
                 'tries' => 3,

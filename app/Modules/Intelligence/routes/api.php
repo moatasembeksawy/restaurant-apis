@@ -16,3 +16,9 @@ Route::middleware('feature:loyalty')->group(function (): void {
     Route::get('loyalty/customers/{customer}', [\App\Modules\Intelligence\Loyalty\Http\Controllers\LoyaltyController::class, 'show']);
     Route::post('loyalty/customers/{customer}/redeem', [\App\Modules\Intelligence\Loyalty\Http\Controllers\LoyaltyController::class, 'redeem']);
 });
+
+Route::middleware('feature:whatsapp_marketing')->group(function (): void {
+    Route::get('marketing/segments', [\App\Modules\Intelligence\Marketing\Http\Controllers\MarketingController::class, 'segments']);
+    Route::get('marketing/campaigns', [\App\Modules\Intelligence\Marketing\Http\Controllers\MarketingController::class, 'index']);
+    Route::post('marketing/broadcast', [\App\Modules\Intelligence\Marketing\Http\Controllers\MarketingController::class, 'broadcast']);
+});

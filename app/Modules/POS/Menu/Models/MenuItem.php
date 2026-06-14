@@ -9,15 +9,18 @@ use Database\Factories\MenuItemFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class MenuItem extends BaseModel
+class MenuItem extends BaseModel implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     protected static function newFactory(): Factory
     {
         return MenuItemFactory::new();
     }
+
     protected $fillable = [
         'tenant_id',
         'category_id',
@@ -41,6 +44,11 @@ class MenuItem extends BaseModel
         ];
     }
 
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('photo')->singleFile();
+    }
+
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'category_id');
@@ -53,5 +61,10 @@ class MenuItem extends BaseModel
         }
 
         return round((($this->price - $this->cost_price) / $this->price) * 100, 2);
+    }
+
+    public function photoUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('photo') ?: $this->photo_url;
     }
 }

@@ -1,0 +1,98 @@
+services:
+  mysql:
+    image: mysql:8.0
+    ports:
+      - "${DB_PORT:-3306}:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-root}
+      MYSQL_DATABASE: ${DB_DATABASE:-restaurant_db}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-p${DB_PASSWORD:-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  app:
+    build: .
+    ports:
+      - "${APP_PORT:-8000}:8000"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      REDIS_HOST: redis
+      CACHE_STORE: redis
+      QUEUE_CONNECTION: redis
+      SESSION_DRIVER: redis
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+    command: >
+      sh -c "composer install --no-interaction &&
+             php artisan migrate --force &&
+             php artisan serve --host=0.0.0.0 --port=8000"
+
+  horizon:
+    build: .
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      REDIS_HOST: redis
+      QUEUE_CONNECTION: redis
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+    command: >
+      sh -c "composer install --no-interaction &&
+             php artisan horizon"
+    profiles:
+      - workers
+
+  reverb:
+    build: .
+    ports:
+      - "${REVERB_PORT:-8080}:8080"
+    env_file:
+      - .env
+    environment:
+      DB_HOST: mysql
+      REDIS_HOST: redis
+      REVERB_HOST: 0.0.0.0
+    depends_on:
+      redis:
+        condition: service_healthy
+    volumes:
+      - .:/var/www/html
+      - vendor_data:/var/www/html/vendor
+    command: >
+      sh -c "composer install --no-interaction &&
+             php artisan reverb:start --host=0.0.0.0 --port=8080"
+    profiles:
+      - workers
+
+volumes:
+  mysql_data:
+  vendor_data:

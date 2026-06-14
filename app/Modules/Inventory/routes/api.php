@@ -14,6 +14,11 @@ Route::middleware('feature:inventory')->group(function (): void {
     Route::get('inventory/movements', [\App\Modules\Inventory\Stock\Http\Controllers\StockMovementController::class, 'index']);
     Route::post('inventory/movements', [\App\Modules\Inventory\Stock\Http\Controllers\StockMovementController::class, 'store']);
 
+    Route::middleware('feature:multi_branch')->group(function (): void {
+        Route::get('inventory/transfers', [\App\Modules\Inventory\Stock\Http\Controllers\StockTransferController::class, 'index']);
+        Route::post('inventory/transfers', [\App\Modules\Inventory\Stock\Http\Controllers\StockTransferController::class, 'store']);
+    });
+
     Route::get('menu/items/{item}/cost', [\App\Modules\Inventory\Recipes\Http\Controllers\RecipeController::class, 'cost']);
     Route::get('menu/items/{item}/recipe', [\App\Modules\Inventory\Recipes\Http\Controllers\RecipeController::class, 'show']);
     Route::put('menu/items/{item}/recipe', [\App\Modules\Inventory\Recipes\Http\Controllers\RecipeController::class, 'sync']);
