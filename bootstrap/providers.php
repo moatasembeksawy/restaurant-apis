@@ -13,4 +13,5 @@ return [
     App\Modules\Delivery\Providers\DeliveryServiceProvider::class,
     App\Modules\Inventory\Providers\InventoryServiceProvider::class,
     App\Modules\Intelligence\Providers\IntelligenceServiceProvider::class,
+    App\Modules\Platform\Providers\PlatformServiceProvider::class,
 ];

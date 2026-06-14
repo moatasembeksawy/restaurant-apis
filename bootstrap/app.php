@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Modules\Tenant\Subscription\Exceptions\PlanLimitExceededException;
 use App\Shared\Support\Http\Middleware\EnsurePlanFeature;
+use App\Shared\Support\Http\Middleware\EnsurePlatformAdmin;
 use App\Shared\Support\Http\Middleware\TenantMiddleware;
 use App\Shared\Support\Http\Middleware\TenantRateLimitMiddleware;
 use Illuminate\Auth\AuthenticationException;
@@ -26,6 +27,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'tenant' => TenantMiddleware::class,
             'feature' => EnsurePlanFeature::class,
             'tenant.rate_limit' => TenantRateLimitMiddleware::class,
+            'platform.admin' => EnsurePlatformAdmin::class,
         ]);
 
         $middleware->statefulApi();

@@ -18,6 +18,11 @@ Route::prefix('v1')->group(function (): void {
     // ── Auth (public + authenticated — handled inside module) ──────────────────
     require base_path('app/Modules/Auth/routes/api.php');
 
+    // ── Platform admin (SaaS operator — no tenant context) ─────────────────────
+    Route::prefix('admin')->group(function (): void {
+        require base_path('app/Modules/Platform/routes/api.php');
+    });
+
     // ── Authenticated + tenant-resolved routes ─────────────────────────────────
     Route::middleware(['auth:sanctum', 'tenant', 'tenant.rate_limit'])->group(function (): void {
 
