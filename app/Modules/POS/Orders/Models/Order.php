@@ -30,10 +30,13 @@ class Order extends BaseModel
         'floor_table_id',
         'waiter_id',
         'customer_id',
+        'rider_id',
         'channel',
         'status',
+        'delivery_status',
         'external_ref',
         'notes',
+        'delivery_address',
         'subtotal',
         'discount',
         'total',
@@ -97,6 +100,11 @@ class Order extends BaseModel
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function rider(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'rider_id');
     }
 
     public function payment(): HasOne

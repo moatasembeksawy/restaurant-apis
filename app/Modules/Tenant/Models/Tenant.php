@@ -29,6 +29,7 @@ class Tenant extends Model
         'status',
         'eta_cert_path',
         'kitchen_device_secret',
+        'whatsapp_phone_number_id',
         'feature_flags',
         'trial_ends_at',
         'grace_period_ends_at',

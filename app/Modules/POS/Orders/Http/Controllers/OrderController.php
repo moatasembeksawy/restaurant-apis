@@ -5,10 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\POS\Orders\Http\Controllers;
 
 use App\Modules\POS\Orders\Models\Order;
-use App\Modules\POS\Orders\Models\OrderItem;
-use App\Modules\POS\Tables\Models\FloorTable;
-use App\Modules\Tenant\Subscription\Services\PlanLimitService;
-use App\Shared\Support\Audit\AuditLogger;
+use App\Modules\POS\Orders\Services\OrderPlacementService;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -19,7 +16,7 @@ use Illuminate\Routing\Controller;
  */
 class OrderController extends Controller
 {
-    public function __construct(private readonly PlanLimitService $planLimits) {}
+    public function __construct(private readonly OrderPlacementService $orderPlacement) {}
 
     public function index(Request $request): JsonResponse
     {
@@ -37,66 +34,36 @@ class OrderController extends Controller
 
     public function store(Request $request): JsonResponse
     {
-        $this->planLimits->check('orders');
-
         $validated = $request->validate([
             'branch_id' => ['required', 'integer'],
             'floor_table_id' => ['nullable', 'integer'],
             'channel' => ['required', 'in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery'],
             'notes' => ['nullable', 'string'],
+            'delivery_address' => ['nullable', 'string', 'max:500'],
+            'customer_id' => ['nullable', 'integer'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_item_id' => ['required', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.notes' => ['nullable', 'string'],
         ]);
 
-        $order = Order::create([
-            'branch_id' => $validated['branch_id'],
-            'floor_table_id' => $validated['floor_table_id'] ?? null,
-            'waiter_id' => $request->user()->id,
-            'channel' => $validated['channel'],
-            'notes' => $validated['notes'] ?? null,
-            'status' => 'pending',
-        ]);
+        $order = $this->orderPlacement->place(
+            branchId: (int) $validated['branch_id'],
+            channel: $validated['channel'],
+            items: $validated['items'],
+            floorTableId: $validated['floor_table_id'] ?? null,
+            waiterId: $request->user()->id,
+            customerId: $validated['customer_id'] ?? null,
+            notes: $validated['notes'] ?? null,
+            deliveryAddress: $validated['delivery_address'] ?? null,
+        );
 
-        foreach ($validated['items'] as $itemData) {
-            $menuItem = \App\Modules\POS\Menu\Models\MenuItem::findOrFail($itemData['menu_item_id']);
-            $subtotal = $menuItem->price * $itemData['quantity'];
-
-            $order->items()->create([
-                'menu_item_id' => $menuItem->id,
-                'item_name_ar' => $menuItem->name_ar,
-                'unit_price' => $menuItem->price,
-                'quantity' => $itemData['quantity'],
-                'subtotal' => $subtotal,
-                'status' => 'pending',
-                'notes' => $itemData['notes'] ?? null,
-            ]);
-        }
-
-        $order->recalculateTotals();
-
-        if ($order->floor_table_id) {
-            FloorTable::find($order->floor_table_id)?->update(['status' => 'occupied']);
-        }
-
-        $order->update(['status' => 'active']);
-
-        // Broadcast to kitchen display
-        broadcast(new \App\Modules\POS\Orders\Events\OrderPlaced($order->load('items')))->toOthers();
-
-        AuditLogger::log('order.placed', $order, [
-            'channel' => $order->channel,
-            'total' => $order->total,
-            'items_count' => $order->items->count(),
-        ]);
-
-        return ApiResponse::created($order->load('items'), 'Order placed.');
+        return ApiResponse::created($order, 'Order placed.');
     }
 
     public function show(Order $order): JsonResponse
     {
-        return ApiResponse::success($order->load(['items.menuItem', 'table', 'waiter', 'payment']));
+        return ApiResponse::success($order->load(['items.menuItem', 'table', 'waiter', 'payment', 'customer', 'rider']));
     }
 
     public function update(Request $request, Order $order): JsonResponse
@@ -127,11 +94,11 @@ class OrderController extends Controller
         $order->update(['status' => $validated['status']]);
 
         if ($validated['status'] === 'completed' && $order->floor_table_id) {
-            FloorTable::find($order->floor_table_id)?->update(['status' => 'free']);
+            \App\Modules\POS\Tables\Models\FloorTable::find($order->floor_table_id)?->update(['status' => 'free']);
         }
 
         if ($validated['status'] === 'cancelled') {
-            AuditLogger::log('order.cancelled', $order);
+            \App\Shared\Support\Audit\AuditLogger::log('order.cancelled', $order);
         }
 
         return ApiResponse::success($order, 'Order status updated.');

@@ -4,9 +4,11 @@ declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
 
-// Phase 4 — gated by 'ai_reports' and 'loyalty' features
 Route::middleware('feature:ai_reports')->group(function (): void {
     Route::get('reports/ai-summary', [\App\Modules\Intelligence\Reports\Http\Controllers\AIReportController::class, 'weekly']);
+});
+
+Route::middleware('feature:aggregator_analytics')->group(function (): void {
     Route::get('analytics/aggregators', [\App\Modules\Intelligence\Analytics\Http\Controllers\AggregatorController::class, 'compare']);
 });
 

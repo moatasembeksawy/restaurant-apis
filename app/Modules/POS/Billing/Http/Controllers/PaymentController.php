@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Billing\Http\Controllers;
 
+use App\Modules\Inventory\Stock\Services\StockService;
+use App\Modules\Intelligence\Loyalty\Services\LoyaltyService;
 use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Models\Payment;
@@ -20,6 +22,11 @@ use Illuminate\Routing\Controller;
  */
 class PaymentController extends Controller
 {
+    public function __construct(
+        private readonly StockService $stock,
+        private readonly LoyaltyService $loyalty,
+    ) {}
+
     public function settle(Request $request, Order $order): JsonResponse
     {
         if ($order->status === 'paid') {
@@ -75,6 +82,15 @@ class PaymentController extends Controller
         ]);
 
         SubmitETAInvoiceJob::dispatch($invoice);
+
+        $tenant = app('tenant');
+        if ($tenant->hasFeature('inventory')) {
+            $this->stock->deductForOrder($order->load('items'));
+        }
+
+        if ($tenant->hasFeature('loyalty') && $order->customer_id) {
+            $this->loyalty->accrueForOrder($order);
+        }
 
         AuditLogger::log('payment.settled', $order, [
             'payment_id' => $payment->id,

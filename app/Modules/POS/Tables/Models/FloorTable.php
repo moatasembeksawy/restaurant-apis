@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Tables\Models;
 
+use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
 use Database\Factories\FloorTableFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Str;
 
@@ -54,6 +56,11 @@ class FloorTable extends BaseModel
     public function orders(): HasMany
     {
         return $this->hasMany(\App\Modules\POS\Orders\Models\Order::class, 'floor_table_id');
+    }
+
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
     }
 
     public function activeOrder(): \Illuminate\Database\Eloquent\Relations\HasOne
