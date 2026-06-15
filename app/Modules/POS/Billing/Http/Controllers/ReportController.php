@@ -12,6 +12,7 @@ use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Shared\Support\Http\Resources\ApiResponse;
+use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
 
@@ -74,8 +75,8 @@ class ReportController extends Controller
     public function topItems(TopItemsReportRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $startDate = $validated['start_date'] ?? now()->startOfWeek()->toDateString();
-        $endDate = $validated['end_date'] ?? now()->toDateString();
+        $startDate = Carbon::parse($validated['start_date'] ?? now()->startOfWeek())->startOfDay();
+        $endDate = Carbon::parse($validated['end_date'] ?? now())->endOfDay();
         $limit = (int) ($validated['limit'] ?? 10);
         $branchId = $validated['branch_id'] ?? null;
 
@@ -94,11 +95,15 @@ class ReportController extends Controller
             ->map(fn ($item) => [
                 'menu_item_id' => $item->menu_item_id,
                 'name_ar' => $item->menuItem?->name_ar,
-                'total_qty' => $item->total_qty,
-                'total_revenue' => $item->total_revenue,
+                'total_qty' => (int) $item->total_qty,
+                'total_revenue' => round((float) $item->total_revenue, 2),
                 'profit_margin' => $item->menuItem?->profitMargin(),
-            ]);
+            ])
+            ->values()
+            ->all();
 
-        return ApiResponse::success(new ReportResource($items));
+        return ApiResponse::success(new ReportResource([
+            'items' => $items,
+        ]));
     }
 }

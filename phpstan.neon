@@ -19,5 +19,3 @@ parameters:
         - vendor/
         - storage/
 
-    checkMissingIterableValueType: false
-    checkGenericClassInNonGenericObjectType: false
