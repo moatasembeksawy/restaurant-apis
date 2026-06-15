@@ -1,5 +1,6 @@
 includes:
     - vendor/nunomaduro/larastan/extension.neon
+    - phpstan-baseline.neon
 
 parameters:
     paths:
@@ -9,11 +10,6 @@ parameters:
         - app/Providers
 
     level: 5
-
-    ignoreErrors:
-        # Laravel magic methods — expected PHPStan can't resolve these
-        - '#Call to an undefined method Illuminate\\Database\\Eloquent\\Builder#'
-        - '#Access to an undefined property App\\Models\\User::#'
 
     excludePaths:
         - vendor/

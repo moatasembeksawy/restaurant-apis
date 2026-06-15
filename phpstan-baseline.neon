@@ -1,0 +1,943 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Match arm comparison between ''rider'' and ''rider'' is always true\.$#'
+			identifier: match.alwaysTrue
+			count: 1
+			path: app/Models/User.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Modules/Auth/Http/Controllers/AuthController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Services/AuthService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$locale\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Services/AuthService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Services/AuthService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Auth/Services/AuthService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/Aggregators/Services/AggregatorOrderService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>id" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Delivery/Aggregators/Services/AggregatorOrderService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_en\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$photo_url\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$preparation_time\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasFeature\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of class App\\Modules\\Delivery\\QRMenu\\QRMenuContext constructor expects App\\Modules\\Tenant\\Models\\Tenant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method App\\Modules\\Delivery\\QRMenu\\Services\\QRMenuService\:\:bindTenant\(\) expects App\\Modules\\Tenant\\Models\\Tenant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Parameter \#2 \$branch of class App\\Modules\\Delivery\\QRMenu\\QRMenuContext constructor expects App\\Modules\\Tenant\\Models\\Branch, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Using nullsafe property access "\?\-\>qr_token" on left side of \?\? is unnecessary\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
+
+		-
+			message: '#^Offset ''assigned''\|''cancelled''\|''delivered''\|''en_route''\|''pending''\|''picked_up'' on array\{pending\: array\{''assigned'', ''cancelled''\}, assigned\: array\{''picked_up'', ''cancelled''\}, picked_up\: array\{''en_route'', ''cancelled''\}, en_route\: array\{''delivered'', ''cancelled''\}, delivered\: array\{\}, cancelled\: array\{\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/Delivery/Riders/Services/DeliveryService.php
+
+		-
+			message: '#^PHPDoc tag @var for constant App\\Modules\\Delivery\\Riders\\Services\\DeliveryService\:\:DELIVERY_TRANSITIONS with type array\<int, string\> is incompatible with value array\{pending\: array\{''assigned'', ''cancelled''\}, assigned\: array\{''picked_up'', ''cancelled''\}, picked_up\: array\{''en_route'', ''cancelled''\}, en_route\: array\{''delivered'', ''cancelled''\}, delivered\: array\{\}, cancelled\: array\{\}\}\.$#'
+			identifier: classConstant.phpDocType
+			count: 1
+			path: app/Modules/Delivery/Riders/Services/DeliveryService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$phone\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$whatsapp_phone_number_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasFeature\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Cannot call method format\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method App\\Modules\\Delivery\\WhatsApp\\Services\\WhatsAppNotificationService\:\:clientForTenant\(\) expects App\\Modules\\Tenant\\Models\\Tenant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Parameter \$parameters of method App\\Shared\\Infrastructure\\WhatsAppClient\\WhatsAppClient\:\:sendTemplate\(\) expects array\<string, string\>, array\<int, mixed\> given\.$#'
+			identifier: argument.type
+			count: 3
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Parameter \$parameters of method App\\Shared\\Infrastructure\\WhatsAppClient\\WhatsAppClient\:\:sendTemplate\(\) expects array\<string, string\>, array\<int, string\> given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppOrderService.php
+
+		-
+			message: '#^Property App\\Modules\\Delivery\\WhatsApp\\Services\\WhatsAppOrderService\:\:\$whatsapp is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppOrderService.php
+
+		-
+			message: '#^Parameter \#1 \$array \(array\{\}\|string\) to function array_values is empty, call has no effect\.$#'
+			identifier: arrayValues.empty
+			count: 1
+			path: app/Modules/Intelligence/Marketing/Services/WhatsAppMarketingService.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\POS\\Orders\\Models\\OrderItem\:\:\$total_qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\POS\\Orders\\Models\\OrderItem\:\:\$total_revenue\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\POS\\Orders\\Models\\OrderItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
+
+		-
+			message: '#^Parameter \#1 \$array \(list\<string\>\) of array_values is already a list, call has no effect\.$#'
+			identifier: arrayValues.list
+			count: 1
+			path: app/Modules/Intelligence/Reports/Services/LLMNarrativeService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_cost\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Recipes/Models/Recipe.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$counted_quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_stock\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int, ingredient_id\: int\<0, max\>, name_ar\: mixed, unit\: mixed, system_quantity\: float, counted_quantity\: float, variance\: float, current_stock\: float\}, Closure\(App\\Modules\\Inventory\\Stock\\Models\\StockCountLine\)\: array\{id\: int, ingredient_id\: int\<0, max\>, name_ar\: mixed, unit\: mixed, system_quantity\: float, counted_quantity\: float, variance\: float, current_stock\: float\} given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockCountService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$item_name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$menu_item_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_cost\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\Inventory\\Recipes\\Models\\Recipe\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Parameter \$ingredient of method App\\Modules\\Inventory\\Stock\\Services\\StockService\:\:recordMovement\(\) expects App\\Modules\\Inventory\\Stock\\Models\\Ingredient, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Inventory/Stock/Services/StockService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/POS/Billing/Http/Controllers/PaymentController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\POS\\Orders\\Models\\OrderItem\:\:\$total_qty\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property App\\Modules\\POS\\Orders\\Models\\OrderItem\:\:\$total_revenue\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:profitMargin\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\POS\\Orders\\Models\\OrderItem\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Jobs/NotifyETAInvoiceFailureJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Jobs/NotifyETAInvoiceFailureJob.php
+
+		-
+			message: '#^Offset ''error'' on string\|null on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/POS/Billing/Jobs/NotifyETAInvoiceFailureJob.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$order\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Services/ETAService.php
+
+		-
+			message: '#^Offset ''qrUrl'' on array\{uuid\: string, longId\: string, internalId\: string, status\: string\} on left side of \?\? does not exist\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/POS/Billing/Services/ETAService.php
+
+		-
+			message: '#^Offset ''uuid'' on array\{uuid\: string, longId\: string, internalId\: string, status\: string\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 2
+			path: app/Modules/POS/Billing/Services/ETAService.php
+
+		-
+			message: '#^Parameter \#1 \$payment of method App\\Shared\\Infrastructure\\ETA\\ETAAdapterInterface\:\:buildInvoiceDocument\(\) expects App\\Modules\\POS\\Billing\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/POS/Billing/Services/ETAService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:invoice\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isRefunded\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
+
+		-
+			message: '#^Method App\\Modules\\POS\\Billing\\Services\\PaymentSettlementService\:\:refund\(\) should return array\{refund\: App\\Modules\\POS\\Billing\\Models\\PaymentRefund, payment\: App\\Modules\\POS\\Billing\\Models\\Payment, order\: App\\Modules\\POS\\Orders\\Models\\Order\} but returns array\{refund\: App\\Modules\\POS\\Billing\\Models\\PaymentRefund, payment\: Illuminate\\Database\\Eloquent\\Model\|null, order\: App\\Modules\\POS\\Orders\\Models\\Order\|null\}\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''active''\|''cancelled''\|''completed''\|''cooking''\|''paid''\|''pending''\|''ready'' and ''refunded'' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tenant\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
+
+		-
+			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:items\(\)\.$#'
+			identifier: method.notFound
+			count: 1
+			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
+
+		-
+			message: '#^Parameter \#1 \$order of class App\\Modules\\POS\\Orders\\Events\\OrderReady constructor expects App\\Modules\\POS\\Orders\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
+
+		-
+			message: '#^Parameter \#1 \$order of job class App\\Modules\\Delivery\\WhatsApp\\Jobs\\SendWhatsAppNotificationJob constructor expects App\\Modules\\POS\\Orders\\Models\\Order in App\\Modules\\Delivery\\WhatsApp\\Jobs\\SendWhatsAppNotificationJob\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderItemReady.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderItemReady.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderItemReady.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderPlaced.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$item_name_ar\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderPlaced.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderPlaced.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderPlaced.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderPlaced.php
+
+		-
+			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
+			identifier: argument.unresolvableType
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderPlaced.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Orders/Events/OrderReady.php
+
+		-
+			message: '#^Offset ''active''\|''cancelled''\|''completed''\|''cooking''\|''paid''\|''pending''\|''ready'' on array\{pending\: array\{''active'', ''cancelled''\}, active\: array\{''cooking'', ''ready'', ''completed'', ''cancelled''\}, cooking\: array\{''ready'', ''cancelled''\}, ready\: array\{''completed'', ''cancelled''\}, completed\: array\{''paid''\}, paid\: array\{''refunded''\}, refunded\: array\{\}, cancelled\: array\{\}\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: app/Modules/POS/Orders/Models/Order.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/POS/Print/Http/Controllers/PrintController.php
+
+		-
+			message: '#^Parameter \#2 \$payment of method App\\Shared\\Infrastructure\\PrintJob\\EscPosBuilder\:\:buildReceipt\(\) expects App\\Modules\\POS\\Billing\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/POS/Print/Http/Controllers/PrintController.php
+
+		-
+			message: '#^Parameter \#1 \$paginator of static method App\\Shared\\Support\\Http\\Resources\\ApiResponse\:\:paginated\(\) expects Illuminate\\Pagination\\LengthAwarePaginator, Illuminate\\Contracts\\Pagination\\LengthAwarePaginator\<int, array\<string, mixed\>\> given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Platform/Http/Controllers/AdminTenantController.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/Platform/Services/PlatformAdminAuthService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type Laravel\\Sanctum\\PersonalAccessToken\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Platform/Services/PlatformAdminAuthService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_period_end\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Platform/Services/TenantManagementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Platform/Services/TenantManagementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Platform/Services/TenantManagementService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Platform/Services/TenantManagementService.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Modules/Platform/Services/TenantManagementService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/Tenant/Http/Controllers/OnboardingController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 4
+			path: app/Modules/Tenant/Http/Controllers/SubscriptionController.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/Tenant/Services/CustomDomainService.php
+
+		-
+			message: '#^Method App\\Modules\\Tenant\\Services\\StaffService\:\:list\(\) should return Illuminate\\Support\\Collection\<int, App\\Models\\User\> but returns Illuminate\\Support\\Collection\<int, array\<string, mixed\>\>\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Tenant/Services/StaffService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Staff/Services/StaffShiftSalesService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$method\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Staff/Services/StaffShiftSalesService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$splits\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Staff/Services/StaffShiftSalesService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
+
+		-
+			message: '#^Cannot call method diffInMinutes\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 3
+			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
+
+		-
+			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
+
+		-
+			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
+			identifier: nullsafe.neverNull
+			count: 1
+			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
+
+		-
+			message: '#^Cannot call method isFuture\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Modules/Tenant/Subscription/Models/Subscription.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionLifecycleService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionLifecycleService.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of job class App\\Modules\\Tenant\\Subscription\\Jobs\\SendBillingNotificationJob constructor expects App\\Modules\\Tenant\\Models\\Tenant in App\\Modules\\Tenant\\Subscription\\Jobs\\SendBillingNotificationJob\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 2
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionLifecycleService.php
+
+		-
+			message: '#^Parameter \#1 \$tenant of method App\\Modules\\Tenant\\Subscription\\Services\\SubscriptionService\:\:enterGracePeriod\(\) expects App\\Modules\\Tenant\\Models\\Tenant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
+			identifier: argument.type
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionLifecycleService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount_cents\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$cancelled_at\.$#'
+			identifier: property.notFound
+			count: 4
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_period_end\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_period_start\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$payment_gateway\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$pending_plan\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
+			identifier: property.notFound
+			count: 3
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Cannot call method isPast\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 2
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Method App\\Modules\\Tenant\\Subscription\\Services\\SubscriptionService\:\:cancel\(\) should return App\\Modules\\Tenant\\Subscription\\Models\\Subscription but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Method App\\Modules\\Tenant\\Subscription\\Services\\SubscriptionService\:\:cancelPendingDowngrade\(\) should return App\\Modules\\Tenant\\Subscription\\Models\\Subscription but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Method App\\Modules\\Tenant\\Subscription\\Services\\SubscriptionService\:\:resume\(\) should return App\\Modules\\Tenant\\Subscription\\Models\\Subscription but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Method App\\Modules\\Tenant\\Subscription\\Services\\SubscriptionService\:\:scheduleDowngrade\(\) should return App\\Modules\\Tenant\\Subscription\\Models\\Subscription but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Modules/Tenant/Subscription/Services/SubscriptionService.php
+
+		-
+			message: '#^Access to an undefined property App\\Shared\\Domain\\Models\\BaseModel\:\:\$tenant_id\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Shared/Domain/Models/BaseModel.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$items\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Shared/Infrastructure/ETA/ETAAdapter.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$eta_uuid\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$item_name_ar\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
+			identifier: property.notFound
+			count: 2
+			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
+
+		-
+			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$subtotal\.$#'
+			identifier: property.notFound
+			count: 1
+			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
+
+		-
+			message: '#^Negated boolean expression is always false\.$#'
+			identifier: booleanNot.alwaysFalse
+			count: 1
+			path: app/Shared/Support/Authorization/RolePermissionService.php
+
+		-
+			message: '#^Instanceof between App\\Models\\User\|null and App\\Modules\\Platform\\Models\\PlatformAdmin will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Shared/Support/Http/Middleware/EnsurePlatformAdmin.php
+
+		-
+			message: '#^Result of \|\| is always true\.$#'
+			identifier: booleanOr.alwaysTrue
+			count: 1
+			path: app/Shared/Support/Http/Middleware/EnsurePlatformAdmin.php
+
+		-
+			message: '#^Unreachable statement \- code above always terminates\.$#'
+			identifier: deadCode.unreachable
+			count: 1
+			path: app/Shared/Support/Http/Middleware/EnsurePlatformAdmin.php
+
+		-
+			message: '#^Cannot call method toISOString\(\) on string\.$#'
+			identifier: method.nonObject
+			count: 1
+			path: app/Shared/Support/Http/Middleware/TenantMiddleware.php
+
+		-
+			message: '#^Instanceof between mixed and Illuminate\\Http\\Resources\\Json\\ResourceCollection will always evaluate to false\.$#'
+			identifier: instanceof.alwaysFalse
+			count: 1
+			path: app/Shared/Support/Http/Resources/ApiResponse.php
+
+		-
+			message: '#^Method App\\Shared\\Support\\Tenant\\TenantResolver\:\:resolve\(\) should return App\\Modules\\Tenant\\Models\\Tenant\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
+			identifier: return.type
+			count: 1
+			path: app/Shared/Support/Tenant/TenantResolver.php
