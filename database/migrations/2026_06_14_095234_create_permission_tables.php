@@ -114,9 +114,24 @@ return new class extends Migration
             $table->primary([$pivotPermission, $pivotRole], 'role_has_permissions_permission_id_role_id_primary');
         });
 
-        app('cache')
-            ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
-            ->forget(config('permission.cache.key'));
+        $this->forgetPermissionCache();
+    }
+
+    /**
+     * Spatie flushes its permission cache after schema changes. That must not
+     * fail the migration when Redis (CACHE_STORE) is not running — MySQL
+     * already committed the CREATE TABLEs, so a throw here leaves migrate
+     * marked failed and every retry then dies on "table already exists".
+     */
+    private function forgetPermissionCache(): void
+    {
+        try {
+            app('cache')
+                ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
+                ->forget(config('permission.cache.key'));
+        } catch (Throwable) {
+            // Cache backend unavailable (typical: Redis not started).
+        }
     }
 
     /**

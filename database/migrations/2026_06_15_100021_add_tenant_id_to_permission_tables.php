@@ -83,9 +83,18 @@ return new class extends Migration
             $this->backfillRoleAssignments($tableNames['model_has_roles'], $teamKey);
         }
 
-        app('cache')
-            ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
-            ->forget(config('permission.cache.key'));
+        $this->forgetPermissionCache();
+    }
+
+    private function forgetPermissionCache(): void
+    {
+        try {
+            app('cache')
+                ->store(config('permission.cache.store') != 'default' ? config('permission.cache.store') : null)
+                ->forget(config('permission.cache.key'));
+        } catch (Throwable) {
+            // Cache backend unavailable (typical: Redis not started).
+        }
     }
 
     private function backfillRoleAssignments(string $table, string $teamKey): void
