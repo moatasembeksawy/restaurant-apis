@@ -7,6 +7,7 @@ namespace App\Modules\Tenant\Staff\Models;
 use App\Models\User;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Billing\Models\PaymentRefund;
+use App\Modules\Tenant\Finance\Models\CashMovement;
 use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -59,6 +60,12 @@ class StaffShift extends BaseModel
     public function refunds(): HasMany
     {
         return $this->hasMany(PaymentRefund::class);
+    }
+
+    /** @return HasMany<CashMovement, $this> */
+    public function cashMovements(): HasMany
+    {
+        return $this->hasMany(CashMovement::class);
     }
 
     public function isActive(): bool

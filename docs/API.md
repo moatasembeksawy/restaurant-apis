@@ -2552,6 +2552,197 @@ Update — branches/{branch}
 
 ---
 
+#### `POST` /api/v1/cash-movements/{movement}/reverse
+
+Reverse — cash-movements/{movement}/reverse
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `cash_movements.reverse`
+- **Plan features:** `staff_shifts`
+- **Path params:** `{movement}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `reason` | `required, string, max:255` |
+
+```json
+{
+    "reason": "طلب العميل إلغاء الطلب"
+}
+```
+
+---
+
+#### `GET` /api/v1/expense-categories
+
+Index — expense-categories
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `POST` /api/v1/expense-categories
+
+Store — expense-categories
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expense_categories.manage`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+_None_
+
+```json
+{}
+```
+
+---
+
+#### `GET` /api/v1/expenses
+
+Index — expenses
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
+| `expense_category_id` | `nullable, integer` |
+| `status` | `nullable, in:"pending","approved","voided"` |
+| `payment_method` | `nullable, in:"cash","card","bank_transfer","wallet"` |
+| `from` | `nullable, date` |
+| `to` | `nullable, date, after_or_equal:from` |
+| `per_page` | `nullable, integer, min:1, max:100` |
+
+---
+
+#### `POST` /api/v1/expenses
+
+Store — expenses
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.create`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `expense_category_id` | `required, integer` |
+| `staff_shift_id` | `nullable, integer, required_if:payment_method,cash` |
+| `amount` | `required, numeric, gt:0` |
+| `payment_method` | `required, in:"cash","card","bank_transfer","wallet"` |
+| `description` | `required, string, max:255` |
+| `reference` | `nullable, string, max:100` |
+| `receipt_path` | `nullable, string, max:500` |
+| `expense_date` | `required, date` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "expense_category_id": 1,
+    "staff_shift_id": 1,
+    "amount": 45,
+    "payment_method": "\"cash\"",
+    "description": "مثال",
+    "reference": "مثال",
+    "receipt_path": "مثال",
+    "expense_date": "مثال"
+}
+```
+
+---
+
+#### `GET` /api/v1/expenses/summary
+
+Summary — expenses/summary
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
+| `expense_category_id` | `nullable, integer` |
+| `status` | `nullable, in:"pending","approved","voided"` |
+| `payment_method` | `nullable, in:"cash","card","bank_transfer","wallet"` |
+| `from` | `nullable, date` |
+| `to` | `nullable, date, after_or_equal:from` |
+| `per_page` | `nullable, integer, min:1, max:100` |
+
+---
+
+#### `GET` /api/v1/expenses/{expense}
+
+Show — expenses/{expense}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.view`
+- **Plan features:** _None_
+- **Path params:** `{expense}`
+
+---
+
+#### `POST` /api/v1/expenses/{expense}/approve
+
+Approve — expenses/{expense}/approve
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.approve`
+- **Plan features:** _None_
+- **Path params:** `{expense}`
+
+**Request body**
+
+_None_
+
+```json
+{}
+```
+
+---
+
+#### `POST` /api/v1/expenses/{expense}/void
+
+Void — expenses/{expense}/void
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.approve`
+- **Plan features:** _None_
+- **Path params:** `{expense}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `reason` | `required, string, max:500` |
+
+```json
+{
+    "reason": "طلب العميل إلغاء الطلب"
+}
+```
+
+---
+
 #### `GET` /api/v1/ops/health
 
 Health — ops/health
@@ -2786,7 +2977,7 @@ Store — staff
 Index — staff/shifts
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** _None_
+- **Permissions:** `shifts.view`
 - **Plan features:** `staff_shifts`
 - **Path params:** _None_
 
@@ -2805,7 +2996,7 @@ Index — staff/shifts
 Active — staff/shifts/active
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** _None_
+- **Permissions:** `shifts.view`
 - **Plan features:** `staff_shifts`
 - **Path params:** _None_
 
@@ -2822,7 +3013,7 @@ Active — staff/shifts/active
 Clock in staff member for the current shift.
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** _None_
+- **Permissions:** `shifts.operate`
 - **Plan features:** `staff_shifts`
 - **Path params:** _None_
 
@@ -2849,7 +3040,7 @@ Clock in staff member for the current shift.
 Clock out staff member and close the active shift.
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** _None_
+- **Permissions:** `shifts.operate`
 - **Plan features:** `staff_shifts`
 - **Path params:** _None_
 
@@ -2874,7 +3065,7 @@ Clock out staff member and close the active shift.
 Current — staff/shifts/current
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** _None_
+- **Permissions:** `shifts.view`
 - **Plan features:** `staff_shifts`
 - **Path params:** _None_
 
@@ -2885,9 +3076,49 @@ Current — staff/shifts/current
 Show — staff/shifts/{shift}
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** _None_
+- **Permissions:** `shifts.view`
 - **Plan features:** `staff_shifts`
 - **Path params:** `{shift}`
+
+---
+
+#### `GET` /api/v1/staff/shifts/{shift}/cash-movements
+
+Index — staff/shifts/{shift}/cash-movements
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `cash_movements.view`
+- **Plan features:** `staff_shifts`
+- **Path params:** `{shift}`
+
+---
+
+#### `POST` /api/v1/staff/shifts/{shift}/cash-movements
+
+Store — staff/shifts/{shift}/cash-movements
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `cash_movements.create`
+- **Plan features:** `staff_shifts`
+- **Path params:** `{shift}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `type` | `required, in:"paid_in","paid_out","safe_drop","float_adjustment"` |
+| `amount` | `required, numeric, gt:0` |
+| `reason` | `required, string, max:255` |
+| `reference` | `nullable, string, max:100` |
+
+```json
+{
+    "type": "\"paid_in\"",
+    "amount": 45,
+    "reason": "طلب العميل إلغاء الطلب",
+    "reference": "مثال"
+}
+```
 
 ---
 

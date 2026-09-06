@@ -69,6 +69,22 @@
         {
             "key": "category_id",
             "value": "1"
+        },
+        {
+            "key": "shift_id",
+            "value": "1"
+        },
+        {
+            "key": "cash_movement_id",
+            "value": "1"
+        },
+        {
+            "key": "expense_category_id",
+            "value": "1"
+        },
+        {
+            "key": "expense_id",
+            "value": "1"
         }
     ],
     "item": [
@@ -982,6 +998,18 @@
                                             "    console.warn('Set tenant_subdomain collection variable');",
                                             "}",
                                             "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data?.id) {",
+                                            "    pm.collectionVariables.set('shift_id', json.data.id);",
+                                            "}"
                                         ]
                                     }
                                 }
@@ -2727,6 +2755,118 @@
                             ]
                         },
                         {
+                            "name": "GET · staff/shifts/{shift}/cash-movements",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/staff/shifts/{{shift_id}}/cash-movements",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "staff",
+                                        "shifts",
+                                        "{shift}",
+                                        "cash-movements"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Index — staff/shifts/{shift}/cash-movements\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · cash-movements/{movement}/reverse",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/cash-movements/{{cash_movement_id}}/reverse",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "cash-movements",
+                                        "{movement}",
+                                        "reverse"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Reverse — cash-movements/{movement}/reverse\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"طلب العميل إلغاء الطلب\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "POST · staff/shifts/clock-in",
                             "request": {
                                 "method": "POST",
@@ -2781,6 +2921,18 @@
                                             "    console.warn('Set tenant_subdomain collection variable');",
                                             "}",
                                             "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data?.id) {",
+                                            "    pm.collectionVariables.set('shift_id', json.data.id);",
+                                            "}"
                                         ]
                                     }
                                 }
@@ -2845,9 +2997,82 @@
                                     }
                                 }
                             ]
+                        },
+                        {
+                            "name": "POST · staff/shifts/{shift}/cash-movements",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/staff/shifts/{{shift_id}}/cash-movements",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "staff",
+                                        "shifts",
+                                        "{shift}",
+                                        "cash-movements"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Store — staff/shifts/{shift}/cash-movements\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"type\": \"\\\"paid_in\\\"\",\n    \"amount\": 45,\n    \"reason\": \"طلب العميل إلغاء الطلب\",\n    \"reference\": \"مثال\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data?.id) {",
+                                            "    pm.collectionVariables.set('cash_movement_id', json.data.id);",
+                                            "}"
+                                        ]
+                                    }
+                                }
+                            ]
                         }
                     ],
-                    "description": "Clock in/out for cashiers. Required before cash payments on Pro plan."
+                    "description": "Clock in/out, inspect transaction-level reconciliation, record paid-in/paid-out/safe-drop movements, and reverse mistakes."
                 },
                 {
                     "name": "2.5 Subscription & Billing",
@@ -5748,10 +5973,534 @@
             ]
         },
         {
-            "name": "05 · Reports",
+            "name": "05 · Finance & Reports",
             "item": [
                 {
-                    "name": "5.1 Daily & Sales Reports",
+                    "name": "5.1 Expense Categories",
+                    "item": [
+                        {
+                            "name": "GET · expense-categories",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expense-categories",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expense-categories"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Index — expense-categories\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · expense-categories",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expense-categories",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expense-categories"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Store — expense-categories\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data?.id) {",
+                                            "    pm.collectionVariables.set('expense_category_id', json.data.id);",
+                                            "}"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Owner/manager-defined categories used to classify restaurant operating expenses."
+                },
+                {
+                    "name": "5.2 Expenses & Summary",
+                    "item": [
+                        {
+                            "name": "GET · expenses",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expenses?branch_id=%7B%7Bbranch_id%7D%7D&expense_category_id=1&status=%22pending%22&payment_method=%22cash%22&from=%D9%85%D8%AB%D8%A7%D9%84&to=%D9%85%D8%AB%D8%A7%D9%84&per_page=25",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expenses"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "expense_category_id",
+                                            "value": "1",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "status",
+                                            "value": "\"pending\"",
+                                            "description": "nullable, in:\"pending\",\"approved\",\"voided\""
+                                        },
+                                        {
+                                            "key": "payment_method",
+                                            "value": "\"cash\"",
+                                            "description": "nullable, in:\"cash\",\"card\",\"bank_transfer\",\"wallet\""
+                                        },
+                                        {
+                                            "key": "from",
+                                            "value": "مثال",
+                                            "description": "nullable, date"
+                                        },
+                                        {
+                                            "key": "to",
+                                            "value": "مثال",
+                                            "description": "nullable, date, after_or_equal:from"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        }
+                                    ]
+                                },
+                                "description": "Index — expenses\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "GET · expenses/summary",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expenses/summary?branch_id=%7B%7Bbranch_id%7D%7D&expense_category_id=1&status=%22pending%22&payment_method=%22cash%22&from=%D9%85%D8%AB%D8%A7%D9%84&to=%D9%85%D8%AB%D8%A7%D9%84&per_page=25",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expenses",
+                                        "summary"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "expense_category_id",
+                                            "value": "1",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "status",
+                                            "value": "\"pending\"",
+                                            "description": "nullable, in:\"pending\",\"approved\",\"voided\""
+                                        },
+                                        {
+                                            "key": "payment_method",
+                                            "value": "\"cash\"",
+                                            "description": "nullable, in:\"cash\",\"card\",\"bank_transfer\",\"wallet\""
+                                        },
+                                        {
+                                            "key": "from",
+                                            "value": "مثال",
+                                            "description": "nullable, date"
+                                        },
+                                        {
+                                            "key": "to",
+                                            "value": "مثال",
+                                            "description": "nullable, date, after_or_equal:from"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        }
+                                    ]
+                                },
+                                "description": "Summary — expenses/summary\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "GET · expenses/{expense}",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expenses/{{expense_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expenses",
+                                        "{expense}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Show — expenses/{expense}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · expenses",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expenses",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expenses"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Store — expenses\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"expense_category_id\": 1,\n    \"staff_shift_id\": 1,\n    \"amount\": 45,\n    \"payment_method\": \"\\\"cash\\\"\",\n    \"description\": \"مثال\",\n    \"reference\": \"مثال\",\n    \"receipt_path\": \"مثال\",\n    \"expense_date\": \"مثال\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                },
+                                {
+                                    "listen": "test",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "const json = pm.response.json();",
+                                            "if (json.data?.id) {",
+                                            "    pm.collectionVariables.set('expense_id', json.data.id);",
+                                            "}"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · expenses/{expense}/approve",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expenses/{{expense_id}}/approve",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expenses",
+                                        "{expense}",
+                                        "approve"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Approve — expenses/{expense}/approve\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · expenses/{expense}/void",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/expenses/{{expense_id}}/void",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "expenses",
+                                        "{expense}",
+                                        "void"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Void — expenses/{expense}/void\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"طلب العميل إلغاء الطلب\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Submit, approve, void, filter, and summarize expenses. Approved cash expenses automatically reduce the linked shift drawer."
+                },
+                {
+                    "name": "5.3 Daily & Sales Reports",
                     "item": [
                         {
                             "name": "GET · reports/cash-summary",
@@ -5950,7 +6699,7 @@
                     "description": ""
                 },
                 {
-                    "name": "5.2 Branch Comparison",
+                    "name": "5.4 Branch Comparison",
                     "item": [
                         {
                             "name": "GET · reports/branches/compare",

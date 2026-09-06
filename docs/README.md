@@ -6,7 +6,7 @@ Full API reference and Postman collection for the Restaurant SaaS backend.
 
 | File | Description |
 |------|-------------|
-| [API.md](./API.md) | Complete API reference (149 endpoints) with Arabic JSON examples |
+| [API.md](./API.md) | Complete API reference (160 endpoints) with Arabic JSON examples |
 | [postman/Restaurant-SaaS-API.postman_collection.json](./postman/Restaurant-SaaS-API.postman_collection.json) | Postman Collection v2.1 |
 | [postman/Restaurant-SaaS-Environment.postman_environment.json](./postman/Restaurant-SaaS-Environment.postman_environment.json) | Environment variables |
 
@@ -24,10 +24,10 @@ Full API reference and Postman collection for the Restaurant SaaS backend.
 |--------|-------------|
 | **00 · Quick Start Flows** | End-to-end scenarios — run subfolders 01→08 in order |
 | **01 · Onboarding & Auth** | Register, login, PIN device login, kitchen secret login |
-| **02 · Tenant Setup** | Settings, branches, staff, shifts, subscription, audit log, ETA |
+| **02 · Tenant Setup** | Settings, branches, staff, shifts, drawer movements, subscription, audit log, ETA |
 | **03 · Menu & Floor Setup** | Categories, items, tables |
 | **04 · Daily Operations (POS)** | Orders, kitchen, payments, print, invoices |
-| **05 · Reports** | Daily sales, cash summary, branch comparison |
+| **05 · Finance & Reports** | Expense categories, expense approval, expense summary, sales and branch reports |
 | **06 · Delivery & QR** | Customers, riders, public QR menu |
 | **07 · Inventory** | Ingredients, movements, stock counts, recipes, suppliers, POs |
 | **08 · Intelligence** | Loyalty, marketing, analytics, AI summary |
@@ -43,6 +43,8 @@ Full API reference and Postman collection for the Restaurant SaaS backend.
 | `tenant_token` | Sanctum Bearer token (auto-set after register/login) |
 | `kitchen_device_secret` | Kitchen display secret (auto-set after onboarding; shown once) |
 | `admin_token` | Platform admin token |
+| `shift_id`, `cash_movement_id` | Active shift and drawer movement IDs |
+| `expense_category_id`, `expense_id` | Expense workflow IDs |
 | `branch_id`, `order_id`, `menu_item_id`, … | Resource IDs (auto-set by test scripts) |
 
 ## Regenerate after API changes

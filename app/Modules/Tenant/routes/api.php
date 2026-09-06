@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use App\Modules\Tenant\Finance\Http\Controllers\CashMovementController;
+use App\Modules\Tenant\Finance\Http\Controllers\ExpenseCategoryController;
+use App\Modules\Tenant\Finance\Http\Controllers\ExpenseController;
 use App\Modules\Tenant\Http\Controllers\AuditLogController;
 use App\Modules\Tenant\Http\Controllers\BranchController;
 use App\Modules\Tenant\Http\Controllers\ETASettingsController;
@@ -32,12 +35,38 @@ Route::get('audit-log', [AuditLogController::class, 'index'])
     ->middleware(['feature:audit_log', 'permission:audit.view']);
 
 Route::middleware('feature:staff_shifts')->group(function (): void {
-    Route::get('staff/shifts', [StaffShiftController::class, 'index']);
-    Route::get('staff/shifts/active', [StaffShiftController::class, 'active']);
-    Route::get('staff/shifts/current', [StaffShiftController::class, 'current']);
-    Route::get('staff/shifts/{shift}', [StaffShiftController::class, 'show']);
-    Route::post('staff/shifts/clock-in', [StaffShiftController::class, 'clockIn']);
-    Route::post('staff/shifts/clock-out', [StaffShiftController::class, 'clockOut']);
+    Route::middleware('permission:shifts.view')->group(function (): void {
+        Route::get('staff/shifts', [StaffShiftController::class, 'index']);
+        Route::get('staff/shifts/active', [StaffShiftController::class, 'active']);
+        Route::get('staff/shifts/current', [StaffShiftController::class, 'current']);
+        Route::get('staff/shifts/{shift}', [StaffShiftController::class, 'show']);
+    });
+    Route::middleware('permission:shifts.operate')->group(function (): void {
+        Route::post('staff/shifts/clock-in', [StaffShiftController::class, 'clockIn']);
+        Route::post('staff/shifts/clock-out', [StaffShiftController::class, 'clockOut']);
+    });
+    Route::get('staff/shifts/{shift}/cash-movements', [CashMovementController::class, 'index'])
+        ->middleware('permission:cash_movements.view');
+    Route::post('staff/shifts/{shift}/cash-movements', [CashMovementController::class, 'store'])
+        ->middleware('permission:cash_movements.create');
+    Route::post('cash-movements/{movement}/reverse', [CashMovementController::class, 'reverse'])
+        ->middleware('permission:cash_movements.reverse');
+});
+
+Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])
+    ->middleware('permission:expenses.view');
+Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])
+    ->middleware('permission:expense_categories.manage');
+Route::middleware('permission:expenses.view')->group(function (): void {
+    Route::get('expenses', [ExpenseController::class, 'index']);
+    Route::get('expenses/summary', [ExpenseController::class, 'summary']);
+    Route::get('expenses/{expense}', [ExpenseController::class, 'show']);
+});
+Route::post('expenses', [ExpenseController::class, 'store'])
+    ->middleware('permission:expenses.create');
+Route::middleware('permission:expenses.approve')->group(function (): void {
+    Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve']);
+    Route::post('expenses/{expense}/void', [ExpenseController::class, 'void']);
 });
 
 Route::get('staff', [StaffController::class, 'index'])->middleware('permission:staff.view');

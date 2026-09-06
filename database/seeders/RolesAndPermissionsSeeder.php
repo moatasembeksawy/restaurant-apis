@@ -44,6 +44,11 @@ class RolesAndPermissionsSeeder extends Seeder
             // Staff (Phase 3)
             'staff.view', 'staff.manage',
 
+            // Shifts and finance
+            'shifts.view', 'shifts.operate',
+            'cash_movements.view', 'cash_movements.create', 'cash_movements.reverse',
+            'expenses.view', 'expenses.create', 'expenses.approve', 'expense_categories.manage',
+
             // Users
             'users.view', 'users.manage',
 
@@ -74,6 +79,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'audit.view',
                 'inventory.view', 'inventory.manage',
                 'staff.view', 'staff.manage',
+                'shifts.view', 'shifts.operate',
+                'cash_movements.view', 'cash_movements.create', 'cash_movements.reverse',
+                'expenses.view', 'expenses.create', 'expenses.approve', 'expense_categories.manage',
                 'users.view',
                 'subscription.view', 'subscription.manage',
                 'suppliers.manage',
@@ -86,6 +94,9 @@ class RolesAndPermissionsSeeder extends Seeder
                 'orders.view', 'orders.create', 'orders.update',
                 'payments.process', 'payments.discount',
                 'reports.view',
+                'shifts.view', 'shifts.operate',
+                'cash_movements.view', 'cash_movements.create',
+                'expenses.view', 'expenses.create',
             ]);
 
         Role::firstOrCreate(['name' => 'waiter', 'guard_name' => 'web'])
@@ -93,12 +104,14 @@ class RolesAndPermissionsSeeder extends Seeder
                 'tables.view', 'tables.update',
                 'menu.view',
                 'orders.view', 'orders.create', 'orders.update',
+                'shifts.view', 'shifts.operate',
             ]);
 
         Role::firstOrCreate(['name' => 'cook', 'guard_name' => 'web'])
             ->syncPermissions([
                 'kitchen.view', 'kitchen.update',
                 'orders.view',
+                'shifts.view', 'shifts.operate',
             ]);
 
         Role::firstOrCreate(['name' => 'rider', 'guard_name' => 'web'])

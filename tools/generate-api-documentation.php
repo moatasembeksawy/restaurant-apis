@@ -1,19 +1,22 @@
 <?php
 
 declare(strict_types=1);
+use App\Shared\Support\Http\Requests\Concerns\HasPaginationRules;
+use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Routing\Router;
 
 /**
  * Generates API.md and Postman collection/environment for all api/v1/* endpoints.
  *
  * Usage: php tools/generate-api-documentation.php
  */
-
 $basePath = dirname(__DIR__);
 
 require $basePath.'/vendor/autoload.php';
 
 $app = require $basePath.'/bootstrap/app.php';
-$app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
+$app->make(Kernel::class)->bootstrap();
 
 // ── Plan features (mirrors Tenant::planIncludesFeature) ────────────────────────
 
@@ -126,7 +129,7 @@ function loadFormRequestRules(string $basePath): array
             $classRules = $instance->rules();
 
             if (in_array(
-                App\Shared\Support\Http\Requests\Concerns\HasPaginationRules::class,
+                HasPaginationRules::class,
                 $ref->getTraitNames(),
                 true,
             ) && $ref->hasMethod('paginationRules')) {
@@ -202,7 +205,7 @@ function mapControllerFormRequests(string $basePath): array
                         continue;
                     }
                     $paramClass = $type->getName();
-                    if (is_subclass_of($paramClass, Illuminate\Foundation\Http\FormRequest::class)) {
+                    if (is_subclass_of($paramClass, FormRequest::class)) {
                         $map[$class.'@'.$method->getName()] = $paramClass;
                     }
                 }
@@ -216,7 +219,7 @@ function mapControllerFormRequests(string $basePath): array
 }
 
 /** @return list<array<string, mixed>> */
-function collectEndpoints(Illuminate\Routing\Router $router): array
+function collectEndpoints(Router $router): array
 {
     $endpoints = [];
 
@@ -879,6 +882,9 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_starts_with($uri, 'api/v1/staff/shifts')) {
         return ['02 · Tenant Setup', '2.4 Staff Shifts'];
     }
+    if (str_starts_with($uri, 'api/v1/cash-movements')) {
+        return ['02 · Tenant Setup', '2.4 Staff Shifts'];
+    }
     if (str_starts_with($uri, 'api/v1/staff')) {
         return ['02 · Tenant Setup', '2.3 Staff'];
     }
@@ -921,13 +927,19 @@ function resolvePostmanFolderPath(array $endpoint): array
         return ['04 · Daily Operations (POS)', '4.6 ETA Invoices'];
     }
 
+    if (str_starts_with($uri, 'api/v1/expense-categories')) {
+        return ['05 · Finance & Reports', '5.1 Expense Categories'];
+    }
+    if (str_starts_with($uri, 'api/v1/expenses')) {
+        return ['05 · Finance & Reports', '5.2 Expenses & Summary'];
+    }
     if (str_starts_with($uri, 'api/v1/reports/daily')
         || str_starts_with($uri, 'api/v1/reports/cash-summary')
         || str_starts_with($uri, 'api/v1/reports/top-items')) {
-        return ['05 · Reports', '5.1 Daily & Sales Reports'];
+        return ['05 · Finance & Reports', '5.3 Daily & Sales Reports'];
     }
     if (str_starts_with($uri, 'api/v1/reports/branches')) {
-        return ['05 · Reports', '5.2 Branch Comparison'];
+        return ['05 · Finance & Reports', '5.4 Branch Comparison'];
     }
     if (str_starts_with($uri, 'api/v1/reports/ai-summary')) {
         return ['08 · Intelligence', '8.4 AI Weekly Summary'];
@@ -1023,7 +1035,7 @@ function sortEndpointsForPostman(array $endpoints): array
 }
 
 /**
- * @param list<array<string, mixed>> $endpoints
+ * @param  list<array<string, mixed>>  $endpoints
  * @return array<string, array{items: list<array<string, mixed>>, children: array<string, mixed>}>
  */
 function groupEndpointsByFolderPath(array $endpoints): array
@@ -1051,7 +1063,7 @@ function groupEndpointsByFolderPath(array $endpoints): array
 }
 
 /**
- * @param array<string, array{items: list<array<string, mixed>>, children: array<string, mixed>}> $tree
+ * @param  array<string, array{items: list<array<string, mixed>>, children: array<string, mixed>}>  $tree
  * @return list<array<string, mixed>>
  */
 function postmanTreeToItems(array $tree, array $requestMap, array $allRules): array
@@ -1089,7 +1101,9 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Settings') => 'Restaurant profile, locale, WhatsApp, custom domain DNS verification.',
         str_contains($folderName, 'Branches') => 'Manage locations. Each branch gets a qr_menu_url for shareable menus.',
         str_contains($folderName, 'Staff') && ! str_contains($folderName, 'Shifts') => 'Create staff with roles and 4-digit PINs for tablet login.',
-        str_contains($folderName, 'Shifts') => 'Clock in/out for cashiers. Required before cash payments on Pro plan.',
+        str_contains($folderName, 'Shifts') => 'Clock in/out, inspect transaction-level reconciliation, record paid-in/paid-out/safe-drop movements, and reverse mistakes.',
+        str_contains($folderName, 'Expense Categories') => 'Owner/manager-defined categories used to classify restaurant operating expenses.',
+        str_contains($folderName, 'Expenses') => 'Submit, approve, void, filter, and summarize expenses. Approved cash expenses automatically reduce the linked shift drawer.',
         str_contains($folderName, 'Menu Categories') => 'Setup menu structure before adding items.',
         str_contains($folderName, 'Menu Items') => 'Add dishes with Arabic names, prices, photos.',
         str_contains($folderName, 'Floor Tables') => 'Table layout for dine-in orders and table QR codes.',
@@ -1150,6 +1164,10 @@ DESC,
             ['key' => 'staff_id', 'value' => '1'],
             ['key' => 'table_id', 'value' => '1'],
             ['key' => 'category_id', 'value' => '1'],
+            ['key' => 'shift_id', 'value' => '1'],
+            ['key' => 'cash_movement_id', 'value' => '1'],
+            ['key' => 'expense_category_id', 'value' => '1'],
+            ['key' => 'expense_id', 'value' => '1'],
         ],
         'item' => $items,
     ];
@@ -1172,8 +1190,8 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
     $relativePath = preg_replace('#^api/v1/#', '', $endpoint['uri']) ?? $endpoint['uri'];
     $url = '{{base_url}}/'.$relativePath;
     $url = str_replace(
-        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}'],
-        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}'],
+        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}'],
+        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}'],
         $url,
     );
 
@@ -1231,11 +1249,11 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
             'script' => [
                 'type' => 'text/javascript',
                 'exec' => [
-                    "const json = pm.response.json();",
-                    "if (json.data && json.data.token) {",
+                    'const json = pm.response.json();',
+                    'if (json.data && json.data.token) {',
                     "    pm.collectionVariables.set('tenant_token', json.data.token);",
                     '}',
-                    "if (json.data?.user?.tenant_id) {",
+                    'if (json.data?.user?.tenant_id) {',
                     "    pm.collectionVariables.set('tenant_id', json.data.user.tenant_id);",
                     '}',
                 ],
@@ -1249,17 +1267,17 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
             'script' => [
                 'type' => 'text/javascript',
                 'exec' => [
-                    "const json = pm.response.json();",
-                    "if (json.data?.token) {",
+                    'const json = pm.response.json();',
+                    'if (json.data?.token) {',
                     "    pm.collectionVariables.set('tenant_token', json.data.token);",
                     '}',
-                    "if (json.data?.tenant?.subdomain) {",
+                    'if (json.data?.tenant?.subdomain) {',
                     "    pm.collectionVariables.set('tenant_subdomain', json.data.tenant.subdomain);",
                     '}',
-                    "if (json.data?.branch?.id) {",
+                    'if (json.data?.branch?.id) {',
                     "    pm.collectionVariables.set('branch_id', json.data.branch.id);",
                     '}',
-                    "if (json.data?.kitchen_device_secret) {",
+                    'if (json.data?.kitchen_device_secret) {',
                     "    pm.collectionVariables.set('kitchen_device_secret', json.data.kitchen_device_secret);",
                     '}',
                 ],
@@ -1273,8 +1291,8 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
             'script' => [
                 'type' => 'text/javascript',
                 'exec' => [
-                    "const json = pm.response.json();",
-                    "if (json.data && json.data.token) {",
+                    'const json = pm.response.json();',
+                    'if (json.data && json.data.token) {',
                     "    pm.collectionVariables.set('admin_token', json.data.token);",
                     '}',
                 ],
@@ -1288,9 +1306,32 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
             'script' => [
                 'type' => 'text/javascript',
                 'exec' => [
-                    "const json = pm.response.json();",
-                    "if (json.data && json.data.id) {",
+                    'const json = pm.response.json();',
+                    'if (json.data && json.data.id) {',
                     "    pm.collectionVariables.set('order_id', json.data.id);",
+                    '}',
+                ],
+            ],
+        ];
+    }
+
+    $createdIdVariables = [
+        'App\\Modules\\Tenant\\Staff\\Http\\Controllers\\StaffShiftController@clockIn' => 'shift_id',
+        'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\CashMovementController@store' => 'cash_movement_id',
+        'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\ExpenseCategoryController@store' => 'expense_category_id',
+        'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\ExpenseController@store' => 'expense_id',
+    ];
+
+    if (isset($createdIdVariables[$endpoint['action_key']])) {
+        $variable = $createdIdVariables[$endpoint['action_key']];
+        $events[] = [
+            'listen' => 'test',
+            'script' => [
+                'type' => 'text/javascript',
+                'exec' => [
+                    'const json = pm.response.json();',
+                    'if (json.data?.id) {',
+                    "    pm.collectionVariables.set('{$variable}', json.data.id);",
                     '}',
                 ],
             ],
@@ -1428,6 +1469,9 @@ function generatePostmanEnvironment(): array
             ['key' => 'invoice_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'shift_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'tenant_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'cash_movement_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'expense_category_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'expense_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
         ],
         '_postman_variable_scope' => 'environment',
         '_postman_exported_at' => gmdate('c'),
