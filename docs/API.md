@@ -1909,6 +1909,17 @@ Kitchen Ticket — orders/{order}/print/kitchen
 
 ---
 
+#### `GET` /api/v1/orders/{order}/print/kitchen/jobs
+
+Kitchen Jobs — orders/{order}/print/kitchen/jobs
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.execute`
+- **Plan features:** _None_
+- **Path params:** `{order}`
+
+---
+
 #### `GET` /api/v1/orders/{order}/print/receipt
 
 Receipt — orders/{order}/print/receipt
@@ -1961,6 +1972,306 @@ Update Status — orders/{order}/status
 ```json
 {
     "status": "active"
+}
+```
+
+---
+
+#### `GET` /api/v1/print/printers
+
+Index — print/printers
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+
+---
+
+#### `POST` /api/v1/print/printers
+
+Store — print/printers
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `name` | `required, string, max:100` |
+| `bridge_key` | `required, string, max:100, regex:/^[a-zA-Z0-9._-]+$/` |
+| `type` | `required, in:"kitchen","receipt","both"` |
+| `paper_width` | `nullable, integer, in:"58","80"` |
+| `copies` | `nullable, integer, min:1, max:5` |
+| `auto_print` | `nullable, boolean` |
+| `is_default_kitchen` | `nullable, boolean` |
+| `is_default_receipt` | `nullable, boolean` |
+| `is_active` | `nullable, boolean` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "name": "Downtown Branch",
+    "bridge_key": "مثال",
+    "type": "\"kitchen\"",
+    "paper_width": "\"58\"",
+    "copies": 1,
+    "auto_print": true,
+    "is_default_kitchen": true,
+    "is_default_receipt": true,
+    "is_active": true
+}
+```
+
+---
+
+#### `DELETE` /api/v1/print/printers/{printer}
+
+Destroy — print/printers/{printer}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{printer}`
+
+---
+
+#### `PATCH` /api/v1/print/printers/{printer}
+
+Update — print/printers/{printer}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{printer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `sometimes, string, max:100` |
+| `bridge_key` | `sometimes, string, max:100, regex:/^[a-zA-Z0-9._-]+$/` |
+| `type` | `sometimes, in:"kitchen","receipt","both"` |
+| `paper_width` | `sometimes, integer, in:"58","80"` |
+| `copies` | `sometimes, integer, min:1, max:5` |
+| `auto_print` | `sometimes, boolean` |
+| `is_default_kitchen` | `sometimes, boolean` |
+| `is_default_receipt` | `sometimes, boolean` |
+| `is_active` | `sometimes, boolean` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "bridge_key": "مثال",
+    "type": "\"kitchen\"",
+    "paper_width": "\"58\"",
+    "copies": 1,
+    "auto_print": true,
+    "is_default_kitchen": true,
+    "is_default_receipt": true,
+    "is_active": true
+}
+```
+
+---
+
+#### `PUT` /api/v1/print/routes/categories/{category}
+
+Replace Category Routes — print/routes/categories/{category}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{category}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `targets` | `present, array` |
+| `targets.*` | `array` |
+| `targets.*.printer_id` | `nullable, integer` |
+| `targets.*.kitchen_station_id` | `nullable, integer` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "targets": [
+        {
+            "printer_id": 1,
+            "kitchen_station_id": 1
+        }
+    ]
+}
+```
+
+---
+
+#### `PUT` /api/v1/print/routes/items/{item}
+
+Replace Item Routes — print/routes/items/{item}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{item}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `targets` | `present, array` |
+| `targets.*` | `array` |
+| `targets.*.printer_id` | `nullable, integer` |
+| `targets.*.kitchen_station_id` | `nullable, integer` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "targets": [
+        {
+            "printer_id": 1,
+            "kitchen_station_id": 1
+        }
+    ]
+}
+```
+
+---
+
+#### `GET` /api/v1/print/settings
+
+Show — print/settings
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+
+---
+
+#### `PATCH` /api/v1/print/settings/{branch}
+
+Update — print/settings/{branch}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{branch}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `printing_mode` | `required, in:"direct","stations"` |
+
+```json
+{
+    "printing_mode": "\"direct\""
+}
+```
+
+---
+
+#### `GET` /api/v1/print/stations
+
+Index — print/stations
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+
+---
+
+#### `POST` /api/v1/print/stations
+
+Store — print/stations
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `name` | `required, string, max:100` |
+| `printer_ids` | `nullable, array` |
+| `printer_ids.*` | `integer, distinct` |
+| `is_active` | `nullable, boolean` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "name": "Downtown Branch",
+    "printer_ids": [],
+    "is_active": true
+}
+```
+
+---
+
+#### `DELETE` /api/v1/print/stations/{station}
+
+Destroy — print/stations/{station}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{station}`
+
+---
+
+#### `PATCH` /api/v1/print/stations/{station}
+
+Update — print/stations/{station}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `printing.manage`
+- **Plan features:** _None_
+- **Path params:** `{station}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `sometimes, string, max:100` |
+| `printer_ids` | `sometimes, array` |
+| `printer_ids.*` | `integer, distinct` |
+| `is_active` | `sometimes, boolean` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "printer_ids": [],
+    "is_active": true
 }
 ```
 

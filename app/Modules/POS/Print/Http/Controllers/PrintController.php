@@ -6,10 +6,12 @@ namespace App\Modules\POS\Print\Http\Controllers;
 
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Print\Http\Resources\PrintJobResource;
+use App\Modules\POS\Print\Services\KitchenPrintRoutingService;
 use App\Shared\Infrastructure\PrintJob\EscPosBuilder;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use InvalidArgumentException;
 
 /**
  * @group Print Jobs
@@ -18,7 +20,10 @@ use Illuminate\Routing\Controller;
  */
 class PrintController extends Controller
 {
-    public function __construct(private readonly EscPosBuilder $escPos) {}
+    public function __construct(
+        private readonly EscPosBuilder $escPos,
+        private readonly KitchenPrintRoutingService $routing,
+    ) {}
 
     /**
      * Kitchen ticket bytes for an order.
@@ -37,6 +42,23 @@ class PrintController extends Controller
             'format' => 'escpos',
             'encoding' => 'binary',
             'bytes' => base64_encode($this->escPos->buildKitchenTicket($order, $branch)),
+        ]));
+    }
+
+    /**
+     * Kitchen tickets grouped by logical printer.
+     */
+    public function kitchenJobs(Order $order): JsonResponse
+    {
+        try {
+            $jobs = $this->routing->jobsFor($order);
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'PRINT_ROUTING_FAILED', 422);
+        }
+
+        return ApiResponse::success(new PrintJobResource([
+            'order_id' => $order->id,
+            'jobs' => $jobs,
         ]));
     }
 

@@ -29,6 +29,9 @@ class RolesAndPermissionsSeeder extends Seeder
             // Kitchen
             'kitchen.view', 'kitchen.update',
 
+            // Printing
+            'printing.view', 'printing.manage', 'printing.execute',
+
             // Payments
             'payments.process', 'payments.discount', 'payments.refund',
 
@@ -74,6 +77,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'menu.view', 'menu.create', 'menu.update',
                 'orders.view', 'orders.create', 'orders.update', 'orders.cancel',
                 'kitchen.view', 'kitchen.update',
+                'printing.view', 'printing.manage', 'printing.execute',
                 'payments.process', 'payments.discount', 'payments.refund',
                 'reports.view', 'reports.export',
                 'audit.view',
@@ -94,6 +98,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'orders.view', 'orders.create', 'orders.update',
                 'payments.process', 'payments.discount',
                 'reports.view',
+                'printing.view', 'printing.execute',
                 'shifts.view', 'shifts.operate',
                 'cash_movements.view', 'cash_movements.create',
                 'expenses.view', 'expenses.create',
@@ -104,6 +109,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'tables.view', 'tables.update',
                 'menu.view',
                 'orders.view', 'orders.create', 'orders.update',
+                'printing.view', 'printing.execute',
                 'shifts.view', 'shifts.operate',
             ]);
 
@@ -111,6 +117,7 @@ class RolesAndPermissionsSeeder extends Seeder
             ->syncPermissions([
                 'kitchen.view', 'kitchen.update',
                 'orders.view',
+                'printing.view', 'printing.execute',
                 'shifts.view', 'shifts.operate',
             ]);
 

@@ -904,6 +904,9 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_starts_with($uri, 'api/v1/tables')) {
         return ['03 · Menu & Floor Setup', '3.3 Floor Tables'];
     }
+    if (str_starts_with($uri, 'api/v1/print/')) {
+        return ['03 · Menu & Floor Setup', '3.4 Printer & Kitchen Routing Setup'];
+    }
 
     if (str_contains($uri, '/orders/{order}/pay') || str_contains($uri, '/orders/{order}/refund')) {
         return ['04 · Daily Operations (POS)', '4.4 Payments & Refunds'];
@@ -914,14 +917,14 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_contains($uri, 'assign-rider') || str_contains($uri, 'delivery-status')) {
         return ['06 · Delivery & QR', '6.2 Riders & Delivery Status'];
     }
+    if (str_contains($uri, '/print/')) {
+        return ['04 · Daily Operations (POS)', '4.5 Print Tickets'];
+    }
     if (str_starts_with($uri, 'api/v1/orders')) {
         return ['04 · Daily Operations (POS)', '4.1 Orders'];
     }
     if (str_starts_with($uri, 'api/v1/kitchen')) {
         return ['04 · Daily Operations (POS)', '4.3 Kitchen Display'];
-    }
-    if (str_contains($uri, '/print/')) {
-        return ['04 · Daily Operations (POS)', '4.5 Print Tickets'];
     }
     if (str_starts_with($uri, 'api/v1/invoices')) {
         return ['04 · Daily Operations (POS)', '4.6 ETA Invoices'];
@@ -1107,6 +1110,7 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Menu Categories') => 'Setup menu structure before adding items.',
         str_contains($folderName, 'Menu Items') => 'Add dishes with Arabic names, prices, photos.',
         str_contains($folderName, 'Floor Tables') => 'Table layout for dine-in orders and table QR codes.',
+        str_contains($folderName, 'Printer & Kitchen') => 'Configure logical printers, optional kitchen stations, direct/category/item routes, and branch printing mode.',
         str_contains($folderName, '4.1 Orders') => 'Core POS flow: list → create → update status.',
         str_contains($folderName, 'Payments') => 'Settle and refund after order is ready.',
         str_contains($folderName, 'Kitchen') => 'Kitchen queue and mark items done.',
@@ -1168,6 +1172,8 @@ DESC,
             ['key' => 'cash_movement_id', 'value' => '1'],
             ['key' => 'expense_category_id', 'value' => '1'],
             ['key' => 'expense_id', 'value' => '1'],
+            ['key' => 'printer_id', 'value' => '1'],
+            ['key' => 'station_id', 'value' => '1'],
         ],
         'item' => $items,
     ];
@@ -1190,8 +1196,8 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
     $relativePath = preg_replace('#^api/v1/#', '', $endpoint['uri']) ?? $endpoint['uri'];
     $url = '{{base_url}}/'.$relativePath;
     $url = str_replace(
-        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}'],
-        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}'],
+        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}'],
+        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}'],
         $url,
     );
 
@@ -1320,6 +1326,8 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
         'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\CashMovementController@store' => 'cash_movement_id',
         'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\ExpenseCategoryController@store' => 'expense_category_id',
         'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\ExpenseController@store' => 'expense_id',
+        'App\\Modules\\POS\\Print\\Http\\Controllers\\PrinterController@store' => 'printer_id',
+        'App\\Modules\\POS\\Print\\Http\\Controllers\\KitchenStationController@store' => 'station_id',
     ];
 
     if (isset($createdIdVariables[$endpoint['action_key']])) {
@@ -1472,6 +1480,8 @@ function generatePostmanEnvironment(): array
             ['key' => 'cash_movement_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'expense_category_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'expense_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'printer_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'station_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
         ],
         '_postman_variable_scope' => 'environment',
         '_postman_exported_at' => gmdate('c'),

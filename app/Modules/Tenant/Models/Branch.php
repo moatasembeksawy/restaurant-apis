@@ -29,6 +29,7 @@ class Branch extends Model
         'phone',
         'is_default',
         'timezone',
+        'printing_mode',
         'is_active',
         'qr_menu_token',
     ];

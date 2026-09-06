@@ -10,7 +10,10 @@ use App\Modules\POS\Menu\Http\Controllers\MenuCategoryController;
 use App\Modules\POS\Menu\Http\Controllers\MenuItemController;
 use App\Modules\POS\Orders\Http\Controllers\OrderController;
 use App\Modules\POS\Orders\Http\Controllers\OrderItemController;
+use App\Modules\POS\Print\Http\Controllers\KitchenStationController;
 use App\Modules\POS\Print\Http\Controllers\PrintController;
+use App\Modules\POS\Print\Http\Controllers\PrinterController;
+use App\Modules\POS\Print\Http\Controllers\PrintSettingsController;
 use App\Modules\POS\Tables\Http\Controllers\TableController;
 use Illuminate\Support\Facades\Route;
 
@@ -41,6 +44,24 @@ Route::patch('menu/items/{item}/toggle', [MenuItemController::class, 'toggle'])-
 Route::post('menu/items/{item}/photo', [MenuItemController::class, 'uploadPhoto'])->middleware('permission:menu.update');
 Route::delete('menu/items/{item}/photo', [MenuItemController::class, 'deletePhoto'])->middleware('permission:menu.update');
 
+// ── Printing & kitchen routing ────────────────────────────────────────────────
+Route::middleware('permission:printing.view')->group(function (): void {
+    Route::get('print/settings', [PrintSettingsController::class, 'show']);
+    Route::get('print/printers', [PrinterController::class, 'index']);
+    Route::get('print/stations', [KitchenStationController::class, 'index']);
+});
+Route::middleware('permission:printing.manage')->group(function (): void {
+    Route::patch('print/settings/{branch}', [PrintSettingsController::class, 'update']);
+    Route::post('print/printers', [PrinterController::class, 'store']);
+    Route::patch('print/printers/{printer}', [PrinterController::class, 'update']);
+    Route::delete('print/printers/{printer}', [PrinterController::class, 'destroy']);
+    Route::post('print/stations', [KitchenStationController::class, 'store']);
+    Route::patch('print/stations/{station}', [KitchenStationController::class, 'update']);
+    Route::delete('print/stations/{station}', [KitchenStationController::class, 'destroy']);
+    Route::put('print/routes/categories/{category}', [PrintSettingsController::class, 'replaceCategoryRoutes']);
+    Route::put('print/routes/items/{item}', [PrintSettingsController::class, 'replaceItemRoutes']);
+});
+
 // ── Orders ─────────────────────────────────────────────────────────────────────
 Route::middleware('permission:orders.view')->group(function (): void {
     Route::get('orders', [OrderController::class, 'index']);
@@ -48,6 +69,8 @@ Route::middleware('permission:orders.view')->group(function (): void {
     Route::get('orders/{order}/print/kitchen', [PrintController::class, 'kitchenTicket']);
     Route::get('orders/{order}/print/receipt', [PrintController::class, 'receipt']);
 });
+Route::get('orders/{order}/print/kitchen/jobs', [PrintController::class, 'kitchenJobs'])
+    ->middleware('permission:printing.execute');
 Route::post('orders', [OrderController::class, 'store'])->middleware('permission:orders.create');
 Route::match(['put', 'patch'], 'orders/{order}', [OrderController::class, 'update'])->middleware('permission:orders.update');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->middleware('permission:orders.update');

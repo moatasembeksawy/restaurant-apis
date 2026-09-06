@@ -6,6 +6,7 @@ namespace App\Shared\Infrastructure\PrintJob;
 
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 
@@ -75,14 +76,21 @@ class EscPosBuilder
         return $this->buffer;
     }
 
-    public function buildKitchenTicket(Order $order, Branch $branch): string
+    public function buildKitchenTicket(Order $order, Branch $branch, ?string $stationName = null): string
     {
         $this->reset()->alignCenter()->bold()->text('KITCHEN TICKET')->bold(false)
-            ->text($branch->name_ar ?? $branch->name)
-            ->separator()->alignLeft();
+            ->text($branch->name_ar ?? $branch->name);
 
-        if ($order->table) {
-            $this->text('Table: '.$order->table->name);
+        if ($stationName) {
+            $this->bold()->text($stationName)->bold(false);
+        }
+
+        $this->separator()->alignLeft();
+
+        /** @var FloorTable|null $floorTable */
+        $floorTable = $order->getRelation('table');
+        if ($floorTable) {
+            $this->text('Table: '.$floorTable->name);
         }
 
         $this->text('Order #'.$order->id)
