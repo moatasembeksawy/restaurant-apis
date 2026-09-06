@@ -181,27 +181,9 @@ parameters:
 			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$whatsapp_phone_number_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasFeature\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
-
-		-
 			message: '#^Cannot call method format\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
-			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
-
-		-
-			message: '#^Parameter \#1 \$tenant of method App\\Modules\\Delivery\\WhatsApp\\Services\\WhatsAppNotificationService\:\:clientForTenant\(\) expects App\\Modules\\Tenant\\Models\\Tenant, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 3
 			path: app/Modules/Delivery/WhatsApp/Services/WhatsAppNotificationService.php
 
 		-
@@ -243,18 +225,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\POS\\Orders\\Models\\OrderItem\:\:\$total_revenue\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\POS\\Orders\\Models\\OrderItem\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Modules/Intelligence/Reports/Services/AIReportService.php
 
@@ -337,18 +307,6 @@ parameters:
 			path: app/Modules/Inventory/Stock/Services/StockService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$item_name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$menu_item_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
 			identifier: property.notFound
 			count: 1
@@ -357,7 +315,7 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
 			identifier: property.notFound
-			count: 2
+			count: 1
 			path: app/Modules/Inventory/Stock/Services/StockService.php
 
 		-
@@ -399,24 +357,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property App\\Modules\\POS\\Orders\\Models\\OrderItem\:\:\$total_revenue\.$#'
 			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:profitMargin\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\POS\\Orders\\Models\\OrderItem\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Modules/POS/Billing/Http/Controllers/ReportController.php
 
@@ -499,100 +439,10 @@ parameters:
 			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$customer_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$tenant\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:items\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
-
-		-
-			message: '#^Parameter \#1 \$order of class App\\Modules\\POS\\Orders\\Events\\OrderReady constructor expects App\\Modules\\POS\\Orders\\Models\\Order, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
-
-		-
-			message: '#^Parameter \#1 \$order of job class App\\Modules\\Delivery\\WhatsApp\\Jobs\\SendWhatsAppNotificationJob constructor expects App\\Modules\\POS\\Orders\\Models\\Order in App\\Modules\\Delivery\\WhatsApp\\Jobs\\SendWhatsAppNotificationJob\:\:dispatch\(\), Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Modules/POS/Kitchen/Http/Controllers/KitchenController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$branch_id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderItemReady.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderItemReady.php
-
-		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
 			path: app/Modules/POS/Orders/Events/OrderItemReady.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderPlaced.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$item_name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderPlaced.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderPlaced.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderPlaced.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderPlaced.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderPlaced.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Orders/Events/OrderReady.php
 
 		-
 			message: '#^Offset ''active''\|''cancelled''\|''completed''\|''cooking''\|''paid''\|''pending''\|''ready'' on array\{pending\: array\{''active'', ''cancelled''\}, active\: array\{''cooking'', ''ready'', ''completed'', ''cancelled''\}, cooking\: array\{''ready'', ''cancelled''\}, ready\: array\{''completed'', ''cancelled''\}, completed\: array\{''paid''\}, paid\: array\{''refunded''\}, refunded\: array\{\}, cancelled\: array\{\}\} on left side of \?\? always exists and is not nullable\.$#'
@@ -866,36 +716,6 @@ parameters:
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$eta_uuid\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$item_name_ar\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$notes\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$subtotal\.$#'
 			identifier: property.notFound
 			count: 1
 			path: app/Shared/Infrastructure/PrintJob/EscPosBuilder.php

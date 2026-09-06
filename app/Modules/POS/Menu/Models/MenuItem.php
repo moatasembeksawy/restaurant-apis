@@ -49,6 +49,7 @@ class MenuItem extends BaseModel implements HasMedia
         $this->addMediaCollection('photo')->singleFile();
     }
 
+    /** @return BelongsTo<MenuCategory, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'category_id');

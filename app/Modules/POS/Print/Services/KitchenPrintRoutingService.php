@@ -6,6 +6,7 @@ namespace App\Modules\POS\Print\Services;
 
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
+use App\Modules\POS\Print\Models\KitchenStation;
 use App\Modules\POS\Print\Models\Printer;
 use App\Modules\POS\Print\Models\PrintRoute;
 use App\Shared\Infrastructure\PrintJob\EscPosBuilder;
@@ -131,7 +132,7 @@ class KitchenPrintRoutingService
 
     /**
      * @param  Collection<int, PrintRoute>  $routes
-     * @return list<array{printer: Printer, station: mixed}>
+     * @return list<array{printer: Printer, station: KitchenStation|null}>
      */
     private function printersForRoutes(Collection $routes): array
     {

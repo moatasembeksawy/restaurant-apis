@@ -176,7 +176,7 @@ class StaffShiftSalesService
                 'created_by_name' => $movement->creator?->name,
                 'is_reversed' => $movement->reversed_at !== null,
                 'reversal_of_id' => $movement->reversal_of_id,
-                'occurred_at' => $movement->occurred_at?->toIso8601String(),
+                'occurred_at' => $movement->occurred_at->toIso8601String(),
             ]);
 
         return $transactions

@@ -11,7 +11,6 @@ use App\Modules\POS\Print\Models\Printer;
 use App\Modules\POS\Print\Models\PrintRoute;
 use App\Modules\Tenant\Models\Branch;
 use App\Shared\Support\Audit\AuditLogger;
-use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -117,11 +116,10 @@ class PrintConfigurationService
     }
 
     /**
-     * @param  MenuCategory|MenuItem  $source
      * @param  list<array<string, int|null>>  $targets
      * @return Collection<int, PrintRoute>
      */
-    public function replaceRoutes(Model $source, int $branchId, array $targets): Collection
+    public function replaceRoutes(MenuCategory|MenuItem $source, int $branchId, array $targets): Collection
     {
         Branch::query()->findOrFail($branchId);
         $this->validateTargets($branchId, $targets);

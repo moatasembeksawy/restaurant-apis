@@ -21,26 +21,31 @@ class PrintRoute extends BaseModel
         'kitchen_station_id',
     ];
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /** @return BelongsTo<MenuCategory, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(MenuCategory::class, 'menu_category_id');
     }
 
+    /** @return BelongsTo<MenuItem, $this> */
     public function item(): BelongsTo
     {
         return $this->belongsTo(MenuItem::class, 'menu_item_id');
     }
 
+    /** @return BelongsTo<Printer, $this> */
     public function printer(): BelongsTo
     {
         return $this->belongsTo(Printer::class);
     }
 
+    /** @return BelongsTo<KitchenStation, $this> */
     public function station(): BelongsTo
     {
         return $this->belongsTo(KitchenStation::class, 'kitchen_station_id');

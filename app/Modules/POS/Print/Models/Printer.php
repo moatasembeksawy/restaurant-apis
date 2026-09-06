@@ -42,17 +42,20 @@ class Printer extends BaseModel
         ];
     }
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /** @return BelongsToMany<KitchenStation, $this> */
     public function stations(): BelongsToMany
     {
         return $this->belongsToMany(KitchenStation::class, 'kitchen_station_printer')
             ->withTimestamps();
     }
 
+    /** @return HasMany<PrintRoute, $this> */
     public function routes(): HasMany
     {
         return $this->hasMany(PrintRoute::class);

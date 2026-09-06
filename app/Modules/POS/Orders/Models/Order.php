@@ -9,6 +9,7 @@ use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
+use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Domain\Models\BaseModel;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -81,19 +82,28 @@ class Order extends BaseModel
 
     // ── Relations ──────────────────────────────────────────────────────────────
 
+    /** @return HasMany<OrderItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
     }
 
+    /** @return BelongsTo<FloorTable, $this> */
     public function table(): BelongsTo
     {
         return $this->belongsTo(FloorTable::class, 'floor_table_id');
     }
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    /** @return BelongsTo<Tenant, $this> */
+    public function tenant(): BelongsTo
+    {
+        return $this->belongsTo(Tenant::class);
     }
 
     public function waiter(): BelongsTo

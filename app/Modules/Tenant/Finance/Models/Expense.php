@@ -47,31 +47,37 @@ class Expense extends BaseModel
         ];
     }
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /** @return BelongsTo<ExpenseCategory, $this> */
     public function category(): BelongsTo
     {
         return $this->belongsTo(ExpenseCategory::class, 'expense_category_id');
     }
 
+    /** @return BelongsTo<StaffShift, $this> */
     public function shift(): BelongsTo
     {
         return $this->belongsTo(StaffShift::class, 'staff_shift_id');
     }
 
+    /** @return BelongsTo<CashMovement, $this> */
     public function cashMovement(): BelongsTo
     {
         return $this->belongsTo(CashMovement::class);
     }
 
+    /** @return BelongsTo<User, $this> */
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return BelongsTo<User, $this> */
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');

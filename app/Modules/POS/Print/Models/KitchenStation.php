@@ -24,17 +24,20 @@ class KitchenStation extends BaseModel
         return ['is_active' => 'boolean'];
     }
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /** @return BelongsToMany<Printer, $this> */
     public function printers(): BelongsToMany
     {
         return $this->belongsToMany(Printer::class, 'kitchen_station_printer')
             ->withTimestamps();
     }
 
+    /** @return HasMany<PrintRoute, $this> */
     public function routes(): HasMany
     {
         return $this->hasMany(PrintRoute::class);

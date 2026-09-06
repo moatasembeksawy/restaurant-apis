@@ -45,38 +45,41 @@ class ExpenseController extends Controller
         $filters = $request->validated();
         unset($filters['status'], $filters['per_page']);
 
-        $query = $this->filteredQuery($filters)->where('status', 'approved');
+        $expenses = $this->filteredQuery($filters)
+            ->where('status', 'approved')
+            ->with('category:id,name')
+            ->get();
 
-        $byCategory = (clone $query)
-            ->join('expense_categories', 'expenses.expense_category_id', '=', 'expense_categories.id')
-            ->selectRaw('expense_categories.id, expense_categories.name, COUNT(*) as count, SUM(expenses.amount) as total')
-            ->groupBy('expense_categories.id', 'expense_categories.name')
-            ->orderByDesc('total')
-            ->get()
-            ->map(fn ($row): array => [
-                'category_id' => $row->id,
-                'category_name' => $row->name,
-                'count' => (int) $row->count,
-                'total' => round((float) $row->total, 2),
-            ])
-            ->all();
+        $byCategory = [];
+        $byPaymentMethod = [];
 
-        $byPaymentMethod = (clone $query)
-            ->selectRaw('payment_method, COUNT(*) as count, SUM(amount) as total')
-            ->groupBy('payment_method')
-            ->get()
-            ->mapWithKeys(fn ($row): array => [
-                $row->payment_method => [
-                    'count' => (int) $row->count,
-                    'total' => round((float) $row->total, 2),
-                ],
-            ])
-            ->all();
+        foreach ($expenses as $expense) {
+            $categoryId = $expense->expense_category_id;
+            $byCategory[$categoryId] ??= [
+                'category_id' => $categoryId,
+                'category_name' => $expense->category?->name,
+                'count' => 0,
+                'total' => 0.0,
+            ];
+            $byCategory[$categoryId]['count']++;
+            $byCategory[$categoryId]['total'] = round(
+                $byCategory[$categoryId]['total'] + (float) $expense->amount,
+                2,
+            );
+
+            $method = $expense->payment_method;
+            $byPaymentMethod[$method] ??= ['count' => 0, 'total' => 0.0];
+            $byPaymentMethod[$method]['count']++;
+            $byPaymentMethod[$method]['total'] = round(
+                $byPaymentMethod[$method]['total'] + (float) $expense->amount,
+                2,
+            );
+        }
 
         return ApiResponse::success([
-            'expenses_count' => (clone $query)->count(),
-            'total_expenses' => round((float) (clone $query)->sum('amount'), 2),
-            'by_category' => $byCategory,
+            'expenses_count' => $expenses->count(),
+            'total_expenses' => round((float) $expenses->sum('amount'), 2),
+            'by_category' => array_values($byCategory),
             'by_payment_method' => $byPaymentMethod,
         ]);
     }
@@ -130,7 +133,10 @@ class ExpenseController extends Controller
         return ApiResponse::success(new ExpenseResource($expense), 'Expense voided.');
     }
 
-    /** @param array<string, mixed> $filters */
+    /**
+     * @param  array<string, mixed>  $filters
+     * @return Builder<Expense>
+     */
     private function filteredQuery(array $filters): Builder
     {
         $query = Expense::query();

@@ -31,11 +31,13 @@ class OrderItem extends Model
         ];
     }
 
+    /** @return BelongsTo<Order, $this> */
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
     }
 
+    /** @return BelongsTo<MenuItem, $this> */
     public function menuItem(): BelongsTo
     {
         return $this->belongsTo(MenuItem::class);
