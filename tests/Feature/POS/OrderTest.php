@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\Order;
@@ -69,6 +70,54 @@ it('allows a waiter to place an order', function (): void {
     // Table should now be occupied
     expect($this->table->fresh()->status)->toBe('occupied');
     expect(Order::query()->latest('id')->first()->fulfillment_type)->toBe('dine_in');
+});
+
+it('attaches a customer when placing an order', function (): void {
+    $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'floor_table_id' => $this->table->id,
+            'channel' => 'dine_in',
+            'customer_id' => $customer->id,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.customer_id', $customer->id);
+});
+
+it('rejects a missing customer_id instead of failing on insert', function (): void {
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'customer_id' => 999_999,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'VALIDATION_ERROR')
+        ->assertJsonPath('errors.0.field', 'customer_id');
+});
+
+it('rejects a customer from another tenant', function (): void {
+    $foreignCustomer = Customer::factory()->create();
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'customer_id' => $foreignCustomer->id,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
 });
 
 it('creates a takeaway order when staff sets fulfillment_type', function (): void {

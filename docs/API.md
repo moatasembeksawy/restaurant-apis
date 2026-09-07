@@ -1718,7 +1718,7 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.).
 | `fulfillment_type` | `nullable, in:dine_in,takeaway,delivery` |
 | `notes` | `nullable, string` |
 | `delivery_address` | `nullable, string, max:500` |
-| `customer_id` | `nullable, integer` |
+| `customer_id` | `nullable, integer, exists:customers,id` |
 | `items` | `required, array, min:1` |
 | `items.*.menu_item_id` | `required, integer` |
 | `items.*.quantity` | `required, integer, min:1` |

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Orders\Services;
 
+use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderPlaced;
@@ -52,6 +53,10 @@ class OrderPlacementService
 
         /** @var Tenant $tenant */
         $tenant = app('tenant');
+
+        if ($customerId !== null && Customer::query()->whereKey($customerId)->doesntExist()) {
+            throw new InvalidArgumentException('Customer not found.');
+        }
 
         if (
             $fulfillmentType === OrderFulfillment::DELIVERY

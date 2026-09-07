@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Database\Seeders;
 
 use App\Models\User;
+use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Tables\Models\FloorTable;
@@ -118,6 +119,9 @@ class TenantSeeder extends Seeder
         // ── Seed floor tables ──────────────────────────────────────────────────
         $this->seedTables($tenant, $branch);
 
+        // ── Seed demo customer (Postman {{customer_id}}) ───────────────────────
+        $customer = $this->seedCustomer($tenant);
+
         // ── Assign Spatie roles ────────────────────────────────────────────────
         User::query()
             ->where('tenant_id', $tenant->id)
@@ -133,6 +137,7 @@ class TenantSeeder extends Seeder
                 ['Cashier PIN', '5678'],
                 ['Cook PIN', '9012'],
                 ['Subdomain', 'nile.localhost'],
+                ['Demo customer_id', (string) $customer->id],
             ],
         );
     }
@@ -197,6 +202,19 @@ class TenantSeeder extends Seeder
                 ],
             );
         }
+    }
+
+    private function seedCustomer(Tenant $tenant): Customer
+    {
+        app()->instance('tenant', $tenant);
+
+        return Customer::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'phone' => '+201001112233'],
+            [
+                'name' => 'محمد علي',
+                'default_address' => '١٢ شارع التحرير، الدقي، الجيزة',
+            ],
+        );
     }
 
     private function seedTables(Tenant $tenant, Branch $branch): void
