@@ -12,6 +12,7 @@ use App\Modules\POS\Menu\Http\Resources\MenuItemResource;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 
 /**
@@ -73,7 +74,7 @@ class MenuItemController extends Controller
         return ApiResponse::success(new MenuItemResource($item->fresh()->load('category')), 'Photo removed.');
     }
 
-    public function destroy(MenuItem $item): JsonResponse
+    public function destroy(MenuItem $item): Response
     {
         $item->delete();
 

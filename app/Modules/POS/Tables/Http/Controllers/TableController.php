@@ -12,6 +12,7 @@ use App\Modules\POS\Tables\Http\Resources\FloorTableResource;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 
 /**
@@ -57,7 +58,7 @@ class TableController extends Controller
         return ApiResponse::success(new FloorTableResource($table), 'Table updated.');
     }
 
-    public function destroy(FloorTable $table): JsonResponse
+    public function destroy(FloorTable $table): Response
     {
         $table->delete();
 

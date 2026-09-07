@@ -13,6 +13,7 @@ use App\Modules\POS\Print\Services\PrintConfigurationService;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use InvalidArgumentException;
 
@@ -58,7 +59,7 @@ class KitchenStationController extends Controller
         return ApiResponse::success(new KitchenStationResource($station), 'Kitchen station updated.');
     }
 
-    public function destroy(KitchenStation $station): JsonResponse
+    public function destroy(KitchenStation $station): Response
     {
         AuditLogger::log('kitchen_station.deleted', $station);
         $station->delete();

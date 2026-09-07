@@ -10,6 +10,7 @@ use App\Modules\POS\Menu\Http\Resources\MenuCategoryResource;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 
 /**
@@ -51,7 +52,7 @@ class MenuCategoryController extends Controller
         return ApiResponse::success(new MenuCategoryResource($category), 'Category updated.');
     }
 
-    public function destroy(MenuCategory $category): JsonResponse
+    public function destroy(MenuCategory $category): Response
     {
         $category->delete();
 

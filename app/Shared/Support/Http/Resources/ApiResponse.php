@@ -7,6 +7,7 @@ namespace App\Shared\Support\Http\Resources;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Http\Resources\Json\ResourceCollection;
+use Illuminate\Http\Response;
 use Illuminate\Pagination\LengthAwarePaginator;
 
 class ApiResponse
@@ -62,9 +63,9 @@ class ApiResponse
         return self::success($data, $message, 201);
     }
 
-    public static function noContent(): JsonResponse
+    public static function noContent(): Response
     {
-        return response()->json(null, 204);
+        return response()->noContent();
     }
 
     public static function error(

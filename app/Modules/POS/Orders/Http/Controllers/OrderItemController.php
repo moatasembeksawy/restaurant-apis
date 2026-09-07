@@ -11,6 +11,7 @@ use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 
 /**
@@ -43,7 +44,7 @@ class OrderItemController extends Controller
         return ApiResponse::created(new OrderItemResource($item), 'Item added to order.');
     }
 
-    public function destroy(Order $order, OrderItem $item): JsonResponse
+    public function destroy(Order $order, OrderItem $item): JsonResponse|Response
     {
         if ($item->order_id !== $order->id) {
             return ApiResponse::error('Item does not belong to this order.', 'ITEM_NOT_FOUND', 404);

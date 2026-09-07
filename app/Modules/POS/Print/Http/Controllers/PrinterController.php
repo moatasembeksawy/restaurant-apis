@@ -13,6 +13,7 @@ use App\Modules\POS\Print\Services\PrintConfigurationService;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 use InvalidArgumentException;
 
@@ -57,7 +58,7 @@ class PrinterController extends Controller
         return ApiResponse::success(new PrinterResource($printer), 'Printer updated.');
     }
 
-    public function destroy(Printer $printer): JsonResponse
+    public function destroy(Printer $printer): Response
     {
         AuditLogger::log('printer.deleted', $printer);
         $printer->delete();
