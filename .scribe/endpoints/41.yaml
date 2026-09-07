@@ -1,0 +1,231 @@
+name: 'QR Menu (Public)'
+description: |-
+
+  Public endpoints — no authentication required.
+  Token may be a branch menu link (social/print) or a table QR (dine-in).
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/qr/{token}/menu'
+    metadata:
+      custom: []
+      groupName: 'QR Menu (Public)'
+      groupDescription: |-
+
+        Public endpoints — no authentication required.
+        Token may be a branch menu link (social/print) or a table QR (dine-in).
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Get public menu'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      token:
+        custom: []
+        name: token
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      token: architecto
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 404
+        content: '{"errors":[{"message":"Invalid or expired QR code.","code":"INVALID_QR_TOKEN"}]}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: 'api/v1/qr/{token}/orders'
+    metadata:
+      custom: []
+      groupName: 'QR Menu (Public)'
+      groupDescription: |-
+
+        Public endpoints — no authentication required.
+        Token may be a branch menu link (social/print) or a table QR (dine-in).
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Place order from public QR menu'
+      description: ''
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      token:
+        custom: []
+        name: token
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      token: architecto
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      items:
+        custom: []
+        name: items
+        description: 'Must have at least 1 items.'
+        required: true
+        example:
+          - []
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      customer_name:
+        custom: []
+        name: customer_name
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      customer_phone:
+        custom: []
+        name: customer_phone
+        description: 'Must not be greater than 20 characters.'
+        required: false
+        example: ngzmiyvdljnikhwa
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      notes:
+        custom: []
+        name: notes
+        description: 'Must not be greater than 500 characters.'
+        required: false
+        example: 'y'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      table_label:
+        custom: []
+        name: table_label
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: k
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      fulfillment_type:
+        custom: []
+        name: fulfillment_type
+        description: ''
+        required: false
+        example: delivery
+        type: string
+        enumValues:
+          - takeaway
+          - delivery
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      delivery_address:
+        custom: []
+        name: delivery_address
+        description: 'This field is required when <code>fulfillment_type</code> is <code>delivery</code>. Must not be greater than 500 characters.'
+        required: false
+        example: c
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'items[].menu_item_id':
+        custom: []
+        name: 'items[].menu_item_id'
+        description: ''
+        required: true
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'items[].quantity':
+        custom: []
+        name: 'items[].quantity'
+        description: 'Must be at least 1.'
+        required: true
+        example: 22
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'items[].notes':
+        custom: []
+        name: 'items[].notes'
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: g
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      items:
+        -
+          menu_item_id: 16
+          quantity: 22
+          notes: g
+      customer_name: b
+      customer_phone: ngzmiyvdljnikhwa
+      notes: 'y'
+      table_label: k
+      fulfillment_type: delivery
+      delivery_address: c
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null

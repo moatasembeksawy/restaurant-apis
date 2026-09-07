@@ -1,14 +1,82 @@
-name: 'Order Items'
+name: 'Floor Tables'
 description: ''
 endpoints:
   -
     custom: []
     httpMethods:
-      - POST
-    uri: 'api/v1/orders/{order_id}/items'
+      - GET
+    uri: api/v1/tables
     metadata:
       custom: []
-      groupName: 'Order Items'
+      groupName: 'Floor Tables'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      branch_id:
+        custom: []
+        name: branch_id
+        description: ''
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      section:
+        custom: []
+        name: section
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: 'n'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      branch_id: 16
+      section: 'n'
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"errors":[{"message":"Unauthenticated.","code":"UNAUTHENTICATED"}]}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: 'api/v1/tables/{table_id}'
+    metadata:
+      custom: []
+      groupName: 'Floor Tables'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
@@ -21,25 +89,69 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      order_id:
+      table_id:
         custom: []
-        name: order_id
-        description: 'The ID of the order.'
+        name: table_id
+        description: 'The ID of the table.'
         required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      order_id: 16
+      table_id: 1
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters: []
+    cleanBodyParameters: []
+    fileParameters: []
+    responses:
+      -
+        custom: []
+        status: 401
+        content: '{"errors":[{"message":"Unauthenticated.","code":"UNAUTHENTICATED"}]}'
+        headers:
+          cache-control: 'no-cache, private'
+          content-type: application/json
+          access-control-allow-origin: '*'
+        description: null
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/tables
+    metadata:
+      custom: []
+      groupName: 'Floor Tables'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
-      menu_item_id:
+      branch_id:
         custom: []
-        name: menu_item_id
+        name: branch_id
         description: ''
         required: true
         example: 16
@@ -48,32 +160,188 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      quantity:
+      name:
         custom: []
-        name: quantity
-        description: 'Must be at least 1.'
+        name: name
+        description: 'Must not be greater than 20 characters.'
         required: true
-        example: 22
-        type: integer
+        example: ngzmiyvdljnikhwa
+        type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      notes:
+      section:
         custom: []
-        name: notes
-        description: ''
+        name: section
+        description: 'Must not be greater than 50 characters.'
         required: false
-        example: architecto
+        example: 'y'
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: true
         deprecated: false
+      capacity:
+        custom: []
+        name: capacity
+        description: 'Must be at least 1. Must not be greater than 50.'
+        required: false
+        example: 18
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      position_x:
+        custom: []
+        name: position_x
+        description: 'Must be at least 0.'
+        required: false
+        example: 54
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      position_y:
+        custom: []
+        name: position_y
+        description: 'Must be at least 0.'
+        required: false
+        example: 38
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
     cleanBodyParameters:
-      menu_item_id: 16
-      quantity: 22
-      notes: architecto
+      branch_id: 16
+      name: ngzmiyvdljnikhwa
+      section: 'y'
+      capacity: 18
+      position_x: 54
+      position_y: 38
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PUT
+      - PATCH
+    uri: 'api/v1/tables/{table_id}'
+    metadata:
+      custom: []
+      groupName: 'Floor Tables'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      table_id:
+        custom: []
+        name: table_id
+        description: 'The ID of the table.'
+        required: true
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      table_id: 1
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      name:
+        custom: []
+        name: name
+        description: 'Must not be greater than 20 characters.'
+        required: false
+        example: bngzmiyvdljnikhw
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      section:
+        custom: []
+        name: section
+        description: 'Must not be greater than 50 characters.'
+        required: false
+        example: a
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      capacity:
+        custom: []
+        name: capacity
+        description: 'Must be at least 1.'
+        required: false
+        example: 79
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      position_x:
+        custom: []
+        name: position_x
+        description: 'Must be at least 0.'
+        required: false
+        example: 62
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      position_y:
+        custom: []
+        name: position_y
+        description: 'Must be at least 0.'
+        required: false
+        example: 54
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      is_active:
+        custom: []
+        name: is_active
+        description: ''
+        required: false
+        example: false
+        type: boolean
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      name: bngzmiyvdljnikhw
+      section: a
+      capacity: 79
+      position_x: 62
+      position_y: 54
+      is_active: false
     fileParameters: []
     responses: []
     responseFields: []
@@ -88,10 +356,10 @@ endpoints:
     custom: []
     httpMethods:
       - DELETE
-    uri: 'api/v1/orders/{order_id}/items/{item_id}'
+    uri: 'api/v1/tables/{table_id}'
     metadata:
       custom: []
-      groupName: 'Order Items'
+      groupName: 'Floor Tables'
       groupDescription: ''
       subgroup: ''
       subgroupDescription: ''
@@ -104,35 +372,86 @@ endpoints:
       Content-Type: application/json
       Accept: application/json
     urlParameters:
-      order_id:
+      table_id:
         custom: []
-        name: order_id
-        description: 'The ID of the order.'
+        name: table_id
+        description: 'The ID of the table.'
         required: true
-        example: 16
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      item_id:
-        custom: []
-        name: item_id
-        description: 'The ID of the item.'
-        required: true
-        example: 16
+        example: 1
         type: integer
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
     cleanUrlParameters:
-      order_id: 16
-      item_id: 16
+      table_id: 1
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
     cleanBodyParameters: []
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - PATCH
+    uri: 'api/v1/tables/{table_id}/status'
+    metadata:
+      custom: []
+      groupName: 'Floor Tables'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      table_id:
+        custom: []
+        name: table_id
+        description: 'The ID of the table.'
+        required: true
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      table_id: 1
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      status:
+        custom: []
+        name: status
+        description: ''
+        required: true
+        example: free
+        type: string
+        enumValues:
+          - free
+          - occupied
+          - reserved
+          - unavailable
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      status: free
     fileParameters: []
     responses: []
     responseFields: []

@@ -1,0 +1,269 @@
+name: 'Payments & Billing'
+description: ''
+endpoints:
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: 'api/v1/orders/{order_id}/pay'
+    metadata:
+      custom: []
+      groupName: 'Payments & Billing'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      order_id:
+        custom: []
+        name: order_id
+        description: 'The ID of the order.'
+        required: true
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      order_id: 1
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      method:
+        custom: []
+        name: method
+        description: ''
+        required: true
+        example: cash
+        type: string
+        enumValues:
+          - cash
+          - card
+          - vodafone_cash
+          - instapay
+          - meeza
+          - valu
+          - split
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      amount:
+        custom: []
+        name: amount
+        description: 'Must be at least 0.'
+        required: true
+        example: 27
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      cash_tendered:
+        custom: []
+        name: cash_tendered
+        description: 'Must be at least 0.'
+        required: false
+        example: 39
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      discount_type:
+        custom: []
+        name: discount_type
+        description: ''
+        required: false
+        example: fixed
+        type: string
+        enumValues:
+          - percentage
+          - fixed
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      discount_value:
+        custom: []
+        name: discount_value
+        description: 'Must be at least 0.'
+        required: false
+        example: 84
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      discount_reason:
+        custom: []
+        name: discount_reason
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: z
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      reference:
+        custom: []
+        name: reference
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: m
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      splits:
+        custom: []
+        name: splits
+        description: 'This field is required when <code>method</code> is <code>split</code>. Must have at least 2 items.'
+        required: false
+        example: null
+        type: 'object[]'
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      loyalty_points:
+        custom: []
+        name: loyalty_points
+        description: 'Must be at least 1.'
+        required: false
+        example: 35
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      'splits[].method':
+        custom: []
+        name: 'splits[].method'
+        description: ''
+        required: true
+        example: valu
+        type: string
+        enumValues:
+          - cash
+          - card
+          - vodafone_cash
+          - instapay
+          - meeza
+          - valu
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'splits[].amount':
+        custom: []
+        name: 'splits[].amount'
+        description: 'Must be at least 0.01.'
+        required: true
+        example: 76
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      'splits[].reference':
+        custom: []
+        name: 'splits[].reference'
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: v
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      method: cash
+      amount: 27
+      cash_tendered: 39
+      discount_type: fixed
+      discount_value: 84
+      discount_reason: z
+      reference: m
+      loyalty_points: 35
+      splits:
+        -
+          method: valu
+          amount: 76
+          reference: v
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: 'api/v1/orders/{order_id}/refund'
+    metadata:
+      custom: []
+      groupName: 'Payments & Billing'
+      groupDescription: ''
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters:
+      order_id:
+        custom: []
+        name: order_id
+        description: 'The ID of the order.'
+        required: true
+        example: 1
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanUrlParameters:
+      order_id: 1
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      reason:
+        custom: []
+        name: reason
+        description: 'Must not be greater than 255 characters.'
+        required: false
+        example: b
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      reason: b
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null

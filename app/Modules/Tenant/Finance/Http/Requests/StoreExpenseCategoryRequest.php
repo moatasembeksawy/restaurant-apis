@@ -12,20 +12,27 @@ class StoreExpenseCategoryRequest extends ApiFormRequest
     /** @return array<string, mixed> */
     public function rules(): array
     {
+        $tenantId = $this->user()?->tenant_id;
+        $uniqueName = Rule::unique('expense_categories', 'name');
+        $uniqueCode = Rule::unique('expense_categories', 'code');
+
+        if ($tenantId !== null) {
+            $uniqueName->where('tenant_id', $tenantId);
+            $uniqueCode->where('tenant_id', $tenantId);
+        }
+
         return [
             'name' => [
                 'required',
                 'string',
                 'max:100',
-                Rule::unique('expense_categories', 'name')
-                    ->where('tenant_id', app('tenant')->id),
+                $uniqueName,
             ],
             'code' => [
                 'nullable',
                 'string',
                 'max:64',
-                Rule::unique('expense_categories', 'code')
-                    ->where('tenant_id', app('tenant')->id),
+                $uniqueCode,
             ],
         ];
     }

@@ -1,15 +1,212 @@
-name: 'Floor Tables'
-description: ''
+name: Authentication
+description: |-
+
+  All authentication endpoints. No tenant middleware required.
 endpoints:
   -
     custom: []
     httpMethods:
-      - GET
-    uri: api/v1/tables
+      - POST
+    uri: api/v1/auth/login
     metadata:
       custom: []
-      groupName: 'Floor Tables'
-      groupDescription: ''
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Login (manager / owner)'
+      description: |-
+        Authenticate with email and password. Returns a Sanctum Bearer token
+        scoped to the user's role abilities.
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address.'
+        required: true
+        example: gbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'Must be at least 8 characters.'
+        required: true
+        example: '+-0pBNvYgxwmi/#iw'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      device_name:
+        custom: []
+        name: device_name
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: u
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      email: gbailey@example.net
+      password: '+-0pBNvYgxwmi/#iw'
+      device_name: u
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/auth/forgot-password
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address.'
+        required: true
+        example: gbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      email: gbailey@example.net
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/auth/reset-password
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
+      subgroup: ''
+      subgroupDescription: ''
+      title: ''
+      description: ''
+      authenticated: true
+      deprecated: false
+    headers:
+      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      email:
+        custom: []
+        name: email
+        description: 'Must be a valid email address.'
+        required: true
+        example: gbailey@example.net
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      token:
+        custom: []
+        name: token
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      password:
+        custom: []
+        name: password
+        description: 'Must be at least 8 characters. Must not be greater than 100 characters.'
+        required: true
+        example: ']|{+-0pBNvYg'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+    cleanBodyParameters:
+      email: gbailey@example.net
+      token: architecto
+      password: ']|{+-0pBNvYg'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth:
+      - headers
+      - Authorization
+      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - GET
+    uri: api/v1/auth/verify-email
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
       subgroup: ''
       subgroupDescription: ''
       title: ''
@@ -30,8 +227,8 @@ endpoints:
     responses:
       -
         custom: []
-        status: 401
-        content: '{"errors":[{"message":"Unauthenticated.","code":"UNAUTHENTICATED"}]}'
+        status: 422
+        content: '{"errors":[{"message":"Invalid or expired verification link.","code":"EMAIL_VERIFICATION_FAILED"}]}'
         headers:
           cache-control: 'no-cache, private'
           content-type: application/json
@@ -49,19 +246,22 @@ endpoints:
     custom: []
     httpMethods:
       - POST
-    uri: api/v1/tables
+    uri: api/v1/auth/device/login
     metadata:
       custom: []
-      groupName: 'Floor Tables'
-      groupDescription: ''
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
       subgroup: ''
       subgroupDescription: ''
-      title: ''
-      description: ''
-      authenticated: true
+      title: 'Device login (waiter / cashier)'
+      description: |-
+        Authenticate with a branch-scoped PIN. Issues a 12-hour token.
+        Requires TenantMiddleware to have resolved the tenant first.
+      authenticated: false
       deprecated: false
     headers:
-      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
       Content-Type: application/json
       Accept: application/json
     urlParameters: []
@@ -80,75 +280,107 @@ endpoints:
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      name:
+      pin:
         custom: []
-        name: name
-        description: 'Must not be greater than 20 characters.'
+        name: pin
+        description: 'Must be 4 digits.'
         required: true
-        example: ngzmiyvdljnikhwa
+        example: '9775'
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: false
         deprecated: false
-      section:
+      device_name:
         custom: []
-        name: section
-        description: 'Must not be greater than 50 characters.'
+        name: device_name
+        description: 'Must not be greater than 100 characters.'
         required: false
-        example: 'y'
+        example: 'n'
         type: string
         enumValues: []
         exampleWasSpecified: false
         nullable: true
         deprecated: false
-      capacity:
-        custom: []
-        name: capacity
-        description: 'Must be at least 1. Must not be greater than 50.'
-        required: false
-        example: 18
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      position_x:
-        custom: []
-        name: position_x
-        description: 'Must be at least 0.'
-        required: false
-        example: 54
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      position_y:
-        custom: []
-        name: position_y
-        description: 'Must be at least 0.'
-        required: false
-        example: 38
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
     cleanBodyParameters:
       branch_id: 16
-      name: ngzmiyvdljnikhwa
-      section: 'y'
-      capacity: 18
-      position_x: 54
-      position_y: 38
+      pin: '9775'
+      device_name: 'n'
     fileParameters: []
     responses: []
     responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
+    auth: []
+    controller: null
+    method: null
+    route: null
+  -
+    custom: []
+    httpMethods:
+      - POST
+    uri: api/v1/auth/device/kitchen
+    metadata:
+      custom: []
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
+      subgroup: ''
+      subgroupDescription: ''
+      title: 'Kitchen display login'
+      description: |-
+        Creates a long-lived (1 year) read-only token for a kitchen display device.
+        Token abilities are limited to `kitchen:read` and `orders:read`.
+      authenticated: false
+      deprecated: false
+    headers:
+      Content-Type: application/json
+      Accept: application/json
+    urlParameters: []
+    cleanUrlParameters: []
+    queryParameters: []
+    cleanQueryParameters: []
+    bodyParameters:
+      branch_id:
+        custom: []
+        name: branch_id
+        description: ''
+        required: true
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      device_secret:
+        custom: []
+        name: device_secret
+        description: ''
+        required: true
+        example: architecto
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      device_name:
+        custom: []
+        name: device_name
+        description: 'Must not be greater than 100 characters.'
+        required: false
+        example: 'n'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+    cleanBodyParameters:
+      branch_id: 16
+      device_secret: architecto
+      device_name: 'n'
+    fileParameters: []
+    responses: []
+    responseFields: []
+    auth: []
     controller: null
     method: null
     route: null
@@ -156,35 +388,25 @@ endpoints:
     custom: []
     httpMethods:
       - GET
-    uri: 'api/v1/tables/{id}'
+    uri: api/v1/auth/me
     metadata:
       custom: []
-      groupName: 'Floor Tables'
-      groupDescription: ''
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
       subgroup: ''
       subgroupDescription: ''
-      title: ''
-      description: ''
+      title: 'Get authenticated user'
+      description: 'Returns the currently authenticated user, their role, and tenant info.'
       authenticated: true
       deprecated: false
     headers:
       Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
       Content-Type: application/json
       Accept: application/json
-    urlParameters:
-      id:
-        custom: []
-        name: id
-        description: 'The ID of the table.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      id: 1
+    urlParameters: []
+    cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -211,156 +433,26 @@ endpoints:
   -
     custom: []
     httpMethods:
-      - PUT
-      - PATCH
-    uri: 'api/v1/tables/{id}'
-    metadata:
-      custom: []
-      groupName: 'Floor Tables'
-      groupDescription: ''
-      subgroup: ''
-      subgroupDescription: ''
-      title: ''
-      description: ''
-      authenticated: true
-      deprecated: false
-    headers:
-      Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
-      Content-Type: application/json
-      Accept: application/json
-    urlParameters:
-      id:
-        custom: []
-        name: id
-        description: 'The ID of the table.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      id: 1
-    queryParameters: []
-    cleanQueryParameters: []
-    bodyParameters:
-      name:
-        custom: []
-        name: name
-        description: 'Must not be greater than 20 characters.'
-        required: false
-        example: bngzmiyvdljnikhw
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      section:
-        custom: []
-        name: section
-        description: 'Must not be greater than 50 characters.'
-        required: false
-        example: a
-        type: string
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: true
-        deprecated: false
-      capacity:
-        custom: []
-        name: capacity
-        description: 'Must be at least 1.'
-        required: false
-        example: 79
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      position_x:
-        custom: []
-        name: position_x
-        description: 'Must be at least 0.'
-        required: false
-        example: 62
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      position_y:
-        custom: []
-        name: position_y
-        description: 'Must be at least 0.'
-        required: false
-        example: 54
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-      is_active:
-        custom: []
-        name: is_active
-        description: ''
-        required: false
-        example: false
-        type: boolean
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      name: bngzmiyvdljnikhw
-      section: a
-      capacity: 79
-      position_x: 62
-      position_y: 54
-      is_active: false
-    fileParameters: []
-    responses: []
-    responseFields: []
-    auth:
-      - headers
-      - Authorization
-      - 'Bearer 6g43cv8PD1aE5beadkZfhV6'
-    controller: null
-    method: null
-    route: null
-  -
-    custom: []
-    httpMethods:
       - DELETE
-    uri: 'api/v1/tables/{id}'
+    uri: api/v1/auth/token
     metadata:
       custom: []
-      groupName: 'Floor Tables'
-      groupDescription: ''
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
       subgroup: ''
       subgroupDescription: ''
-      title: ''
-      description: ''
+      title: Logout
+      description: 'Revokes the current Bearer token. All other tokens remain valid.'
       authenticated: true
       deprecated: false
     headers:
       Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
       Content-Type: application/json
       Accept: application/json
-    urlParameters:
-      id:
-        custom: []
-        name: id
-        description: 'The ID of the table.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      id: 1
+    urlParameters: []
+    cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters: []
@@ -378,12 +470,14 @@ endpoints:
   -
     custom: []
     httpMethods:
-      - PATCH
-    uri: 'api/v1/tables/{table_id}/status'
+      - POST
+    uri: api/v1/auth/email/verification-notification
     metadata:
       custom: []
-      groupName: 'Floor Tables'
-      groupDescription: ''
+      groupName: Authentication
+      groupDescription: |-
+
+        All authentication endpoints. No tenant middleware required.
       subgroup: ''
       subgroupDescription: ''
       title: ''
@@ -394,40 +488,12 @@ endpoints:
       Authorization: 'Bearer {YOUR_BEARER_TOKEN}'
       Content-Type: application/json
       Accept: application/json
-    urlParameters:
-      table_id:
-        custom: []
-        name: table_id
-        description: 'The ID of the table.'
-        required: true
-        example: 1
-        type: integer
-        enumValues: []
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanUrlParameters:
-      table_id: 1
+    urlParameters: []
+    cleanUrlParameters: []
     queryParameters: []
     cleanQueryParameters: []
-    bodyParameters:
-      status:
-        custom: []
-        name: status
-        description: ''
-        required: true
-        example: occupied
-        type: string
-        enumValues:
-          - free
-          - occupied
-          - reserved
-          - unavailable
-        exampleWasSpecified: false
-        nullable: false
-        deprecated: false
-    cleanBodyParameters:
-      status: occupied
+    bodyParameters: []
+    cleanBodyParameters: []
     fileParameters: []
     responses: []
     responseFields: []
