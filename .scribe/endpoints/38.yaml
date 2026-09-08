@@ -85,7 +85,7 @@ endpoints:
         name: locale
         description: ''
         required: false
-        example: ar
+        example: en
         type: string
         enumValues:
           - ar
@@ -137,13 +137,54 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
+      tax_rate:
+        custom: []
+        name: tax_rate
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 15
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      service_charge_rate:
+        custom: []
+        name: service_charge_rate
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 8
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      service_charge_applies_to:
+        custom: []
+        name: service_charge_applies_to
+        description: ''
+        required: false
+        example:
+          - dine_in
+        type: 'string[]'
+        enumValues:
+          - dine_in
+          - takeaway
+          - delivery
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
     cleanBodyParameters:
       name: b
-      locale: ar
+      locale: en
       custom_domain: 'n'
       whatsapp_phone_number_id: g
       talabat_webhook_secret: z
       elmenus_webhook_secret: m
+      tax_rate: 15
+      service_charge_rate: 8
+      service_charge_applies_to:
+        - dine_in
     fileParameters: []
     responses: []
     responseFields: []

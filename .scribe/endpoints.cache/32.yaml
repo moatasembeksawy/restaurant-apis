@@ -126,12 +126,53 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
+      tax_rate:
+        custom: []
+        name: tax_rate
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 24
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      service_charge_rate:
+        custom: []
+        name: service_charge_rate
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 8
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      service_charge_applies_to:
+        custom: []
+        name: service_charge_applies_to
+        description: ''
+        required: false
+        example:
+          - dine_in
+        type: 'string[]'
+        enumValues:
+          - dine_in
+          - takeaway
+          - delivery
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
     cleanBodyParameters:
       name: b
       name_ar: 'n'
       address: g
       phone: zmiyvdljnikhwayk
       timezone: Pacific/Tarawa
+      tax_rate: 24
+      service_charge_rate: 8
+      service_charge_applies_to:
+        - dine_in
     fileParameters: []
     responses: []
     responseFields: []
@@ -238,9 +279,46 @@ endpoints:
         name: is_active
         description: ''
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      tax_rate:
+        custom: []
+        name: tax_rate
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 24
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      service_charge_rate:
+        custom: []
+        name: service_charge_rate
+        description: 'Must be at least 0. Must not be greater than 100.'
+        required: false
+        example: 8
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      service_charge_applies_to:
+        custom: []
+        name: service_charge_applies_to
+        description: ''
+        required: false
+        example:
+          - takeaway
+        type: 'string[]'
+        enumValues:
+          - dine_in
+          - takeaway
+          - delivery
         exampleWasSpecified: false
         nullable: false
         deprecated: false
@@ -250,7 +328,11 @@ endpoints:
       address: g
       phone: zmiyvdljnikhwayk
       timezone: Pacific/Tarawa
-      is_active: true
+      is_active: false
+      tax_rate: 24
+      service_charge_rate: 8
+      service_charge_applies_to:
+        - takeaway
     fileParameters: []
     responses: []
     responseFields: []

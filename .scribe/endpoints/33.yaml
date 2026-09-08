@@ -52,7 +52,7 @@ endpoints:
         name: date
         description: 'Must be a valid date.'
         required: false
-        example: '2026-09-07T09:24:31'
+        example: '2026-09-08T20:35:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -61,7 +61,7 @@ endpoints:
     cleanBodyParameters:
       branch_id: 16
       user_id: 16
-      date: '2026-09-07T09:24:31'
+      date: '2026-09-08T20:35:59'
     fileParameters: []
     responses:
       -

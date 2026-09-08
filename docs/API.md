@@ -1718,6 +1718,7 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.).
 | `fulfillment_type` | `nullable, in:dine_in,takeaway,delivery` |
 | `notes` | `nullable, string` |
 | `delivery_address` | `nullable, string, max:500` |
+| `delivery_fee` | `nullable, numeric, min:0` |
 | `customer_id` | `nullable, integer, exists:customers,id` |
 | `items` | `required, array, min:1` |
 | `items.*.menu_item_id` | `required, integer` |
@@ -1732,6 +1733,7 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.).
     "fulfillment_type": "dine_in",
     "notes": "بدون بصل",
     "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
+    "delivery_fee": 15.5,
     "customer_id": "{{customer_id}}",
     "items": [
         {
@@ -1774,11 +1776,23 @@ Update — orders/{order}
 
 | Parameter | Rules |
 |-----------|-------|
+| `floor_table_id` | `nullable, integer` |
+| `channel` | `sometimes, in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `fulfillment_type` | `sometimes, in:dine_in,takeaway,delivery` |
 | `notes` | `nullable, string` |
+| `delivery_address` | `nullable, string, max:500` |
+| `delivery_fee` | `nullable, numeric, min:0` |
+| `customer_id` | `nullable, integer, exists:customers,id` |
 
 ```json
 {
-    "notes": "بدون بصل"
+    "floor_table_id": "{{table_id}}",
+    "channel": "dine_in",
+    "fulfillment_type": "dine_in",
+    "notes": "بدون بصل",
+    "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
+    "delivery_fee": 15.5,
+    "customer_id": "{{customer_id}}"
 }
 ```
 
@@ -1797,11 +1811,23 @@ Update — orders/{order}
 
 | Parameter | Rules |
 |-----------|-------|
+| `floor_table_id` | `nullable, integer` |
+| `channel` | `sometimes, in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `fulfillment_type` | `sometimes, in:dine_in,takeaway,delivery` |
 | `notes` | `nullable, string` |
+| `delivery_address` | `nullable, string, max:500` |
+| `delivery_fee` | `nullable, numeric, min:0` |
+| `customer_id` | `nullable, integer, exists:customers,id` |
 
 ```json
 {
-    "notes": "بدون بصل"
+    "floor_table_id": "{{table_id}}",
+    "channel": "dine_in",
+    "fulfillment_type": "dine_in",
+    "notes": "بدون بصل",
+    "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
+    "delivery_fee": 15.5,
+    "customer_id": "{{customer_id}}"
 }
 ```
 
@@ -2817,6 +2843,10 @@ Store — branches
 | `address` | `nullable, string, max:255` |
 | `phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
+| `tax_rate` | `nullable, numeric, min:0, max:100` |
+| `service_charge_rate` | `nullable, numeric, min:0, max:100` |
+| `service_charge_applies_to` | `nullable, array` |
+| `service_charge_applies_to.*` | `in:dine_in,takeaway,delivery` |
 
 ```json
 {
@@ -2824,7 +2854,12 @@ Store — branches
     "name_ar": "كشري",
     "address": "منطقة المعادي، القاهرة",
     "phone": "+201012345678",
-    "timezone": "Africa/Cairo"
+    "timezone": "Africa/Cairo",
+    "tax_rate": 14,
+    "service_charge_rate": 12,
+    "service_charge_applies_to": [
+        "dine_in"
+    ]
 }
 ```
 
@@ -2849,6 +2884,10 @@ Update — branches/{branch}
 | `phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
 | `is_active` | `sometimes, boolean` |
+| `tax_rate` | `nullable, numeric, min:0, max:100` |
+| `service_charge_rate` | `nullable, numeric, min:0, max:100` |
+| `service_charge_applies_to` | `nullable, array` |
+| `service_charge_applies_to.*` | `in:dine_in,takeaway,delivery` |
 
 ```json
 {
@@ -2857,7 +2896,12 @@ Update — branches/{branch}
     "address": "منطقة المعادي، القاهرة",
     "phone": "+201012345678",
     "timezone": "Africa/Cairo",
-    "is_active": true
+    "is_active": true,
+    "tax_rate": 14,
+    "service_charge_rate": 12,
+    "service_charge_applies_to": [
+        "dine_in"
+    ]
 }
 ```
 
@@ -2908,10 +2952,16 @@ Store — expense-categories
 
 **Request body**
 
-_None_
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `required, string, max:100, unique:expense_categories,name,NULL,id` |
+| `code` | `nullable, string, max:64, unique:expense_categories,code,NULL,id` |
 
 ```json
-{}
+{
+    "name": "Downtown Branch",
+    "code": "مثال"
+}
 ```
 
 ---
@@ -3113,6 +3163,10 @@ Update — settings
 | `whatsapp_phone_number_id` | `nullable, string, max:50` |
 | `talabat_webhook_secret` | `nullable, string, max:255` |
 | `elmenus_webhook_secret` | `nullable, string, max:255` |
+| `tax_rate` | `sometimes, numeric, min:0, max:100` |
+| `service_charge_rate` | `sometimes, numeric, min:0, max:100` |
+| `service_charge_applies_to` | `sometimes, array` |
+| `service_charge_applies_to.*` | `in:dine_in,takeaway,delivery` |
 
 ```json
 {
@@ -3121,7 +3175,12 @@ Update — settings
     "custom_domain": "menu.nilerestaurant.com",
     "whatsapp_phone_number_id": "+201012345678",
     "talabat_webhook_secret": "kitchen-secret-12345678",
-    "elmenus_webhook_secret": "kitchen-secret-12345678"
+    "elmenus_webhook_secret": "kitchen-secret-12345678",
+    "tax_rate": 14,
+    "service_charge_rate": 12,
+    "service_charge_applies_to": [
+        "dine_in"
+    ]
 }
 ```
 

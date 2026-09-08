@@ -121,7 +121,7 @@ endpoints:
         name: role
         description: ''
         required: true
-        example: cook
+        example: waiter
         type: string
         enumValues:
           - manager
@@ -169,7 +169,7 @@ endpoints:
       name: b
       email: zbailey@example.net
       phone: iyvdljnikhwaykcm
-      role: cook
+      role: waiter
       branch_id: 16
       password: ']|{+-0pBNvYg'
       pin: '5642'
@@ -313,7 +313,7 @@ endpoints:
         name: role
         description: ''
         required: false
-        example: cashier
+        example: manager
         type: string
         enumValues:
           - manager
@@ -362,7 +362,7 @@ endpoints:
         name: is_active
         description: ''
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -372,11 +372,11 @@ endpoints:
       name: b
       email: zbailey@example.net
       phone: iyvdljnikhwaykcm
-      role: cashier
+      role: manager
       branch_id: 16
       password: ']|{+-0pBNvYg'
       pin: '5642'
-      is_active: true
+      is_active: false
     fileParameters: []
     responses: []
     responseFields: []

@@ -56,6 +56,23 @@ it('allows multiple branches on enterprise plan', function (): void {
     expect(Branch::query()->count())->toBe(2);
 });
 
+it('allows a branch to override tenant tax settings', function (): void {
+    $this->tenant->update(['plan' => 'enterprise', 'tax_rate' => 14, 'service_charge_rate' => 12]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/branches/{$this->branch->id}", [
+            'tax_rate' => 0,
+            'service_charge_rate' => 10,
+            'service_charge_applies_to' => ['dine_in', 'takeaway'],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.tax_rate', '0.00')
+        ->assertJsonPath('data.effective_tax_rate', 0)
+        ->assertJsonPath('data.effective_service_charge_rate', 10);
+
+    expect((float) $this->branch->fresh()->tax_rate)->toBe(0.0);
+});
+
 it('forbids cashiers from creating branches', function (): void {
     $this->tenant->update(['plan' => 'enterprise']);
 

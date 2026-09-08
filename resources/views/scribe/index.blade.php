@@ -868,7 +868,7 @@
     </ul>
 
     <ul class="toc-footer" id="last-updated">
-        <li>Last updated: September 7, 2026</li>
+        <li>Last updated: September 8, 2026</li>
     </ul>
 </div>
 
@@ -2675,7 +2675,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"name_ar\": \"n\",
     \"address\": \"g\",
     \"phone\": \"zmiyvdljnikhwayk\",
-    \"timezone\": \"Pacific\\/Tarawa\"
+    \"timezone\": \"Pacific\\/Tarawa\",
+    \"tax_rate\": 24,
+    \"service_charge_rate\": 8,
+    \"service_charge_applies_to\": [
+        \"dine_in\"
+    ]
 }"
 </code></pre></div>
 
@@ -2696,7 +2701,12 @@ let body = {
     "name_ar": "n",
     "address": "g",
     "phone": "zmiyvdljnikhwayk",
-    "timezone": "Pacific\/Tarawa"
+    "timezone": "Pacific\/Tarawa",
+    "tax_rate": 24,
+    "service_charge_rate": 8,
+    "service_charge_applies_to": [
+        "dine_in"
+    ]
 };
 
 fetch(url, {
@@ -2853,6 +2863,46 @@ You can check the Dev Tools console for debugging information.</code></pre>
     <br>
 <p>Must be a valid time zone, such as <code>Africa/Accra</code>. Example: <code>Pacific/Tarawa</code></p>
         </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>tax_rate</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="tax_rate"                data-endpoint="POSTapi-v1-branches"
+               value="24"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Must not be greater than 100. Example: <code>24</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>service_charge_rate</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="service_charge_rate"                data-endpoint="POSTapi-v1-branches"
+               value="8"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Must not be greater than 100. Example: <code>8</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>service_charge_applies_to</code></b>&nbsp;&nbsp;
+<small>string[]</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="service_charge_applies_to[0]"                data-endpoint="POSTapi-v1-branches"
+               data-component="body">
+        <input type="text" style="display: none"
+               name="service_charge_applies_to[1]"                data-endpoint="POSTapi-v1-branches"
+               data-component="body">
+    <br>
+
+Must be one of:
+<ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>takeaway</code></li> <li><code>delivery</code></li></ul>
+        </div>
         </form>
 
                     <h2 id="branches-PATCHapi-v1-branches--branch_id-">PATCH api/v1/branches/{branch_id}</h2>
@@ -2879,7 +2929,12 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"address\": \"g\",
     \"phone\": \"zmiyvdljnikhwayk\",
     \"timezone\": \"Pacific\\/Tarawa\",
-    \"is_active\": true
+    \"is_active\": false,
+    \"tax_rate\": 24,
+    \"service_charge_rate\": 8,
+    \"service_charge_applies_to\": [
+        \"takeaway\"
+    ]
 }"
 </code></pre></div>
 
@@ -2901,7 +2956,12 @@ let body = {
     "address": "g",
     "phone": "zmiyvdljnikhwayk",
     "timezone": "Pacific\/Tarawa",
-    "is_active": true
+    "is_active": false,
+    "tax_rate": 24,
+    "service_charge_rate": 8,
+    "service_charge_applies_to": [
+        "takeaway"
+    ]
 };
 
 fetch(url, {
@@ -3091,7 +3151,47 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>tax_rate</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="tax_rate"                data-endpoint="PATCHapi-v1-branches--branch_id-"
+               value="24"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Must not be greater than 100. Example: <code>24</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>service_charge_rate</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="service_charge_rate"                data-endpoint="PATCHapi-v1-branches--branch_id-"
+               value="8"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Must not be greater than 100. Example: <code>8</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>service_charge_applies_to</code></b>&nbsp;&nbsp;
+<small>string[]</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="service_charge_applies_to[0]"                data-endpoint="PATCHapi-v1-branches--branch_id-"
+               data-component="body">
+        <input type="text" style="display: none"
+               name="service_charge_applies_to[1]"                data-endpoint="PATCHapi-v1-branches--branch_id-"
+               data-component="body">
+    <br>
+
+Must be one of:
+<ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>takeaway</code></li> <li><code>delivery</code></li></ul>
         </div>
         </form>
 
@@ -4598,7 +4698,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"plan\": \"growth\",
+    \"plan\": \"enterprise\",
     \"gateway\": \"paymob\"
 }"
 </code></pre></div>
@@ -4616,7 +4716,7 @@ const headers = {
 };
 
 let body = {
-    "plan": "growth",
+    "plan": "enterprise",
     "gateway": "paymob"
 };
 
@@ -4721,10 +4821,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="plan"                data-endpoint="POSTapi-v1-subscription-upgrade"
-               value="growth"
+               value="enterprise"
                data-component="body">
     <br>
-<p>Example: <code>growth</code></p>
+<p>Example: <code>enterprise</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>starter</code></li> <li><code>growth</code></li> <li><code>pro</code></li> <li><code>enterprise</code></li></ul>
         </div>
@@ -6231,9 +6331,9 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"branch_id\": 16,
     \"expense_category_id\": 16,
     \"status\": \"approved\",
-    \"payment_method\": \"wallet\",
-    \"from\": \"2026-09-07T09:24:31\",
-    \"to\": \"2052-09-30\",
+    \"payment_method\": \"card\",
+    \"from\": \"2026-09-08T20:35:59\",
+    \"to\": \"2052-10-01\",
     \"per_page\": 22
 }"
 </code></pre></div>
@@ -6254,9 +6354,9 @@ let body = {
     "branch_id": 16,
     "expense_category_id": 16,
     "status": "approved",
-    "payment_method": "wallet",
-    "from": "2026-09-07T09:24:31",
-    "to": "2052-09-30",
+    "payment_method": "card",
+    "from": "2026-09-08T20:35:59",
+    "to": "2052-10-01",
     "per_page": 22
 };
 
@@ -6420,10 +6520,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="payment_method"                data-endpoint="GETapi-v1-expenses"
-               value="wallet"
+               value="card"
                data-component="body">
     <br>
-<p>Example: <code>wallet</code></p>
+<p>Example: <code>card</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>cash</code></li> <li><code>card</code></li> <li><code>bank_transfer</code></li> <li><code>wallet</code></li></ul>
         </div>
@@ -6434,10 +6534,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="from"                data-endpoint="GETapi-v1-expenses"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>to</code></b>&nbsp;&nbsp;
@@ -6446,10 +6546,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="to"                data-endpoint="GETapi-v1-expenses"
-               value="2052-09-30"
+               value="2052-10-01"
                data-component="body">
     <br>
-<p>Must be a valid date. Must be a date after or equal to <code>from</code>. Example: <code>2052-09-30</code></p>
+<p>Must be a valid date. Must be a date after or equal to <code>from</code>. Example: <code>2052-10-01</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
@@ -6486,10 +6586,10 @@ Must be one of:
     --data "{
     \"branch_id\": 16,
     \"expense_category_id\": 16,
-    \"status\": \"voided\",
+    \"status\": \"pending\",
     \"payment_method\": \"cash\",
-    \"from\": \"2026-09-07T09:24:31\",
-    \"to\": \"2052-09-30\",
+    \"from\": \"2026-09-08T20:35:59\",
+    \"to\": \"2052-10-01\",
     \"per_page\": 22
 }"
 </code></pre></div>
@@ -6509,10 +6609,10 @@ const headers = {
 let body = {
     "branch_id": 16,
     "expense_category_id": 16,
-    "status": "voided",
+    "status": "pending",
     "payment_method": "cash",
-    "from": "2026-09-07T09:24:31",
-    "to": "2052-09-30",
+    "from": "2026-09-08T20:35:59",
+    "to": "2052-10-01",
     "per_page": 22
 };
 
@@ -6662,10 +6762,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="GETapi-v1-expenses-summary"
-               value="voided"
+               value="pending"
                data-component="body">
     <br>
-<p>Example: <code>voided</code></p>
+<p>Example: <code>pending</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>pending</code></li> <li><code>approved</code></li> <li><code>voided</code></li></ul>
         </div>
@@ -6690,10 +6790,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="from"                data-endpoint="GETapi-v1-expenses-summary"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>to</code></b>&nbsp;&nbsp;
@@ -6702,10 +6802,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="to"                data-endpoint="GETapi-v1-expenses-summary"
-               value="2052-09-30"
+               value="2052-10-01"
                data-component="body">
     <br>
-<p>Must be a valid date. Must be a date after or equal to <code>from</code>. Example: <code>2052-09-30</code></p>
+<p>Must be a valid date. Must be a date after or equal to <code>from</code>. Example: <code>2052-10-01</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>per_page</code></b>&nbsp;&nbsp;
@@ -6908,7 +7008,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"description\": \"Velit et fugiat sunt nihil accusantium.\",
     \"reference\": \"n\",
     \"receipt_path\": \"i\",
-    \"expense_date\": \"2026-09-07T09:24:31\"
+    \"expense_date\": \"2026-09-08T20:35:59\"
 }"
 </code></pre></div>
 
@@ -6933,7 +7033,7 @@ let body = {
     "description": "Velit et fugiat sunt nihil accusantium.",
     "reference": "n",
     "receipt_path": "i",
-    "expense_date": "2026-09-07T09:24:31"
+    "expense_date": "2026-09-08T20:35:59"
 };
 
 fetch(url, {
@@ -7135,10 +7235,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="expense_date"                data-endpoint="POSTapi-v1-expenses"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
         </form>
 
@@ -8028,7 +8128,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"capacity\": 79,
     \"position_x\": 62,
     \"position_y\": 54,
-    \"is_active\": false
+    \"is_active\": true
 }"
 </code></pre></div>
 
@@ -8050,7 +8150,7 @@ let body = {
     "capacity": 79,
     "position_x": 62,
     "position_y": 54,
-    "is_active": false
+    "is_active": true
 };
 
 fetch(url, {
@@ -8244,7 +8344,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
         </form>
 
@@ -8573,8 +8673,8 @@ Must be one of:
     --header "Accept: application/json" \
     --data "{
     \"branch_id\": 16,
-    \"week_start\": \"2026-09-07T09:24:31\",
-    \"narrative\": true
+    \"week_start\": \"2026-09-08T20:35:59\",
+    \"narrative\": false
 }"
 </code></pre></div>
 
@@ -8592,8 +8692,8 @@ const headers = {
 
 let body = {
     "branch_id": 16,
-    "week_start": "2026-09-07T09:24:31",
-    "narrative": true
+    "week_start": "2026-09-08T20:35:59",
+    "narrative": false
 };
 
 fetch(url, {
@@ -8730,10 +8830,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="week_start"                data-endpoint="GETapi-v1-reports-ai-summary"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>narrative</code></b>&nbsp;&nbsp;
@@ -8755,7 +8855,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
         </div>
         </form>
 
@@ -8783,8 +8883,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"branch_id\": 16,
-    \"start_date\": \"2026-09-07T09:24:31\",
-    \"end_date\": \"2052-09-30\"
+    \"start_date\": \"2026-09-08T20:35:59\",
+    \"end_date\": \"2052-10-01\"
 }"
 </code></pre></div>
 
@@ -8802,8 +8902,8 @@ const headers = {
 
 let body = {
     "branch_id": 16,
-    "start_date": "2026-09-07T09:24:31",
-    "end_date": "2052-09-30"
+    "start_date": "2026-09-08T20:35:59",
+    "end_date": "2052-10-01"
 };
 
 fetch(url, {
@@ -8940,10 +9040,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="GETapi-v1-analytics-aggregators"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -8952,10 +9052,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="GETapi-v1-analytics-aggregators"
-               value="2052-09-30"
+               value="2052-10-01"
                data-component="body">
     <br>
-<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-09-30</code></p>
+<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-10-01</code></p>
         </div>
         </form>
 
@@ -10246,7 +10346,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"branch_id\": 16,
     \"name_ar\": \"n\",
     \"name_en\": \"g\",
-    \"unit\": \"kg\",
+    \"unit\": \"piece\",
     \"current_stock\": 12,
     \"reorder_level\": 77,
     \"unit_cost\": 8
@@ -10269,7 +10369,7 @@ let body = {
     "branch_id": 16,
     "name_ar": "n",
     "name_en": "g",
-    "unit": "kg",
+    "unit": "piece",
     "current_stock": 12,
     "reorder_level": 77,
     "unit_cost": 8
@@ -10412,10 +10512,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="unit"                data-endpoint="POSTapi-v1-inventory-ingredients"
-               value="kg"
+               value="piece"
                data-component="body">
     <br>
-<p>Example: <code>kg</code></p>
+<p>Example: <code>piece</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>kg</code></li> <li><code>g</code></li> <li><code>l</code></li> <li><code>ml</code></li> <li><code>piece</code></li></ul>
         </div>
@@ -10478,7 +10578,7 @@ Must be one of:
     --data "{
     \"name_ar\": \"b\",
     \"name_en\": \"n\",
-    \"unit\": \"l\",
+    \"unit\": \"kg\",
     \"reorder_level\": 84,
     \"is_active\": false
 }"
@@ -10499,7 +10599,7 @@ const headers = {
 let body = {
     "name_ar": "b",
     "name_en": "n",
-    "unit": "l",
+    "unit": "kg",
     "reorder_level": 84,
     "is_active": false
 };
@@ -10642,10 +10742,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="unit"                data-endpoint="PATCHapi-v1-inventory-ingredients--ingredient_id-"
-               value="l"
+               value="kg"
                data-component="body">
     <br>
-<p>Example: <code>l</code></p>
+<p>Example: <code>kg</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>kg</code></li> <li><code>g</code></li> <li><code>l</code></li> <li><code>ml</code></li> <li><code>piece</code></li></ul>
         </div>
@@ -13089,7 +13189,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"ingredient_id\": 16,
-    \"type\": \"adjustment\",
+    \"type\": \"waste\",
     \"per_page\": 22,
     \"page\": 67
 }"
@@ -13109,7 +13209,7 @@ const headers = {
 
 let body = {
     "ingredient_id": 16,
-    "type": "adjustment",
+    "type": "waste",
     "per_page": 22,
     "page": 67
 };
@@ -13248,10 +13348,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="GETapi-v1-inventory-movements"
-               value="adjustment"
+               value="waste"
                data-component="body">
     <br>
-<p>Example: <code>adjustment</code></p>
+<p>Example: <code>waste</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>purchase</code></li> <li><code>waste</code></li> <li><code>adjustment</code></li></ul>
         </div>
@@ -13301,11 +13401,11 @@ Must be one of:
     --header "Accept: application/json" \
     --data "{
     \"ingredient_id\": 16,
-    \"type\": \"waste\",
+    \"type\": \"adjustment\",
     \"quantity\": 39,
     \"unit_cost\": 84,
     \"notes\": \"z\",
-    \"direction\": \"out\"
+    \"direction\": \"in\"
 }"
 </code></pre></div>
 
@@ -13323,11 +13423,11 @@ const headers = {
 
 let body = {
     "ingredient_id": 16,
-    "type": "waste",
+    "type": "adjustment",
     "quantity": 39,
     "unit_cost": 84,
     "notes": "z",
-    "direction": "out"
+    "direction": "in"
 };
 
 fetch(url, {
@@ -13443,10 +13543,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-v1-inventory-movements"
-               value="waste"
+               value="adjustment"
                data-component="body">
     <br>
-<p>Example: <code>waste</code></p>
+<p>Example: <code>adjustment</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>purchase</code></li> <li><code>waste</code></li> <li><code>adjustment</code></li></ul>
         </div>
@@ -13493,10 +13593,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="direction"                data-endpoint="POSTapi-v1-inventory-movements"
-               value="out"
+               value="in"
                data-component="body">
     <br>
-<p>Example: <code>out</code></p>
+<p>Example: <code>in</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>in</code></li> <li><code>out</code></li></ul>
         </div>
@@ -14577,7 +14677,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"printer_ids\": [
         16
     ],
-    \"is_active\": false
+    \"is_active\": true
 }"
 </code></pre></div>
 
@@ -14599,7 +14699,7 @@ let body = {
     "printer_ids": [
         16
     ],
-    "is_active": false
+    "is_active": true
 };
 
 fetch(url, {
@@ -14754,7 +14854,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
         </form>
 
@@ -14781,7 +14881,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"printer_ids\": [
         16
     ],
-    \"is_active\": false
+    \"is_active\": true
 }"
 </code></pre></div>
 
@@ -14802,7 +14902,7 @@ let body = {
     "printer_ids": [
         16
     ],
-    "is_active": false
+    "is_active": true
 };
 
 fetch(url, {
@@ -14958,7 +15058,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
         </form>
 
@@ -16609,7 +16709,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"description_ar\": \"architecto\",
     \"price\": 39,
     \"cost_price\": 84,
-    \"is_available\": false,
+    \"is_available\": true,
     \"preparation_time\": 66,
     \"sort_order\": 77,
     \"category_id\": 16
@@ -16634,7 +16734,7 @@ let body = {
     "description_ar": "architecto",
     "price": 39,
     "cost_price": 84,
-    "is_available": false,
+    "is_available": true,
     "preparation_time": 66,
     "sort_order": 77,
     "category_id": 16
@@ -16831,7 +16931,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>preparation_time</code></b>&nbsp;&nbsp;
@@ -17167,7 +17267,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Authorization: Bearer {YOUR_BEARER_TOKEN}" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "photo=@/tmp/phpShqcCi" </code></pre></div>
+    --form "photo=@/tmp/phpTwAarE" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -17301,7 +17401,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be an image. Must not be greater than 5120 kilobytes. Example: <code>/tmp/phpShqcCi</code></p>
+<p>Must be an image. Must not be greater than 5120 kilobytes. Example: <code>/tmp/phpTwAarE</code></p>
         </div>
         </form>
 
@@ -17467,8 +17567,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"start_date\": \"2026-09-07T09:24:31\",
-    \"end_date\": \"2052-09-30\"
+    \"start_date\": \"2026-09-08T20:35:59\",
+    \"end_date\": \"2052-10-01\"
 }"
 </code></pre></div>
 
@@ -17485,8 +17585,8 @@ const headers = {
 };
 
 let body = {
-    "start_date": "2026-09-07T09:24:31",
-    "end_date": "2052-09-30"
+    "start_date": "2026-09-08T20:35:59",
+    "end_date": "2052-10-01"
 };
 
 fetch(url, {
@@ -17611,10 +17711,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="GETapi-v1-reports-branches-compare"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -17623,10 +17723,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="GETapi-v1-reports-branches-compare"
-               value="2052-09-30"
+               value="2052-10-01"
                data-component="body">
     <br>
-<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-09-30</code></p>
+<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-10-01</code></p>
         </div>
         </form>
 
@@ -17655,7 +17755,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"restaurant_name\": \"b\",
     \"subdomain\": \"n\",
-    \"locale\": \"ar\",
+    \"locale\": \"en\",
     \"owner_name\": \"g\",
     \"owner_email\": \"rowan.gulgowski@example.com\",
     \"owner_password\": \"d\",
@@ -17684,7 +17784,7 @@ const headers = {
 let body = {
     "restaurant_name": "b",
     "subdomain": "n",
-    "locale": "ar",
+    "locale": "en",
     "owner_name": "g",
     "owner_email": "rowan.gulgowski@example.com",
     "owner_password": "d",
@@ -17822,10 +17922,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="locale"                data-endpoint="POSTapi-v1-onboarding-register"
-               value="ar"
+               value="en"
                data-component="body">
     <br>
-<p>Example: <code>ar</code></p>
+<p>Example: <code>en</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>ar</code></li> <li><code>en</code></li></ul>
         </div>
@@ -18468,10 +18568,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"status\": \"cancelled\",
+    \"status\": \"ready\",
     \"branch_id\": 16,
     \"table_id\": 16,
-    \"channel\": \"elmenus\",
+    \"channel\": \"qr\",
     \"fulfillment_type\": \"dine_in\",
     \"per_page\": 22,
     \"page\": 67
@@ -18491,10 +18591,10 @@ const headers = {
 };
 
 let body = {
-    "status": "cancelled",
+    "status": "ready",
     "branch_id": 16,
     "table_id": 16,
-    "channel": "elmenus",
+    "channel": "qr",
     "fulfillment_type": "dine_in",
     "per_page": 22,
     "page": 67
@@ -18622,10 +18722,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="GETapi-v1-orders"
-               value="cancelled"
+               value="ready"
                data-component="body">
     <br>
-<p>Example: <code>cancelled</code></p>
+<p>Example: <code>ready</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>active</code></li> <li><code>cooking</code></li> <li><code>ready</code></li> <li><code>completed</code></li> <li><code>paid</code></li> <li><code>cancelled</code></li></ul>
         </div>
@@ -18660,10 +18760,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="channel"                data-endpoint="GETapi-v1-orders"
-               value="elmenus"
+               value="qr"
                data-component="body">
     <br>
-<p>Example: <code>elmenus</code></p>
+<p>Example: <code>qr</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>qr</code></li> <li><code>whatsapp</code></li> <li><code>talabat</code></li> <li><code>elmenus</code></li> <li><code>own_delivery</code></li></ul>
         </div>
@@ -18888,10 +18988,11 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"branch_id\": 16,
     \"floor_table_id\": 16,
-    \"channel\": \"whatsapp\",
-    \"fulfillment_type\": \"delivery\",
+    \"channel\": \"dine_in\",
+    \"fulfillment_type\": \"dine_in\",
     \"notes\": \"architecto\",
     \"delivery_address\": \"n\",
+    \"delivery_fee\": 84,
     \"customer_id\": 16,
     \"items\": [
         {
@@ -18918,10 +19019,11 @@ const headers = {
 let body = {
     "branch_id": 16,
     "floor_table_id": 16,
-    "channel": "whatsapp",
-    "fulfillment_type": "delivery",
+    "channel": "dine_in",
+    "fulfillment_type": "dine_in",
     "notes": "architecto",
     "delivery_address": "n",
+    "delivery_fee": 84,
     "customer_id": 16,
     "items": [
         {
@@ -19057,10 +19159,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="channel"                data-endpoint="POSTapi-v1-orders"
-               value="whatsapp"
+               value="dine_in"
                data-component="body">
     <br>
-<p>Example: <code>whatsapp</code></p>
+<p>Example: <code>dine_in</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>qr</code></li> <li><code>whatsapp</code></li> <li><code>talabat</code></li> <li><code>elmenus</code></li> <li><code>own_delivery</code></li></ul>
         </div>
@@ -19071,10 +19173,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="fulfillment_type"                data-endpoint="POSTapi-v1-orders"
-               value="delivery"
+               value="dine_in"
                data-component="body">
     <br>
-<p>Example: <code>delivery</code></p>
+<p>Example: <code>dine_in</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>takeaway</code></li> <li><code>delivery</code></li></ul>
         </div>
@@ -19103,6 +19205,18 @@ Must be one of:
 <p>Must not be greater than 500 characters. Example: <code>n</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>delivery_fee</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="delivery_fee"                data-endpoint="POSTapi-v1-orders"
+               value="84"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Example: <code>84</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>customer_id</code></b>&nbsp;&nbsp;
 <small>integer</small>&nbsp;
 <i>optional</i> &nbsp;
@@ -19112,7 +19226,7 @@ Must be one of:
                value="16"
                data-component="body">
     <br>
-<p>Example: <code>16</code></p>
+<p>Must match an existing stored value. Example: <code>16</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
         <details>
@@ -19183,7 +19297,13 @@ Must be one of:
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"notes\": \"architecto\"
+    \"floor_table_id\": 16,
+    \"channel\": \"talabat\",
+    \"fulfillment_type\": \"takeaway\",
+    \"notes\": \"architecto\",
+    \"delivery_address\": \"n\",
+    \"delivery_fee\": 84,
+    \"customer_id\": 16
 }"
 </code></pre></div>
 
@@ -19200,7 +19320,13 @@ const headers = {
 };
 
 let body = {
-    "notes": "architecto"
+    "floor_table_id": 16,
+    "channel": "talabat",
+    "fulfillment_type": "takeaway",
+    "notes": "architecto",
+    "delivery_address": "n",
+    "delivery_fee": 84,
+    "customer_id": 16
 };
 
 fetch(url, {
@@ -19315,6 +19441,46 @@ You can check the Dev Tools console for debugging information.</code></pre>
             </div>
                             <h4 class="fancy-heading-panel"><b>Body Parameters</b></h4>
         <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>floor_table_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="floor_table_id"                data-endpoint="PUTapi-v1-orders--order_id-"
+               value="16"
+               data-component="body">
+    <br>
+<p>Example: <code>16</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>channel</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="channel"                data-endpoint="PUTapi-v1-orders--order_id-"
+               value="talabat"
+               data-component="body">
+    <br>
+<p>Example: <code>talabat</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>qr</code></li> <li><code>whatsapp</code></li> <li><code>talabat</code></li> <li><code>elmenus</code></li> <li><code>own_delivery</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>fulfillment_type</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="fulfillment_type"                data-endpoint="PUTapi-v1-orders--order_id-"
+               value="takeaway"
+               data-component="body">
+    <br>
+<p>Example: <code>takeaway</code></p>
+Must be one of:
+<ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>takeaway</code></li> <li><code>delivery</code></li></ul>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>notes</code></b>&nbsp;&nbsp;
 <small>string</small>&nbsp;
 <i>optional</i> &nbsp;
@@ -19325,6 +19491,42 @@ You can check the Dev Tools console for debugging information.</code></pre>
                data-component="body">
     <br>
 <p>Example: <code>architecto</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>delivery_address</code></b>&nbsp;&nbsp;
+<small>string</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="delivery_address"                data-endpoint="PUTapi-v1-orders--order_id-"
+               value="n"
+               data-component="body">
+    <br>
+<p>Must not be greater than 500 characters. Example: <code>n</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>delivery_fee</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="delivery_fee"                data-endpoint="PUTapi-v1-orders--order_id-"
+               value="84"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Example: <code>84</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>customer_id</code></b>&nbsp;&nbsp;
+<small>integer</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="customer_id"                data-endpoint="PUTapi-v1-orders--order_id-"
+               value="16"
+               data-component="body">
+    <br>
+<p>Must match an existing stored value. Example: <code>16</code></p>
         </div>
         </form>
 
@@ -19513,17 +19715,17 @@ Must be one of:
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"method\": \"cash\",
+    \"method\": \"meeza\",
     \"amount\": 27,
     \"cash_tendered\": 39,
-    \"discount_type\": \"fixed\",
+    \"discount_type\": \"percentage\",
     \"discount_value\": 84,
     \"discount_reason\": \"z\",
     \"reference\": \"m\",
     \"loyalty_points\": 35,
     \"splits\": [
         {
-            \"method\": \"valu\",
+            \"method\": \"instapay\",
             \"amount\": 76,
             \"reference\": \"v\"
         }
@@ -19544,17 +19746,17 @@ const headers = {
 };
 
 let body = {
-    "method": "cash",
+    "method": "meeza",
     "amount": 27,
     "cash_tendered": 39,
-    "discount_type": "fixed",
+    "discount_type": "percentage",
     "discount_value": 84,
     "discount_reason": "z",
     "reference": "m",
     "loyalty_points": 35,
     "splits": [
         {
-            "method": "valu",
+            "method": "instapay",
             "amount": 76,
             "reference": "v"
         }
@@ -19675,10 +19877,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="method"                data-endpoint="POSTapi-v1-orders--order_id--pay"
-               value="cash"
+               value="meeza"
                data-component="body">
     <br>
-<p>Example: <code>cash</code></p>
+<p>Example: <code>meeza</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>cash</code></li> <li><code>card</code></li> <li><code>vodafone_cash</code></li> <li><code>instapay</code></li> <li><code>meeza</code></li> <li><code>valu</code></li> <li><code>split</code></li></ul>
         </div>
@@ -19713,10 +19915,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="discount_type"                data-endpoint="POSTapi-v1-orders--order_id--pay"
-               value="fixed"
+               value="percentage"
                data-component="body">
     <br>
-<p>Example: <code>fixed</code></p>
+<p>Example: <code>percentage</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>percentage</code></li> <li><code>fixed</code></li></ul>
         </div>
@@ -19773,10 +19975,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="splits.0.method"                data-endpoint="POSTapi-v1-orders--order_id--pay"
-               value="valu"
+               value="instapay"
                data-component="body">
     <br>
-<p>Example: <code>valu</code></p>
+<p>Example: <code>instapay</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>cash</code></li> <li><code>card</code></li> <li><code>vodafone_cash</code></li> <li><code>instapay</code></li> <li><code>meeza</code></li> <li><code>valu</code></li></ul>
                     </div>
@@ -20606,8 +20808,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"status\": \"active\",
-    \"plan\": \"enterprise\",
+    \"status\": \"suspended\",
+    \"plan\": \"pro\",
     \"search\": \"b\",
     \"per_page\": 22,
     \"page\": 67
@@ -20627,8 +20829,8 @@ const headers = {
 };
 
 let body = {
-    "status": "active",
-    "plan": "enterprise",
+    "status": "suspended",
+    "plan": "pro",
     "search": "b",
     "per_page": 22,
     "page": 67
@@ -20756,10 +20958,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="GETapi-v1-admin-tenants"
-               value="active"
+               value="suspended"
                data-component="body">
     <br>
-<p>Example: <code>active</code></p>
+<p>Example: <code>suspended</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>active</code></li> <li><code>trial</code></li> <li><code>grace_period</code></li> <li><code>suspended</code></li></ul>
         </div>
@@ -20770,10 +20972,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="plan"                data-endpoint="GETapi-v1-admin-tenants"
-               value="enterprise"
+               value="pro"
                data-component="body">
     <br>
-<p>Example: <code>enterprise</code></p>
+<p>Example: <code>pro</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>starter</code></li> <li><code>growth</code></li> <li><code>pro</code></li> <li><code>enterprise</code></li></ul>
         </div>
@@ -20847,7 +21049,7 @@ Must be one of:
     \"branch_phone\": \"qwrsitcpscqldzsn\",
     \"timezone\": \"Europe\\/Copenhagen\",
     \"plan\": \"growth\",
-    \"status\": \"trial\"
+    \"status\": \"suspended\"
 }"
 </code></pre></div>
 
@@ -20877,7 +21079,7 @@ let body = {
     "branch_phone": "qwrsitcpscqldzsn",
     "timezone": "Europe\/Copenhagen",
     "plan": "growth",
-    "status": "trial"
+    "status": "suspended"
 };
 
 fetch(url, {
@@ -21141,10 +21343,10 @@ Must be one of:
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="POSTapi-v1-admin-tenants"
-               value="trial"
+               value="suspended"
                data-component="body">
     <br>
-<p>Example: <code>trial</code></p>
+<p>Example: <code>suspended</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>active</code></li> <li><code>trial</code></li> <li><code>grace_period</code></li> <li><code>suspended</code></li></ul>
         </div>
@@ -21331,7 +21533,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"name\": \"b\",
     \"subdomain\": \"n\",
-    \"locale\": \"ar\",
+    \"locale\": \"en\",
     \"custom_domain\": \"g\"
 }"
 </code></pre></div>
@@ -21351,7 +21553,7 @@ const headers = {
 let body = {
     "name": "b",
     "subdomain": "n",
-    "locale": "ar",
+    "locale": "en",
     "custom_domain": "g"
 };
 
@@ -21493,10 +21695,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="locale"                data-endpoint="PATCHapi-v1-admin-tenants--tenant_id-"
-               value="ar"
+               value="en"
                data-component="body">
     <br>
-<p>Example: <code>ar</code></p>
+<p>Example: <code>en</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>ar</code></li> <li><code>en</code></li></ul>
         </div>
@@ -21533,7 +21735,7 @@ Must be one of:
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"plan\": \"growth\"
+    \"plan\": \"starter\"
 }"
 </code></pre></div>
 
@@ -21550,7 +21752,7 @@ const headers = {
 };
 
 let body = {
-    "plan": "growth"
+    "plan": "starter"
 };
 
 fetch(url, {
@@ -21667,10 +21869,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="plan"                data-endpoint="PATCHapi-v1-admin-tenants--tenant_id--plan"
-               value="growth"
+               value="starter"
                data-component="body">
     <br>
-<p>Example: <code>growth</code></p>
+<p>Example: <code>starter</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>starter</code></li> <li><code>growth</code></li> <li><code>pro</code></li> <li><code>enterprise</code></li></ul>
         </div>
@@ -23585,13 +23787,13 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"branch_id\": 16,
     \"name\": \"n\",
     \"bridge_key\": \"g\",
-    \"type\": \"receipt\",
-    \"paper_width\": 80,
+    \"type\": \"kitchen\",
+    \"paper_width\": 58,
     \"copies\": 1,
-    \"auto_print\": false,
-    \"is_default_kitchen\": false,
-    \"is_default_receipt\": false,
-    \"is_active\": false
+    \"auto_print\": true,
+    \"is_default_kitchen\": true,
+    \"is_default_receipt\": true,
+    \"is_active\": true
 }"
 </code></pre></div>
 
@@ -23611,13 +23813,13 @@ let body = {
     "branch_id": 16,
     "name": "n",
     "bridge_key": "g",
-    "type": "receipt",
-    "paper_width": 80,
+    "type": "kitchen",
+    "paper_width": 58,
     "copies": 1,
-    "auto_print": false,
-    "is_default_kitchen": false,
-    "is_default_receipt": false,
-    "is_active": false
+    "auto_print": true,
+    "is_default_kitchen": true,
+    "is_default_receipt": true,
+    "is_active": true
 };
 
 fetch(url, {
@@ -23757,10 +23959,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-v1-print-printers"
-               value="receipt"
+               value="kitchen"
                data-component="body">
     <br>
-<p>Example: <code>receipt</code></p>
+<p>Example: <code>kitchen</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>kitchen</code></li> <li><code>receipt</code></li> <li><code>both</code></li></ul>
         </div>
@@ -23771,10 +23973,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="paper_width"                data-endpoint="POSTapi-v1-print-printers"
-               value="80"
+               value="58"
                data-component="body">
     <br>
-<p>Example: <code>80</code></p>
+<p>Example: <code>58</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>58</code></li> <li><code>80</code></li></ul>
         </div>
@@ -23810,7 +24012,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_default_kitchen</code></b>&nbsp;&nbsp;
@@ -23832,7 +24034,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_default_receipt</code></b>&nbsp;&nbsp;
@@ -23854,7 +24056,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_active</code></b>&nbsp;&nbsp;
@@ -23876,7 +24078,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
         </form>
 
@@ -23902,12 +24104,12 @@ Must be one of:
     \"name\": \"b\",
     \"bridge_key\": \"n\",
     \"type\": \"receipt\",
-    \"paper_width\": 58,
+    \"paper_width\": 80,
     \"copies\": 2,
     \"auto_print\": false,
-    \"is_default_kitchen\": false,
+    \"is_default_kitchen\": true,
     \"is_default_receipt\": false,
-    \"is_active\": true
+    \"is_active\": false
 }"
 </code></pre></div>
 
@@ -23927,12 +24129,12 @@ let body = {
     "name": "b",
     "bridge_key": "n",
     "type": "receipt",
-    "paper_width": 58,
+    "paper_width": 80,
     "copies": 2,
     "auto_print": false,
-    "is_default_kitchen": false,
+    "is_default_kitchen": true,
     "is_default_receipt": false,
-    "is_active": true
+    "is_active": false
 };
 
 fetch(url, {
@@ -24087,10 +24289,10 @@ Must be one of:
  &nbsp;
                 <input type="number" style="display: none"
                step="any"               name="paper_width"                data-endpoint="PATCHapi-v1-print-printers--printer_id-"
-               value="58"
+               value="80"
                data-component="body">
     <br>
-<p>Example: <code>58</code></p>
+<p>Example: <code>80</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>58</code></li> <li><code>80</code></li></ul>
         </div>
@@ -24148,7 +24350,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>false</code></p>
+<p>Example: <code>true</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>is_default_receipt</code></b>&nbsp;&nbsp;
@@ -24192,7 +24394,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
         </div>
         </form>
 
@@ -24787,7 +24989,7 @@ Must be one of:
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"date\": \"2026-09-07T09:24:31\",
+    \"date\": \"2026-09-08T20:35:58\",
     \"branch_id\": 16
 }"
 </code></pre></div>
@@ -24805,7 +25007,7 @@ const headers = {
 };
 
 let body = {
-    "date": "2026-09-07T09:24:31",
+    "date": "2026-09-08T20:35:58",
     "branch_id": 16
 };
 
@@ -24931,10 +25133,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="date"                data-endpoint="GETapi-v1-reports-daily"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:58"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:58</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>branch_id</code></b>&nbsp;&nbsp;
@@ -24969,7 +25171,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"date\": \"2026-09-07T09:24:31\",
+    \"date\": \"2026-09-08T20:35:58\",
     \"branch_id\": 16
 }"
 </code></pre></div>
@@ -24987,7 +25189,7 @@ const headers = {
 };
 
 let body = {
-    "date": "2026-09-07T09:24:31",
+    "date": "2026-09-08T20:35:58",
     "branch_id": 16
 };
 
@@ -25113,10 +25315,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="date"                data-endpoint="GETapi-v1-reports-cash-summary"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:58"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:58</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>branch_id</code></b>&nbsp;&nbsp;
@@ -25151,8 +25353,8 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"start_date\": \"2026-09-07T09:24:31\",
-    \"end_date\": \"2052-09-30\",
+    \"start_date\": \"2026-09-08T20:35:58\",
+    \"end_date\": \"2052-10-01\",
     \"limit\": 22,
     \"branch_id\": 16
 }"
@@ -25171,8 +25373,8 @@ const headers = {
 };
 
 let body = {
-    "start_date": "2026-09-07T09:24:31",
-    "end_date": "2052-09-30",
+    "start_date": "2026-09-08T20:35:58",
+    "end_date": "2052-10-01",
     "limit": 22,
     "branch_id": 16
 };
@@ -25299,10 +25501,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="start_date"                data-endpoint="GETapi-v1-reports-top-items"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:58"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:58</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>end_date</code></b>&nbsp;&nbsp;
@@ -25311,10 +25513,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="end_date"                data-endpoint="GETapi-v1-reports-top-items"
-               value="2052-09-30"
+               value="2052-10-01"
                data-component="body">
     <br>
-<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-09-30</code></p>
+<p>Must be a valid date. Must be a date after or equal to <code>start_date</code>. Example: <code>2052-10-01</code></p>
         </div>
                 <div style=" padding-left: 28px;  clear: unset;">
             <b style="line-height: 2;"><code>limit</code></b>&nbsp;&nbsp;
@@ -25840,7 +26042,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"status\": \"picked_up\"
+    \"status\": \"assigned\"
 }"
 </code></pre></div>
 
@@ -25857,7 +26059,7 @@ const headers = {
 };
 
 let body = {
-    "status": "picked_up"
+    "status": "assigned"
 };
 
 fetch(url, {
@@ -25974,10 +26176,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="status"                data-endpoint="PATCHapi-v1-orders--order_id--delivery-status"
-               value="picked_up"
+               value="assigned"
                data-component="body">
     <br>
-<p>Example: <code>picked_up</code></p>
+<p>Example: <code>assigned</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>assigned</code></li> <li><code>picked_up</code></li> <li><code>en_route</code></li> <li><code>delivered</code></li> <li><code>cancelled</code></li></ul>
         </div>
@@ -26166,7 +26368,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Content-Type: application/json" \
     --header "Accept: application/json" \
     --data "{
-    \"type\": \"paid_out\",
+    \"type\": \"paid_in\",
     \"amount\": 4326.41688,
     \"reason\": \"m\",
     \"reference\": \"i\"
@@ -26186,7 +26388,7 @@ const headers = {
 };
 
 let body = {
-    "type": "paid_out",
+    "type": "paid_in",
     "amount": 4326.41688,
     "reason": "m",
     "reference": "i"
@@ -26306,10 +26508,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="type"                data-endpoint="POSTapi-v1-staff-shifts--shift_id--cash-movements"
-               value="paid_out"
+               value="paid_in"
                data-component="body">
     <br>
-<p>Example: <code>paid_out</code></p>
+<p>Example: <code>paid_in</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>paid_in</code></li> <li><code>paid_out</code></li> <li><code>safe_drop</code></li> <li><code>float_adjustment</code></li></ul>
         </div>
@@ -26705,7 +26907,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"name\": \"b\",
     \"email\": \"zbailey@example.net\",
     \"phone\": \"iyvdljnikhwaykcm\",
-    \"role\": \"cook\",
+    \"role\": \"waiter\",
     \"branch_id\": 16,
     \"password\": \"]|{+-0pBNvYg\",
     \"pin\": \"5642\"
@@ -26728,7 +26930,7 @@ let body = {
     "name": "b",
     "email": "zbailey@example.net",
     "phone": "iyvdljnikhwaykcm",
-    "role": "cook",
+    "role": "waiter",
     "branch_id": 16,
     "password": "]|{+-0pBNvYg",
     "pin": "5642"
@@ -26871,10 +27073,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="role"                data-endpoint="POSTapi-v1-staff"
-               value="cook"
+               value="waiter"
                data-component="body">
     <br>
-<p>Example: <code>cook</code></p>
+<p>Example: <code>waiter</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>manager</code></li> <li><code>cashier</code></li> <li><code>waiter</code></li> <li><code>cook</code></li> <li><code>rider</code></li></ul>
         </div>
@@ -27098,11 +27300,11 @@ You can check the Dev Tools console for debugging information.</code></pre>
     \"name\": \"b\",
     \"email\": \"zbailey@example.net\",
     \"phone\": \"iyvdljnikhwaykcm\",
-    \"role\": \"cashier\",
+    \"role\": \"manager\",
     \"branch_id\": 16,
     \"password\": \"]|{+-0pBNvYg\",
     \"pin\": \"5642\",
-    \"is_active\": true
+    \"is_active\": false
 }"
 </code></pre></div>
 
@@ -27122,11 +27324,11 @@ let body = {
     "name": "b",
     "email": "zbailey@example.net",
     "phone": "iyvdljnikhwaykcm",
-    "role": "cashier",
+    "role": "manager",
     "branch_id": 16,
     "password": "]|{+-0pBNvYg",
     "pin": "5642",
-    "is_active": true
+    "is_active": false
 };
 
 fetch(url, {
@@ -27279,10 +27481,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="role"                data-endpoint="PATCHapi-v1-staff--staff_id-"
-               value="cashier"
+               value="manager"
                data-component="body">
     <br>
-<p>Example: <code>cashier</code></p>
+<p>Example: <code>manager</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>manager</code></li> <li><code>cashier</code></li> <li><code>waiter</code></li> <li><code>cook</code></li> <li><code>rider</code></li></ul>
         </div>
@@ -27342,7 +27544,7 @@ Must be one of:
             <code>false</code>
         </label>
     <br>
-<p>Example: <code>true</code></p>
+<p>Example: <code>false</code></p>
         </div>
         </form>
 
@@ -27510,7 +27712,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --data "{
     \"branch_id\": 16,
     \"user_id\": 16,
-    \"date\": \"2026-09-07T09:24:31\"
+    \"date\": \"2026-09-08T20:35:59\"
 }"
 </code></pre></div>
 
@@ -27529,7 +27731,7 @@ const headers = {
 let body = {
     "branch_id": 16,
     "user_id": 16,
-    "date": "2026-09-07T09:24:31"
+    "date": "2026-09-08T20:35:59"
 };
 
 fetch(url, {
@@ -27678,10 +27880,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="date"                data-endpoint="GETapi-v1-staff-shifts"
-               value="2026-09-07T09:24:31"
+               value="2026-09-08T20:35:59"
                data-component="body">
     <br>
-<p>Must be a valid date. Example: <code>2026-09-07T09:24:31</code></p>
+<p>Must be a valid date. Example: <code>2026-09-08T20:35:59</code></p>
         </div>
         </form>
 
@@ -28667,11 +28869,16 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"name\": \"b\",
-    \"locale\": \"ar\",
+    \"locale\": \"en\",
     \"custom_domain\": \"n\",
     \"whatsapp_phone_number_id\": \"g\",
     \"talabat_webhook_secret\": \"z\",
-    \"elmenus_webhook_secret\": \"m\"
+    \"elmenus_webhook_secret\": \"m\",
+    \"tax_rate\": 15,
+    \"service_charge_rate\": 8,
+    \"service_charge_applies_to\": [
+        \"dine_in\"
+    ]
 }"
 </code></pre></div>
 
@@ -28689,11 +28896,16 @@ const headers = {
 
 let body = {
     "name": "b",
-    "locale": "ar",
+    "locale": "en",
     "custom_domain": "n",
     "whatsapp_phone_number_id": "g",
     "talabat_webhook_secret": "z",
-    "elmenus_webhook_secret": "m"
+    "elmenus_webhook_secret": "m",
+    "tax_rate": 15,
+    "service_charge_rate": 8,
+    "service_charge_applies_to": [
+        "dine_in"
+    ]
 };
 
 fetch(url, {
@@ -28809,10 +29021,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="locale"                data-endpoint="PATCHapi-v1-settings"
-               value="ar"
+               value="en"
                data-component="body">
     <br>
-<p>Example: <code>ar</code></p>
+<p>Example: <code>en</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>ar</code></li> <li><code>en</code></li></ul>
         </div>
@@ -28863,6 +29075,46 @@ Must be one of:
                data-component="body">
     <br>
 <p>Must not be greater than 255 characters. Example: <code>m</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>tax_rate</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="tax_rate"                data-endpoint="PATCHapi-v1-settings"
+               value="15"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Must not be greater than 100. Example: <code>15</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>service_charge_rate</code></b>&nbsp;&nbsp;
+<small>number</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="number" style="display: none"
+               step="any"               name="service_charge_rate"                data-endpoint="PATCHapi-v1-settings"
+               value="8"
+               data-component="body">
+    <br>
+<p>Must be at least 0. Must not be greater than 100. Example: <code>8</code></p>
+        </div>
+                <div style=" padding-left: 28px;  clear: unset;">
+            <b style="line-height: 2;"><code>service_charge_applies_to</code></b>&nbsp;&nbsp;
+<small>string[]</small>&nbsp;
+<i>optional</i> &nbsp;
+ &nbsp;
+                <input type="text" style="display: none"
+                              name="service_charge_applies_to[0]"                data-endpoint="PATCHapi-v1-settings"
+               data-component="body">
+        <input type="text" style="display: none"
+               name="service_charge_applies_to[1]"                data-endpoint="PATCHapi-v1-settings"
+               data-component="body">
+    <br>
+
+Must be one of:
+<ul style="list-style-type: square;"><li><code>dine_in</code></li> <li><code>takeaway</code></li> <li><code>delivery</code></li></ul>
         </div>
         </form>
 
@@ -29493,7 +29745,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Authorization: Bearer {YOUR_BEARER_TOKEN}" \
     --header "Content-Type: multipart/form-data" \
     --header "Accept: application/json" \
-    --form "certificate=@/tmp/phpnpBeE6" </code></pre></div>
+    --form "certificate=@/tmp/phpkTN5J2" </code></pre></div>
 
 
 <div class="javascript-example">
@@ -29614,7 +29866,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
                value=""
                data-component="body">
     <br>
-<p>Must be a file. Must not be greater than 5120 kilobytes. Example: <code>/tmp/phpnpBeE6</code></p>
+<p>Must be a file. Must not be greater than 5120 kilobytes. Example: <code>/tmp/phpkTN5J2</code></p>
         </div>
         </form>
 
@@ -30062,7 +30314,7 @@ You can check the Dev Tools console for debugging information.</code></pre>
     --header "Accept: application/json" \
     --data "{
     \"template_name\": \"b\",
-    \"segment\": \"high_spenders\",
+    \"segment\": \"inactive_30d\",
     \"parameters\": [
         \"n\"
     ]
@@ -30083,7 +30335,7 @@ const headers = {
 
 let body = {
     "template_name": "b",
-    "segment": "high_spenders",
+    "segment": "inactive_30d",
     "parameters": [
         "n"
     ]
@@ -30202,10 +30454,10 @@ You can check the Dev Tools console for debugging information.</code></pre>
  &nbsp;
                 <input type="text" style="display: none"
                               name="segment"                data-endpoint="POSTapi-v1-marketing-broadcast"
-               value="high_spenders"
+               value="inactive_30d"
                data-component="body">
     <br>
-<p>Example: <code>high_spenders</code></p>
+<p>Example: <code>inactive_30d</code></p>
 Must be one of:
 <ul style="list-style-type: square;"><li><code>all</code></li> <li><code>inactive_30d</code></li> <li><code>high_spenders</code></li> <li><code>recent_visitors</code></li></ul>
         </div>

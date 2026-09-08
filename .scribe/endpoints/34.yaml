@@ -98,7 +98,7 @@ endpoints:
         name: type
         description: ''
         required: true
-        example: paid_out
+        example: paid_in
         type: string
         enumValues:
           - paid_in
@@ -142,7 +142,7 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      type: paid_out
+      type: paid_in
       amount: 4326.41688
       reason: m
       reference: i

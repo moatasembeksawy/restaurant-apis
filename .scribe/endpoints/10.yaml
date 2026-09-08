@@ -120,7 +120,7 @@ endpoints:
         name: is_active
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -131,7 +131,7 @@ endpoints:
       name: 'n'
       printer_ids:
         - 16
-      is_active: false
+      is_active: true
     fileParameters: []
     responses: []
     responseFields: []
@@ -206,7 +206,7 @@ endpoints:
         name: is_active
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -216,7 +216,7 @@ endpoints:
       name: b
       printer_ids:
         - 16
-      is_active: false
+      is_active: true
     fileParameters: []
     responses: []
     responseFields: []

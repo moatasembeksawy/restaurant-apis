@@ -32,6 +32,9 @@ class Branch extends Model
         'printing_mode',
         'is_active',
         'qr_menu_token',
+        'tax_rate',
+        'service_charge_rate',
+        'service_charge_applies_to',
     ];
 
     protected function casts(): array
@@ -39,6 +42,9 @@ class Branch extends Model
         return [
             'is_default' => 'boolean',
             'is_active' => 'boolean',
+            'tax_rate' => 'decimal:2',
+            'service_charge_rate' => 'decimal:2',
+            'service_charge_applies_to' => 'array',
         ];
     }
 

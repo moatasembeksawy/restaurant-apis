@@ -513,6 +513,10 @@ function exampleValue(string $field, array $rules, int $depth = 0): mixed
         'trial_days' => 14,
         'limit' => 10,
         'per_page' => 25,
+        'delivery_fee' => 15.5,
+        'tax_rate' => 14,
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
     ];
 
     if (isset($exact[$key])) {

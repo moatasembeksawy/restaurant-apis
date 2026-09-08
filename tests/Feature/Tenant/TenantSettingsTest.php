@@ -63,6 +63,22 @@ it('rejects duplicate custom domains', function (): void {
         ->assertJsonPath('errors.0.code', 'SETTINGS_UPDATE_FAILED');
 });
 
+it('updates tenant tax and service charge settings', function (): void {
+    $this->withToken($this->token)
+        ->patchJson('/api/v1/settings', [
+            'tax_rate' => 14,
+            'service_charge_rate' => 12,
+            'service_charge_applies_to' => ['dine_in'],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.tax_rate', 14)
+        ->assertJsonPath('data.service_charge_rate', 12)
+        ->assertJsonPath('data.service_charge_applies_to', ['dine_in']);
+
+    expect((float) $this->tenant->fresh()->tax_rate)->toBe(14.0);
+    expect((float) $this->tenant->fresh()->service_charge_rate)->toBe(12.0);
+});
+
 it('forbids managers from updating settings', function (): void {
     $manager = User::factory()->create([
         'tenant_id' => $this->tenant->id,

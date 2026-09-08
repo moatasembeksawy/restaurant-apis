@@ -41,7 +41,7 @@ endpoints:
         name: week_start
         description: 'Must be a valid date.'
         required: false
-        example: '2026-09-07T09:24:31'
+        example: '2026-09-08T20:35:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -52,7 +52,7 @@ endpoints:
         name: narrative
         description: ''
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -60,8 +60,8 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       branch_id: 16
-      week_start: '2026-09-07T09:24:31'
-      narrative: true
+      week_start: '2026-09-08T20:35:59'
+      narrative: false
     fileParameters: []
     responses:
       -

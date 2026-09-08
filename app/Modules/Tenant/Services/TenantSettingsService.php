@@ -30,6 +30,9 @@ class TenantSettingsService
             'whatsapp_phone_number_id' => $tenant->whatsapp_phone_number_id,
             'has_talabat_webhook_secret' => ! empty($tenant->talabat_webhook_secret),
             'has_elmenus_webhook_secret' => ! empty($tenant->elmenus_webhook_secret),
+            'tax_rate' => (float) $tenant->tax_rate,
+            'service_charge_rate' => (float) $tenant->service_charge_rate,
+            'service_charge_applies_to' => $tenant->service_charge_applies_to ?? ['dine_in'],
             'subscription' => $this->subscriptions->currentPlanDetails($tenant),
         ];
     }
@@ -84,6 +87,13 @@ class TenantSettingsService
         if (array_key_exists('elmenus_webhook_secret', $data)) {
             $updates['elmenus_webhook_secret'] = $data['elmenus_webhook_secret'];
             $auditFields[] = 'elmenus_webhook_secret';
+        }
+
+        foreach (['tax_rate', 'service_charge_rate', 'service_charge_applies_to'] as $field) {
+            if (array_key_exists($field, $data)) {
+                $updates[$field] = $data[$field];
+                $auditFields[] = $field;
+            }
         }
 
         if ($updates !== []) {

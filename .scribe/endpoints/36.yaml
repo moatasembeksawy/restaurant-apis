@@ -66,7 +66,7 @@ endpoints:
         name: payment_method
         description: ''
         required: false
-        example: wallet
+        example: card
         type: string
         enumValues:
           - cash
@@ -81,7 +81,7 @@ endpoints:
         name: from
         description: 'Must be a valid date.'
         required: false
-        example: '2026-09-07T09:24:31'
+        example: '2026-09-08T20:35:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -92,7 +92,7 @@ endpoints:
         name: to
         description: 'Must be a valid date. Must be a date after or equal to <code>from</code>.'
         required: false
-        example: '2052-09-30'
+        example: '2052-10-01'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -113,9 +113,9 @@ endpoints:
       branch_id: 16
       expense_category_id: 16
       status: approved
-      payment_method: wallet
-      from: '2026-09-07T09:24:31'
-      to: '2052-09-30'
+      payment_method: card
+      from: '2026-09-08T20:35:59'
+      to: '2052-10-01'
       per_page: 22
     fileParameters: []
     responses:
@@ -187,7 +187,7 @@ endpoints:
         name: status
         description: ''
         required: false
-        example: voided
+        example: pending
         type: string
         enumValues:
           - pending
@@ -216,7 +216,7 @@ endpoints:
         name: from
         description: 'Must be a valid date.'
         required: false
-        example: '2026-09-07T09:24:31'
+        example: '2026-09-08T20:35:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -227,7 +227,7 @@ endpoints:
         name: to
         description: 'Must be a valid date. Must be a date after or equal to <code>from</code>.'
         required: false
-        example: '2052-09-30'
+        example: '2052-10-01'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -247,10 +247,10 @@ endpoints:
     cleanBodyParameters:
       branch_id: 16
       expense_category_id: 16
-      status: voided
+      status: pending
       payment_method: cash
-      from: '2026-09-07T09:24:31'
-      to: '2052-09-30'
+      from: '2026-09-08T20:35:59'
+      to: '2052-10-01'
       per_page: 22
     fileParameters: []
     responses:
@@ -448,7 +448,7 @@ endpoints:
         name: expense_date
         description: 'Must be a valid date.'
         required: true
-        example: '2026-09-07T09:24:31'
+        example: '2026-09-08T20:35:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -463,7 +463,7 @@ endpoints:
       description: 'Velit et fugiat sunt nihil accusantium.'
       reference: 'n'
       receipt_path: i
-      expense_date: '2026-09-07T09:24:31'
+      expense_date: '2026-09-08T20:35:59'
     fileParameters: []
     responses: []
     responseFields: []

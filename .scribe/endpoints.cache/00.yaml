@@ -54,7 +54,7 @@ endpoints:
         name: locale
         description: ''
         required: false
-        example: ar
+        example: en
         type: string
         enumValues:
           - ar
@@ -175,7 +175,7 @@ endpoints:
     cleanBodyParameters:
       restaurant_name: b
       subdomain: 'n'
-      locale: ar
+      locale: en
       owner_name: g
       owner_email: rowan.gulgowski@example.com
       owner_password: d

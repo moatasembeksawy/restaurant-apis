@@ -353,7 +353,7 @@ endpoints:
         name: is_available
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -398,7 +398,7 @@ endpoints:
       description_ar: architecto
       price: 39
       cost_price: 84
-      is_available: false
+      is_available: true
       preparation_time: 66
       sort_order: 77
       category_id: 16

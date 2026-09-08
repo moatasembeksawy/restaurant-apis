@@ -267,7 +267,7 @@ endpoints:
         name: unit
         description: ''
         required: true
-        example: kg
+        example: piece
         type: string
         enumValues:
           - kg
@@ -315,7 +315,7 @@ endpoints:
       branch_id: 16
       name_ar: 'n'
       name_en: g
-      unit: kg
+      unit: piece
       current_stock: 12
       reorder_level: 77
       unit_cost: 8
@@ -392,7 +392,7 @@ endpoints:
         name: unit
         description: ''
         required: false
-        example: l
+        example: kg
         type: string
         enumValues:
           - kg
@@ -428,7 +428,7 @@ endpoints:
     cleanBodyParameters:
       name_ar: b
       name_en: 'n'
-      unit: l
+      unit: kg
       reorder_level: 84
       is_active: false
     fileParameters: []

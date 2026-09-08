@@ -18,6 +18,10 @@ class UpdateTenantSettingsRequest extends ApiFormRequest
             'whatsapp_phone_number_id' => ['nullable', 'string', 'max:50'],
             'talabat_webhook_secret' => ['nullable', 'string', 'max:255'],
             'elmenus_webhook_secret' => ['nullable', 'string', 'max:255'],
+            'tax_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'service_charge_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'service_charge_applies_to' => ['sometimes', 'array'],
+            'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
         ];
     }
 }

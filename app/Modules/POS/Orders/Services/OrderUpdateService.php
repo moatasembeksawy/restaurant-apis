@@ -6,6 +6,7 @@ namespace App\Modules\POS\Orders\Services;
 
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Tenant;
@@ -93,12 +94,17 @@ class OrderUpdateService
 
             $previousTableId = $order->floor_table_id !== null ? (int) $order->floor_table_id : null;
 
+            $charges = OrderCharges::resolve($tenant, $order->branch);
+
             $attributes = [
                 'channel' => $channel,
                 'fulfillment_type' => $fulfillmentType,
                 'floor_table_id' => $floorTableId,
                 'delivery_address' => $deliveryAddress,
                 'delivery_fee' => $deliveryFee,
+                'tax_rate' => $charges['tax_rate'],
+                'service_charge_rate' => $charges['service_charge_rate'],
+                'service_charge_applies_to' => $charges['service_charge_applies_to'],
             ];
 
             if (array_key_exists('notes', $data)) {

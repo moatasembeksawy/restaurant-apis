@@ -43,7 +43,7 @@ endpoints:
         name: type
         description: ''
         required: false
-        example: adjustment
+        example: waste
         type: string
         enumValues:
           - purchase
@@ -76,7 +76,7 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       ingredient_id: 16
-      type: adjustment
+      type: waste
       per_page: 22
       page: 67
     fileParameters: []
@@ -138,7 +138,7 @@ endpoints:
         name: type
         description: ''
         required: true
-        example: waste
+        example: adjustment
         type: string
         enumValues:
           - purchase
@@ -185,7 +185,7 @@ endpoints:
         name: direction
         description: ''
         required: false
-        example: out
+        example: in
         type: string
         enumValues:
           - in
@@ -195,11 +195,11 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       ingredient_id: 16
-      type: waste
+      type: adjustment
       quantity: 39
       unit_cost: 84
       notes: z
-      direction: out
+      direction: in
     fileParameters: []
     responses: []
     responseFields: []

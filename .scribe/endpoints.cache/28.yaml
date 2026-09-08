@@ -43,7 +43,7 @@ endpoints:
         name: start_date
         description: 'Must be a valid date.'
         required: false
-        example: '2026-09-07T09:24:31'
+        example: '2026-09-08T20:35:59'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -54,7 +54,7 @@ endpoints:
         name: end_date
         description: 'Must be a valid date. Must be a date after or equal to <code>start_date</code>.'
         required: false
-        example: '2052-09-30'
+        example: '2052-10-01'
         type: string
         enumValues: []
         exampleWasSpecified: false
@@ -62,8 +62,8 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       branch_id: 16
-      start_date: '2026-09-07T09:24:31'
-      end_date: '2052-09-30'
+      start_date: '2026-09-08T20:35:59'
+      end_date: '2052-10-01'
     fileParameters: []
     responses:
       -

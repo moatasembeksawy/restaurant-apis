@@ -7,6 +7,7 @@ namespace App\Modules\POS\Orders\Models;
 use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
@@ -44,6 +45,11 @@ class Order extends BaseModel
         'subtotal',
         'discount',
         'delivery_fee',
+        'tax_rate',
+        'tax',
+        'service_charge_rate',
+        'service_charge',
+        'service_charge_applies_to',
         'total',
     ];
 
@@ -53,6 +59,11 @@ class Order extends BaseModel
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
             'delivery_fee' => 'decimal:2',
+            'tax_rate' => 'decimal:2',
+            'tax' => 'decimal:2',
+            'service_charge_rate' => 'decimal:2',
+            'service_charge' => 'decimal:2',
+            'service_charge_applies_to' => 'array',
             'total' => 'decimal:2',
         ];
     }
@@ -82,13 +93,16 @@ class Order extends BaseModel
             'cancelled' => [],
         ];
 
-        return in_array($newStatus, $allowed[$this->status] ?? []);
+        return in_array($newStatus, $allowed[$this->status], true);
     }
 
     public function recalculateTotals(): void
     {
         $this->subtotal = $this->items()->sum('subtotal');
-        $this->total = max(0, (float) $this->subtotal - (float) $this->discount) + (float) $this->delivery_fee;
+        $charges = OrderCharges::compute($this);
+        $this->service_charge = $charges['service_charge'];
+        $this->tax = $charges['tax'];
+        $this->total = $charges['total'];
         $this->saveQuietly();
     }
 

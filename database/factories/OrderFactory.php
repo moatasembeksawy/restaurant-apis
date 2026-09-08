@@ -30,6 +30,10 @@ class OrderFactory extends Factory
             'subtotal' => 100.00,
             'discount' => 0.00,
             'delivery_fee' => 0.00,
+            'tax_rate' => 0.00,
+            'tax' => 0.00,
+            'service_charge_rate' => 0.00,
+            'service_charge' => 0.00,
             'total' => 100.00,
         ];
     }

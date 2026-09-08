@@ -131,7 +131,7 @@ endpoints:
         name: segment
         description: ''
         required: true
-        example: high_spenders
+        example: inactive_30d
         type: string
         enumValues:
           - all
@@ -155,7 +155,7 @@ endpoints:
         deprecated: false
     cleanBodyParameters:
       template_name: b
-      segment: high_spenders
+      segment: inactive_30d
       parameters:
         - 'n'
     fileParameters: []

@@ -133,6 +133,14 @@ class EscPosBuilder
 
         $this->separator();
 
+        if ((float) $order->service_charge > 0) {
+            $this->text('Service: '.number_format((float) $order->service_charge, 2).' EGP');
+        }
+
+        if ((float) $order->tax > 0) {
+            $this->text('Tax: '.number_format((float) $order->tax, 2).' EGP');
+        }
+
         if ((float) $order->delivery_fee > 0) {
             $this->text('Delivery: '.number_format((float) $order->delivery_fee, 2).' EGP');
         }

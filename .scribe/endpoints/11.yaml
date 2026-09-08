@@ -30,7 +30,7 @@ endpoints:
         name: status
         description: ''
         required: false
-        example: cancelled
+        example: ready
         type: string
         enumValues:
           - active
@@ -69,7 +69,7 @@ endpoints:
         name: channel
         description: ''
         required: false
-        example: elmenus
+        example: qr
         type: string
         enumValues:
           - dine_in
@@ -118,10 +118,10 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      status: cancelled
+      status: ready
       branch_id: 16
       table_id: 16
-      channel: elmenus
+      channel: qr
       fulfillment_type: dine_in
       per_page: 22
       page: 67
@@ -251,7 +251,7 @@ endpoints:
         name: channel
         description: ''
         required: true
-        example: whatsapp
+        example: dine_in
         type: string
         enumValues:
           - dine_in
@@ -268,7 +268,7 @@ endpoints:
         name: fulfillment_type
         description: ''
         required: false
-        example: delivery
+        example: dine_in
         type: string
         enumValues:
           - dine_in
@@ -299,10 +299,21 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
+      delivery_fee:
+        custom: []
+        name: delivery_fee
+        description: 'Must be at least 0.'
+        required: false
+        example: 84
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
       customer_id:
         custom: []
         name: customer_id
-        description: ''
+        description: 'Must match an existing stored value.'
         required: false
         example: 16
         type: integer
@@ -358,10 +369,11 @@ endpoints:
     cleanBodyParameters:
       branch_id: 16
       floor_table_id: 16
-      channel: whatsapp
-      fulfillment_type: delivery
+      channel: dine_in
+      fulfillment_type: dine_in
       notes: architecto
       delivery_address: 'n'
+      delivery_fee: 84
       customer_id: 16
       items:
         -
@@ -415,6 +427,48 @@ endpoints:
     queryParameters: []
     cleanQueryParameters: []
     bodyParameters:
+      floor_table_id:
+        custom: []
+        name: floor_table_id
+        description: ''
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      channel:
+        custom: []
+        name: channel
+        description: ''
+        required: false
+        example: talabat
+        type: string
+        enumValues:
+          - dine_in
+          - qr
+          - whatsapp
+          - talabat
+          - elmenus
+          - own_delivery
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
+      fulfillment_type:
+        custom: []
+        name: fulfillment_type
+        description: ''
+        required: false
+        example: takeaway
+        type: string
+        enumValues:
+          - dine_in
+          - takeaway
+          - delivery
+        exampleWasSpecified: false
+        nullable: false
+        deprecated: false
       notes:
         custom: []
         name: notes
@@ -426,8 +480,47 @@ endpoints:
         exampleWasSpecified: false
         nullable: true
         deprecated: false
+      delivery_address:
+        custom: []
+        name: delivery_address
+        description: 'Must not be greater than 500 characters.'
+        required: false
+        example: 'n'
+        type: string
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      delivery_fee:
+        custom: []
+        name: delivery_fee
+        description: 'Must be at least 0.'
+        required: false
+        example: 84
+        type: number
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
+      customer_id:
+        custom: []
+        name: customer_id
+        description: 'Must match an existing stored value.'
+        required: false
+        example: 16
+        type: integer
+        enumValues: []
+        exampleWasSpecified: false
+        nullable: true
+        deprecated: false
     cleanBodyParameters:
+      floor_table_id: 16
+      channel: talabat
+      fulfillment_type: takeaway
       notes: architecto
+      delivery_address: 'n'
+      delivery_fee: 84
+      customer_id: 16
     fileParameters: []
     responses: []
     responseFields: []

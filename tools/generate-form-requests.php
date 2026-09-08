@@ -355,6 +355,10 @@ $requests = [
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_charge_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_charge_applies_to' => ['nullable', 'array'],
+            'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateBranchRequest', 'rules' => <<<'RULES'
             'name' => ['sometimes', 'string', 'max:100'],
@@ -363,6 +367,10 @@ $requests = [
             'phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],
             'is_active' => ['sometimes', 'boolean'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_charge_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_charge_applies_to' => ['nullable', 'array'],
+            'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'StoreStaffRequest', 'rules' => <<<'RULES'
             'name' => ['required', 'string', 'max:100'],
@@ -393,6 +401,10 @@ $requests = [
             'whatsapp_phone_number_id' => ['nullable', 'string', 'max:50'],
             'talabat_webhook_secret' => ['nullable', 'string', 'max:255'],
             'elmenus_webhook_secret' => ['nullable', 'string', 'max:255'],
+            'tax_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'service_charge_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'service_charge_applies_to' => ['sometimes', 'array'],
+            'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateETASettingsRequest', 'rules' => <<<'RULES'
             'eta_client_id' => ['nullable', 'string', 'max:100'],

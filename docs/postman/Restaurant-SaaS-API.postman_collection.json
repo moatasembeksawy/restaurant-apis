@@ -555,7 +555,7 @@
                                 "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.).\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -822,7 +822,7 @@
                                 "description": "Update — settings\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\"\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2057,7 +2057,7 @@
                                 "description": "Update — settings\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\"\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2170,7 +2170,7 @@
                                 "description": "Store — branches\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\"\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2229,7 +2229,7 @@
                                 "description": "Update — branches/{branch}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"is_active\": true\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"is_active\": true,\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -5863,7 +5863,7 @@
                                 "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.).\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -5934,7 +5934,7 @@
                                 "description": "Update — orders/{order}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"notes\": \"بدون بصل\"\n}",
+                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -5993,7 +5993,7 @@
                                 "description": "Update — orders/{order}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"notes\": \"بدون بصل\"\n}",
+                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -6846,7 +6846,16 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Store — expense-categories\n\nAuth: Bearer token + tenant header"
+                                "description": "Store — expense-categories\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"code\": \"مثال\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
                             },
                             "event": [
                                 {

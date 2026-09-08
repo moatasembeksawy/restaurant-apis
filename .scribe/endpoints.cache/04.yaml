@@ -32,7 +32,7 @@ endpoints:
         name: status
         description: ''
         required: false
-        example: active
+        example: suspended
         type: string
         enumValues:
           - active
@@ -47,7 +47,7 @@ endpoints:
         name: plan
         description: ''
         required: false
-        example: enterprise
+        example: pro
         type: string
         enumValues:
           - starter
@@ -91,8 +91,8 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      status: active
-      plan: enterprise
+      status: suspended
+      plan: pro
       search: b
       per_page: 22
       page: 67
@@ -293,7 +293,7 @@ endpoints:
         name: status
         description: ''
         required: false
-        example: trial
+        example: suspended
         type: string
         enumValues:
           - active
@@ -317,7 +317,7 @@ endpoints:
       branch_phone: qwrsitcpscqldzsn
       timezone: Europe/Copenhagen
       plan: growth
-      status: trial
+      status: suspended
     fileParameters: []
     responses: []
     responseFields: []
@@ -447,7 +447,7 @@ endpoints:
         name: locale
         description: ''
         required: false
-        example: ar
+        example: en
         type: string
         enumValues:
           - ar
@@ -469,7 +469,7 @@ endpoints:
     cleanBodyParameters:
       name: b
       subdomain: 'n'
-      locale: ar
+      locale: en
       custom_domain: g
     fileParameters: []
     responses: []
@@ -522,7 +522,7 @@ endpoints:
         name: plan
         description: ''
         required: true
-        example: growth
+        example: starter
         type: string
         enumValues:
           - starter
@@ -533,7 +533,7 @@ endpoints:
         nullable: false
         deprecated: false
     cleanBodyParameters:
-      plan: growth
+      plan: starter
     fileParameters: []
     responses: []
     responseFields: []

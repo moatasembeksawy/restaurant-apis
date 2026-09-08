@@ -44,7 +44,7 @@ endpoints:
         name: method
         description: ''
         required: true
-        example: cash
+        example: meeza
         type: string
         enumValues:
           - cash
@@ -84,7 +84,7 @@ endpoints:
         name: discount_type
         description: ''
         required: false
-        example: fixed
+        example: percentage
         type: string
         enumValues:
           - percentage
@@ -152,7 +152,7 @@ endpoints:
         name: 'splits[].method'
         description: ''
         required: true
-        example: valu
+        example: instapay
         type: string
         enumValues:
           - cash
@@ -187,17 +187,17 @@ endpoints:
         nullable: true
         deprecated: false
     cleanBodyParameters:
-      method: cash
+      method: meeza
       amount: 27
       cash_tendered: 39
-      discount_type: fixed
+      discount_type: percentage
       discount_value: 84
       discount_reason: z
       reference: m
       loyalty_points: 35
       splits:
         -
-          method: valu
+          method: instapay
           amount: 76
           reference: v
     fileParameters: []

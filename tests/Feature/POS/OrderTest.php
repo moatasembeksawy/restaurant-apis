@@ -172,6 +172,75 @@ it('calculates order total correctly', function (): void {
     expect((float) $response->json('data.total'))->toBe(150.0); // 3 × 50
 });
 
+it('applies tenant tax and dine-in service charge to the order total', function (): void {
+    $this->tenant->update([
+        'tax_rate' => 14,
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+    ]);
+    app()->instance('tenant', $this->tenant->fresh());
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'floor_table_id' => $this->table->id,
+            'channel' => 'dine_in',
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 2],
+            ],
+        ]);
+
+    $response->assertCreated();
+    expect((float) $response->json('data.subtotal'))->toBe(100.0);
+    expect((float) $response->json('data.service_charge'))->toBe(12.0);
+    expect((float) $response->json('data.tax'))->toBe(15.68);
+    expect((float) $response->json('data.total'))->toBe(127.68);
+});
+
+it('skips service charge on takeaway when settings apply only to dine-in', function (): void {
+    $this->tenant->update([
+        'tax_rate' => 14,
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+    ]);
+    app()->instance('tenant', $this->tenant->fresh());
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'fulfillment_type' => 'takeaway',
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 2],
+            ],
+        ]);
+
+    $response->assertCreated();
+    expect((float) $response->json('data.service_charge'))->toBe(0.0);
+    expect((float) $response->json('data.tax'))->toBe(14.0);
+    expect((float) $response->json('data.total'))->toBe(114.0);
+});
+
+it('uses branch tax override instead of tenant tax', function (): void {
+    $this->tenant->update(['tax_rate' => 14, 'service_charge_rate' => 0]);
+    $this->branch->update(['tax_rate' => 0]);
+    app()->instance('tenant', $this->tenant->fresh());
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'fulfillment_type' => 'takeaway',
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 2],
+            ],
+        ]);
+
+    $response->assertCreated();
+    expect((float) $response->json('data.tax'))->toBe(0.0);
+    expect((float) $response->json('data.total'))->toBe(100.0);
+});
+
 it('allows adding items to an active order', function (): void {
     $order = Order::factory()->create([
         'tenant_id' => $this->tenant->id,

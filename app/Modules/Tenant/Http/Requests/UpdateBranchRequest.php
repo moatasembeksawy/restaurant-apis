@@ -18,6 +18,10 @@ class UpdateBranchRequest extends ApiFormRequest
             'phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],
             'is_active' => ['sometimes', 'boolean'],
+            'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_charge_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'service_charge_applies_to' => ['nullable', 'array'],
+            'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
         ];
     }
 }

@@ -9,8 +9,10 @@ use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 use App\Shared\Support\Audit\AuditLogger;
@@ -70,6 +72,8 @@ class OrderPlacementService
             throw new InvalidArgumentException('Delivery is not enabled for this restaurant.');
         }
 
+        $charges = OrderCharges::resolve($tenant, Branch::query()->find($branchId));
+
         $order = Order::create([
             'branch_id' => $branchId,
             'floor_table_id' => $floorTableId,
@@ -80,6 +84,9 @@ class OrderPlacementService
             'notes' => $notes,
             'delivery_address' => $deliveryAddress,
             'delivery_fee' => $deliveryFee,
+            'tax_rate' => $charges['tax_rate'],
+            'service_charge_rate' => $charges['service_charge_rate'],
+            'service_charge_applies_to' => $charges['service_charge_applies_to'],
             'delivery_status' => OrderFulfillment::requiresDeliveryTracking($fulfillmentType) ? 'pending' : null,
             'external_ref' => $externalRef,
             'status' => 'pending',

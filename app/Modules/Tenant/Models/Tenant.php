@@ -43,6 +43,9 @@ class Tenant extends Model
         'feature_flags',
         'trial_ends_at',
         'grace_period_ends_at',
+        'tax_rate',
+        'service_charge_rate',
+        'service_charge_applies_to',
     ];
 
     protected function casts(): array
@@ -53,6 +56,9 @@ class Tenant extends Model
             'grace_period_ends_at' => 'datetime',
             'custom_domain_verified_at' => 'datetime',
             'eta_client_secret' => 'encrypted',
+            'tax_rate' => 'decimal:2',
+            'service_charge_rate' => 'decimal:2',
+            'service_charge_applies_to' => 'array',
         ];
     }
 

@@ -119,7 +119,7 @@ endpoints:
         name: type
         description: ''
         required: true
-        example: receipt
+        example: kitchen
         type: string
         enumValues:
           - kitchen
@@ -133,7 +133,7 @@ endpoints:
         name: paper_width
         description: ''
         required: false
-        example: 80
+        example: 58
         type: integer
         enumValues:
           - 58
@@ -157,7 +157,7 @@ endpoints:
         name: auto_print
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -168,7 +168,7 @@ endpoints:
         name: is_default_kitchen
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -179,7 +179,7 @@ endpoints:
         name: is_default_receipt
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -190,7 +190,7 @@ endpoints:
         name: is_active
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -200,13 +200,13 @@ endpoints:
       branch_id: 16
       name: 'n'
       bridge_key: g
-      type: receipt
-      paper_width: 80
+      type: kitchen
+      paper_width: 58
       copies: 1
-      auto_print: false
-      is_default_kitchen: false
-      is_default_receipt: false
-      is_active: false
+      auto_print: true
+      is_default_kitchen: true
+      is_default_receipt: true
+      is_active: true
     fileParameters: []
     responses: []
     responseFields: []
@@ -294,7 +294,7 @@ endpoints:
         name: paper_width
         description: ''
         required: false
-        example: 58
+        example: 80
         type: integer
         enumValues:
           - 58
@@ -329,7 +329,7 @@ endpoints:
         name: is_default_kitchen
         description: ''
         required: false
-        example: false
+        example: true
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -351,7 +351,7 @@ endpoints:
         name: is_active
         description: ''
         required: false
-        example: true
+        example: false
         type: boolean
         enumValues: []
         exampleWasSpecified: false
@@ -361,12 +361,12 @@ endpoints:
       name: b
       bridge_key: 'n'
       type: receipt
-      paper_width: 58
+      paper_width: 80
       copies: 2
       auto_print: false
-      is_default_kitchen: false
+      is_default_kitchen: true
       is_default_receipt: false
-      is_active: true
+      is_active: false
     fileParameters: []
     responses: []
     responseFields: []

@@ -445,12 +445,6 @@ parameters:
 			path: app/Modules/POS/Orders/Events/OrderItemReady.php
 
 		-
-			message: '#^Offset ''active''\|''cancelled''\|''completed''\|''cooking''\|''paid''\|''pending''\|''ready'' on array\{pending\: array\{''active'', ''cancelled''\}, active\: array\{''cooking'', ''ready'', ''completed'', ''cancelled''\}, cooking\: array\{''ready'', ''cancelled''\}, ready\: array\{''completed'', ''cancelled''\}, completed\: array\{''paid''\}, paid\: array\{''refunded''\}, refunded\: array\{\}, cancelled\: array\{\}\} on left side of \?\? always exists and is not nullable\.$#'
-			identifier: nullCoalesce.offset
-			count: 1
-			path: app/Modules/POS/Orders/Models/Order.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 1

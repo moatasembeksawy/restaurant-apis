@@ -25,6 +25,9 @@ class TenantFactory extends Factory
             'plan' => 'starter',
             'status' => 'active',
             'feature_flags' => [],
+            'tax_rate' => 0,
+            'service_charge_rate' => 0,
+            'service_charge_applies_to' => ['dine_in'],
         ];
     }
 
