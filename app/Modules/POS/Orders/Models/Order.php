@@ -6,9 +6,11 @@ namespace App\Modules\POS\Orders\Models;
 
 use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
+use App\Modules\Delivery\Customers\Models\CustomerAddress;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\Districts\Models\District;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Domain\Models\BaseModel;
@@ -34,6 +36,8 @@ class Order extends BaseModel
         'floor_table_id',
         'waiter_id',
         'customer_id',
+        'customer_address_id',
+        'district_id',
         'rider_id',
         'channel',
         'fulfillment_type',
@@ -140,6 +144,16 @@ class Order extends BaseModel
     public function customer(): BelongsTo
     {
         return $this->belongsTo(Customer::class);
+    }
+
+    public function customerAddress(): BelongsTo
+    {
+        return $this->belongsTo(CustomerAddress::class);
+    }
+
+    public function district(): BelongsTo
+    {
+        return $this->belongsTo(District::class);
     }
 
     public function rider(): BelongsTo

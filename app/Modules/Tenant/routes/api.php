@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Tenant\Districts\Http\Controllers\DistrictController;
 use App\Modules\Tenant\Finance\Http\Controllers\CashMovementController;
 use App\Modules\Tenant\Finance\Http\Controllers\ExpenseCategoryController;
 use App\Modules\Tenant\Finance\Http\Controllers\ExpenseController;
@@ -81,6 +82,11 @@ Route::get('settings', [TenantSettingsController::class, 'show']);
 Route::patch('settings', [TenantSettingsController::class, 'update']);
 Route::get('settings/domain', [TenantSettingsController::class, 'domainStatus']);
 Route::post('settings/domain/verify', [TenantSettingsController::class, 'verifyDomain']);
+
+Route::get('settings/districts', [DistrictController::class, 'index']);
+Route::post('settings/districts', [DistrictController::class, 'store']);
+Route::patch('settings/districts/{district}', [DistrictController::class, 'update']);
+Route::delete('settings/districts/{district}', [DistrictController::class, 'destroy']);
 
 Route::get('settings/eta', [ETASettingsController::class, 'show']);
 Route::patch('settings/eta', [ETASettingsController::class, 'update']);

@@ -35,7 +35,7 @@ it('lists customers for the tenant', function (): void {
 });
 
 it('creates a customer by phone', function (): void {
-    $this->withToken($this->token)
+    $response = $this->withToken($this->token)
         ->postJson('/api/v1/customers', [
             'phone' => '01098765432',
             'name' => 'محمود',
@@ -43,7 +43,10 @@ it('creates a customer by phone', function (): void {
         ])
         ->assertCreated()
         ->assertJsonPath('data.phone', '+201098765432')
-        ->assertJsonPath('data.name', 'محمود');
+        ->assertJsonPath('data.name', 'محمود')
+        ->assertJsonPath('data.addresses.0.address', 'القاهرة، مصر');
+
+    expect($response->json('data.addresses.0.is_default'))->toBeTrue();
 });
 
 it('shows customer order history', function (): void {

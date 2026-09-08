@@ -43,6 +43,14 @@
             "value": "1"
         },
         {
+            "key": "customer_address_id",
+            "value": "1"
+        },
+        {
+            "key": "district_id",
+            "value": "1"
+        },
+        {
             "key": "supplier_id",
             "value": "1"
         },
@@ -552,10 +560,10 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.).\n\nAuth: Bearer token + tenant header",
+                                "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -1922,6 +1930,62 @@
                             ]
                         },
                         {
+                            "name": "GET · settings/districts",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/settings/districts?is_active=true",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "settings",
+                                        "districts"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "is_active",
+                                            "value": "true",
+                                            "description": "nullable, boolean"
+                                        }
+                                    ]
+                                },
+                                "description": "List delivery districts and their fees. POS uses this to show the fee when a district is selected.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "GET · settings/domain",
                             "request": {
                                 "method": "GET",
@@ -1955,6 +2019,65 @@
                                     "query": []
                                 },
                                 "description": "Domain Status — settings/domain\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · settings/districts",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/settings/districts",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "settings",
+                                        "districts"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Create a delivery district with a default fee. Owners and managers only.\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"delivery_fee\": 15.5,\n    \"is_active\": true,\n    \"sort_order\": 1\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
                             },
                             "event": [
                                 {
@@ -2064,6 +2187,117 @@
                                         }
                                     }
                                 }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · settings/districts/{district}",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/settings/districts/{{district_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "settings",
+                                        "districts",
+                                        "{district}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — settings/districts/{district}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"delivery_fee\": 15.5,\n    \"is_active\": true,\n    \"sort_order\": 1\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · settings/districts/{district}",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/settings/districts/{{district_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "settings",
+                                        "districts",
+                                        "{district}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Destroy — settings/districts/{district}\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -5860,10 +6094,10 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.).\n\nAuth: Bearer token + tenant header",
+                                "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -5934,7 +6168,7 @@
                                 "description": "Update — orders/{order}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\"\n}",
+                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -5993,7 +6227,7 @@
                                 "description": "Update — orders/{order}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\"\n}",
+                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -7813,6 +8047,57 @@
                             ]
                         },
                         {
+                            "name": "GET · customers/{customer}/addresses",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/customers/{{customer_id}}/addresses",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "customers",
+                                        "{customer}",
+                                        "addresses"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "List a customer's saved addresses. Each address includes its district and delivery_fee.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "GET · customers/{customer}/orders",
                             "request": {
                                 "method": "GET",
@@ -7922,6 +8207,66 @@
                             ]
                         },
                         {
+                            "name": "POST · customers/{customer}/addresses",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/customers/{{customer_id}}/addresses",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "customers",
+                                        "{customer}",
+                                        "addresses"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Add an address for a customer. The district fee is returned for POS to display and can be overridden on the order.\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"district_id\": 1,\n    \"label\": \"المنزل\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"is_default\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "PATCH · customers/{customer}",
                             "request": {
                                 "method": "PATCH",
@@ -7964,6 +8309,119 @@
                                         }
                                     }
                                 }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · customers/{customer}/addresses/{address}",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/customers/{{customer_id}}/addresses/{{customer_address_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "customers",
+                                        "{customer}",
+                                        "addresses",
+                                        "{address}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — customers/{customer}/addresses/{address}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"district_id\": 1,\n    \"label\": \"المنزل\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"is_default\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · customers/{customer}/addresses/{address}",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/customers/{{customer_id}}/addresses/{{customer_address_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "customers",
+                                        "{customer}",
+                                        "addresses",
+                                        "{address}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Destroy — customers/{customer}/addresses/{address}\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {

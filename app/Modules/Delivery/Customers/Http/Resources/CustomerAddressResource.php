@@ -7,17 +7,15 @@ namespace App\Modules\Delivery\Customers\Http\Resources;
 use App\Shared\Support\Http\Resources\ModelResource;
 use Illuminate\Http\Request;
 
-class CustomerResource extends ModelResource
+class CustomerAddressResource extends ModelResource
 {
     /** @return array<string, mixed> */
     protected function extras(Request $request): array
     {
-        if (! $this->relationLoaded('addresses')) {
-            return [];
-        }
+        $district = $this->relationLoaded('district') ? $this->district : null;
 
         return [
-            'addresses' => CustomerAddressResource::collection($this->addresses)->resolve($request),
+            'delivery_fee' => $district !== null ? (float) $district->delivery_fee : null,
         ];
     }
 }

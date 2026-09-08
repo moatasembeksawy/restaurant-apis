@@ -39,7 +39,7 @@ class OrderController extends Controller
             ->when($validated['table_id'] ?? null, fn ($q, $id) => $q->where('floor_table_id', $id))
             ->when($validated['channel'] ?? null, fn ($q, $c) => $q->where('channel', $c))
             ->when($validated['fulfillment_type'] ?? null, fn ($q, $type) => $q->where('fulfillment_type', $type))
-            ->with(['items', 'table', 'waiter'])
+            ->with(['items', 'table', 'waiter', 'district'])
             ->orderByDesc('created_at')
             ->paginate((int) ($validated['per_page'] ?? 25));
 
@@ -62,6 +62,9 @@ class OrderController extends Controller
                 deliveryAddress: $validated['delivery_address'] ?? null,
                 fulfillmentType: $validated['fulfillment_type'] ?? null,
                 deliveryFee: isset($validated['delivery_fee']) ? (float) $validated['delivery_fee'] : null,
+                deliveryFeeProvided: array_key_exists('delivery_fee', $validated),
+                customerAddressId: isset($validated['customer_address_id']) ? (int) $validated['customer_address_id'] : null,
+                districtId: isset($validated['district_id']) ? (int) $validated['district_id'] : null,
             );
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'ORDER_VALIDATION_FAILED', 422);
@@ -72,7 +75,7 @@ class OrderController extends Controller
 
     public function show(Order $order): JsonResponse
     {
-        return ApiResponse::success(new OrderResource($order->load(['items.menuItem', 'table', 'waiter', 'payment', 'customer', 'rider'])));
+        return ApiResponse::success(new OrderResource($order->load(['items.menuItem', 'table', 'waiter', 'payment', 'customer', 'rider', 'district', 'customerAddress.district'])));
     }
 
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse

@@ -9,6 +9,7 @@ use App\Modules\Delivery\Customers\Http\Requests\StoreCustomerRequest;
 use App\Modules\Delivery\Customers\Http\Requests\UpdateCustomerRequest;
 use App\Modules\Delivery\Customers\Http\Resources\CustomerResource;
 use App\Modules\Delivery\Customers\Models\Customer;
+use App\Modules\Delivery\Customers\Services\CustomerAddressService;
 use App\Modules\Delivery\Customers\Services\CustomerService;
 use App\Modules\POS\Orders\Http\Resources\OrderResource;
 use App\Modules\POS\Orders\Models\Order;
@@ -21,13 +22,17 @@ use Illuminate\Routing\Controller;
  */
 class CustomerController extends Controller
 {
-    public function __construct(private readonly CustomerService $customers) {}
+    public function __construct(
+        private readonly CustomerService $customers,
+        private readonly CustomerAddressService $addresses,
+    ) {}
 
     public function index(IndexCustomerRequest $request): JsonResponse
     {
         $validated = $request->validated();
 
         $customers = Customer::query()
+            ->with(['addresses.district'])
             ->when($validated['phone'] ?? null, fn ($q, $phone) => $q->where('phone', 'like', "%{$phone}%"))
             ->when($validated['search'] ?? null, fn ($q, $search) => $q->where(function ($q2) use ($search): void {
                 $q2->where('name', 'like', "%{$search}%")
@@ -54,14 +59,20 @@ class CustomerController extends Controller
 
     public function show(Customer $customer): JsonResponse
     {
-        return ApiResponse::success(new CustomerResource($customer));
+        return ApiResponse::success(new CustomerResource($customer->load('addresses.district')));
     }
 
     public function update(UpdateCustomerRequest $request, Customer $customer): JsonResponse
     {
-        $customer->update($request->validated());
+        $validated = $request->validated();
 
-        return ApiResponse::success(new CustomerResource($customer), 'Customer updated.');
+        $customer->update($validated);
+
+        if (array_key_exists('default_address', $validated)) {
+            $this->addresses->syncFromDefaultAddressString($customer, $validated['default_address']);
+        }
+
+        return ApiResponse::success(new CustomerResource($customer->fresh('addresses.district') ?? $customer), 'Customer updated.');
     }
 
     public function orders(Customer $customer): JsonResponse

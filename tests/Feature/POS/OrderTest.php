@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
+use App\Modules\Delivery\Customers\Models\CustomerAddress;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\Districts\Models\District;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Event;
@@ -761,4 +763,135 @@ it('blocks cross-tenant order access', function (): void {
     $this->withToken($this->token)
         ->getJson("/api/v1/orders/{$otherOrder->id}")
         ->assertNotFound();
+});
+
+it('applies the district delivery fee when a district is chosen', function (): void {
+    $district = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 20,
+    ]);
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'delivery_address' => '١٢ شارع التحرير',
+            'district_id' => $district->id,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 2],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.district_id', $district->id)
+        ->assertJsonPath('data.district_delivery_fee', 20);
+
+    expect((float) $response->json('data.delivery_fee'))->toBe(20.0);
+    expect((float) $response->json('data.total'))->toBe(120.0);
+});
+
+it('applies the address district fee when a customer address is chosen', function (): void {
+    $district = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'delivery_fee' => 18,
+    ]);
+    $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+    $address = CustomerAddress::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'customer_id' => $customer->id,
+        'district_id' => $district->id,
+        'address' => '٤٤ عباس العقاد',
+        'is_default' => true,
+    ]);
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'customer_address_id' => $address->id,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.customer_id', $customer->id)
+        ->assertJsonPath('data.customer_address_id', $address->id)
+        ->assertJsonPath('data.delivery_address', '٤٤ عباس العقاد')
+        ->assertJsonPath('data.district_id', $district->id);
+
+    expect((float) $response->json('data.delivery_fee'))->toBe(18.0);
+    expect((float) $response->json('data.total'))->toBe(68.0);
+});
+
+it('allows overriding the district delivery fee', function (): void {
+    $district = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'delivery_fee' => 20,
+    ]);
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'delivery_address' => 'Nasr City',
+            'district_id' => $district->id,
+            'delivery_fee' => 5,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertCreated();
+
+    expect((float) $response->json('data.delivery_fee'))->toBe(5.0);
+    expect((float) $response->json('data.district_delivery_fee'))->toBe(20.0);
+    expect((float) $response->json('data.total'))->toBe(55.0);
+});
+
+it('updates the delivery fee when the district is changed on an open order', function (): void {
+    $dokki = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 15,
+    ]);
+    $nasr = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'name' => 'مدينة نصر',
+        'delivery_fee' => 28,
+    ]);
+
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_address' => 'Nasr City',
+        'district_id' => $dokki->id,
+        'delivery_fee' => 15,
+        'subtotal' => 50.00,
+        'total' => 65.00,
+        'status' => 'active',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'pending',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'district_id' => $nasr->id,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.district_id', $nasr->id);
+
+    expect((float) $order->fresh()->delivery_fee)->toBe(28.0);
+    expect((float) $order->fresh()->total)->toBe(78.0);
 });

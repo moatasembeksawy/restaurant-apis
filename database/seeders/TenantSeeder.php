@@ -9,6 +9,7 @@ use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\Districts\Models\District;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Database\Seeder;
@@ -121,6 +122,7 @@ class TenantSeeder extends Seeder
 
         // ── Seed demo customer (Postman {{customer_id}}) ───────────────────────
         $customer = $this->seedCustomer($tenant);
+        $this->seedDistrictsAndAddresses($tenant, $customer);
 
         // ── Assign Spatie roles ────────────────────────────────────────────────
         User::query()
@@ -215,6 +217,48 @@ class TenantSeeder extends Seeder
                 'default_address' => '١٢ شارع التحرير، الدقي، الجيزة',
             ],
         );
+    }
+
+    private function seedDistrictsAndAddresses(Tenant $tenant, Customer $customer): void
+    {
+        app()->instance('tenant', $tenant);
+
+        $dokki = District::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => 'الدقي'],
+            ['delivery_fee' => 15.00, 'is_active' => true, 'sort_order' => 1],
+        );
+        $nasr = District::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => 'مدينة نصر'],
+            ['delivery_fee' => 25.00, 'is_active' => true, 'sort_order' => 2],
+        );
+        District::firstOrCreate(
+            ['tenant_id' => $tenant->id, 'name' => 'المعادي'],
+            ['delivery_fee' => 30.00, 'is_active' => true, 'sort_order' => 3],
+        );
+
+        $home = $customer->addresses()->firstOrCreate(
+            ['address' => '١٢ شارع التحرير، الدقي، الجيزة'],
+            [
+                'district_id' => $dokki->id,
+                'label' => 'المنزل',
+                'is_default' => true,
+            ],
+        );
+
+        if ($home->district_id === null) {
+            $home->update(['district_id' => $dokki->id, 'label' => $home->label ?: 'المنزل', 'is_default' => true]);
+        }
+
+        $customer->addresses()->firstOrCreate(
+            ['address' => '٤٤ شارع عباس العقاد، مدينة نصر'],
+            [
+                'district_id' => $nasr->id,
+                'label' => 'العمل',
+                'is_default' => false,
+            ],
+        );
+
+        $customer->update(['default_address' => $home->address]);
     }
 
     private function seedTables(Tenant $tenant, Branch $branch): void

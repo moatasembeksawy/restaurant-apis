@@ -29,7 +29,14 @@ class CustomerService
             $customer->update(['default_address' => $address]);
         }
 
-        return $customer->fresh();
+        if ($address && $customer->addresses()->doesntExist()) {
+            $customer->addresses()->create([
+                'address' => $address,
+                'is_default' => true,
+            ]);
+        }
+
+        return $customer->fresh(['addresses.district']);
     }
 
     public function recordPayment(Customer $customer, Order $order): void

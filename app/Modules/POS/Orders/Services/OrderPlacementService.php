@@ -10,6 +10,7 @@ use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Support\OrderCharges;
+use App\Modules\POS\Orders\Support\OrderDeliveryDestination;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
@@ -38,8 +39,36 @@ class OrderPlacementService
         ?string $externalRef = null,
         ?string $fulfillmentType = null,
         ?float $deliveryFee = null,
+        bool $deliveryFeeProvided = false,
+        ?int $customerAddressId = null,
+        ?int $districtId = null,
     ): Order {
         $this->planLimits->check('orders');
+
+        $destination = OrderDeliveryDestination::resolve(
+            incoming: array_filter([
+                'customer_id' => $customerId,
+                'customer_address_id' => $customerAddressId,
+                'district_id' => $districtId,
+                'delivery_address' => $deliveryAddress,
+            ], fn (mixed $value): bool => $value !== null),
+            current: [
+                'customer_id' => null,
+                'customer_address_id' => null,
+                'district_id' => null,
+                'delivery_address' => null,
+            ],
+        );
+
+        $customerId = $destination['customer_id'];
+        $customerAddressId = $destination['customer_address_id'];
+        $districtId = $destination['district_id'];
+        $deliveryAddress = $destination['delivery_address'];
+        $deliveryFee = OrderDeliveryDestination::fee(
+            $deliveryFee,
+            $deliveryFeeProvided || $deliveryFee !== null,
+            $destination['suggested_fee'],
+        );
 
         $fulfillmentType = OrderFulfillment::resolve(
             channel: $channel,
@@ -79,6 +108,8 @@ class OrderPlacementService
             'floor_table_id' => $floorTableId,
             'waiter_id' => $waiterId,
             'customer_id' => $customerId,
+            'customer_address_id' => $customerAddressId,
+            'district_id' => $districtId,
             'channel' => $channel,
             'fulfillment_type' => $fulfillmentType,
             'notes' => $notes,
@@ -139,6 +170,6 @@ class OrderPlacementService
             SendWhatsAppNotificationJob::dispatch($order->load('customer'), 'order_confirmed');
         }
 
-        return $order->load('items');
+        return $order->load(['items', 'district', 'customerAddress.district']);
     }
 }

@@ -420,6 +420,86 @@ Update — customers/{customer}
 
 ---
 
+#### `GET` /api/v1/customers/{customer}/addresses
+
+List a customer's saved addresses. Each address includes its district and delivery_fee.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `customers`
+- **Path params:** `{customer}`
+
+---
+
+#### `POST` /api/v1/customers/{customer}/addresses
+
+Add an address for a customer. The district fee is returned for POS to display and can be overridden on the order.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `customers`
+- **Path params:** `{customer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `district_id` | `required, integer, exists:districts,id,is_active,"1"` |
+| `label` | `nullable, string, max:50` |
+| `address` | `required, string, max:500` |
+| `is_default` | `sometimes, boolean` |
+
+```json
+{
+    "district_id": 1,
+    "label": "المنزل",
+    "address": "منطقة المعادي، القاهرة",
+    "is_default": true
+}
+```
+
+---
+
+#### `DELETE` /api/v1/customers/{customer}/addresses/{address}
+
+Destroy — customers/{customer}/addresses/{address}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `customers`
+- **Path params:** `{customer}`, `{address}`
+
+---
+
+#### `PATCH` /api/v1/customers/{customer}/addresses/{address}
+
+Update — customers/{customer}/addresses/{address}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `customers`
+- **Path params:** `{customer}`, `{address}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `district_id` | `sometimes, integer, exists:districts,id,is_active,"1"` |
+| `label` | `nullable, string, max:50` |
+| `address` | `sometimes, string, max:500` |
+| `is_default` | `sometimes, boolean` |
+
+```json
+{
+    "district_id": 1,
+    "label": "المنزل",
+    "address": "منطقة المعادي، القاهرة",
+    "is_default": true
+}
+```
+
+---
+
 #### `GET` /api/v1/customers/{customer}/orders
 
 Orders — customers/{customer}/orders
@@ -1701,7 +1781,7 @@ Index — orders
 
 #### `POST` /api/v1/orders
 
-Create a new order with line items (dine-in, delivery, aggregator, etc.).
+Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `orders.create`
@@ -1720,6 +1800,8 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.).
 | `delivery_address` | `nullable, string, max:500` |
 | `delivery_fee` | `nullable, numeric, min:0` |
 | `customer_id` | `nullable, integer, exists:customers,id` |
+| `customer_address_id` | `nullable, integer, exists:customer_addresses,id` |
+| `district_id` | `nullable, integer, exists:districts,id` |
 | `items` | `required, array, min:1` |
 | `items.*.menu_item_id` | `required, integer` |
 | `items.*.quantity` | `required, integer, min:1` |
@@ -1735,6 +1817,8 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.).
     "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
     "delivery_fee": 15.5,
     "customer_id": "{{customer_id}}",
+    "customer_address_id": 1,
+    "district_id": 1,
     "items": [
         {
             "menu_item_id": 1,
@@ -1783,6 +1867,8 @@ Update — orders/{order}
 | `delivery_address` | `nullable, string, max:500` |
 | `delivery_fee` | `nullable, numeric, min:0` |
 | `customer_id` | `nullable, integer, exists:customers,id` |
+| `customer_address_id` | `nullable, integer, exists:customer_addresses,id` |
+| `district_id` | `nullable, integer, exists:districts,id` |
 
 ```json
 {
@@ -1792,7 +1878,9 @@ Update — orders/{order}
     "notes": "بدون بصل",
     "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
     "delivery_fee": 15.5,
-    "customer_id": "{{customer_id}}"
+    "customer_id": "{{customer_id}}",
+    "customer_address_id": 1,
+    "district_id": 1
 }
 ```
 
@@ -1818,6 +1906,8 @@ Update — orders/{order}
 | `delivery_address` | `nullable, string, max:500` |
 | `delivery_fee` | `nullable, numeric, min:0` |
 | `customer_id` | `nullable, integer, exists:customers,id` |
+| `customer_address_id` | `nullable, integer, exists:customer_addresses,id` |
+| `district_id` | `nullable, integer, exists:districts,id` |
 
 ```json
 {
@@ -1827,7 +1917,9 @@ Update — orders/{order}
     "notes": "بدون بصل",
     "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
     "delivery_fee": 15.5,
-    "customer_id": "{{customer_id}}"
+    "customer_id": "{{customer_id}}",
+    "customer_address_id": 1,
+    "district_id": 1
 }
 ```
 
@@ -3231,6 +3323,92 @@ Update — settings
     "service_charge_applies_to": [
         "dine_in"
     ]
+}
+```
+
+---
+
+#### `GET` /api/v1/settings/districts
+
+List delivery districts and their fees. POS uses this to show the fee when a district is selected.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `is_active` | `nullable, boolean` |
+
+---
+
+#### `POST` /api/v1/settings/districts
+
+Create a delivery district with a default fee. Owners and managers only.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `required, string, max:100, unique:districts,name,NULL,id` |
+| `delivery_fee` | `required, numeric, min:0` |
+| `is_active` | `sometimes, boolean` |
+| `sort_order` | `sometimes, integer, min:0` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "delivery_fee": 15.5,
+    "is_active": true,
+    "sort_order": 1
+}
+```
+
+---
+
+#### `DELETE` /api/v1/settings/districts/{district}
+
+Destroy — settings/districts/{district}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** `{district}`
+
+---
+
+#### `PATCH` /api/v1/settings/districts/{district}
+
+Update — settings/districts/{district}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** `{district}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `sometimes, string, max:100, unique:districts,name,NULL,id` |
+| `delivery_fee` | `sometimes, numeric, min:0` |
+| `is_active` | `sometimes, boolean` |
+| `sort_order` | `sometimes, integer, min:0` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "delivery_fee": 15.5,
+    "is_active": true,
+    "sort_order": 1
 }
 ```
 

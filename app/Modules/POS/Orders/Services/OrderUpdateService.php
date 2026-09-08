@@ -7,6 +7,7 @@ namespace App\Modules\POS\Orders\Services;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Support\OrderCharges;
+use App\Modules\POS\Orders\Support\OrderDeliveryDestination;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Tenant;
@@ -24,7 +25,9 @@ class OrderUpdateService
      *     notes?: string|null,
      *     delivery_address?: string|null,
      *     delivery_fee?: float|int|string|null,
-     *     customer_id?: int|null
+     *     customer_id?: int|null,
+     *     customer_address_id?: int|null,
+     *     district_id?: int|null
      * }  $data
      */
     public function update(Order $order, array $data): Order
@@ -35,12 +38,31 @@ class OrderUpdateService
 
         return DB::transaction(function () use ($order, $data): Order {
             $channel = $data['channel'] ?? $order->channel;
-            $deliveryAddress = array_key_exists('delivery_address', $data)
-                ? $data['delivery_address']
-                : $order->delivery_address;
             $floorTableId = array_key_exists('floor_table_id', $data)
                 ? ($data['floor_table_id'] !== null ? (int) $data['floor_table_id'] : null)
                 : ($order->floor_table_id !== null ? (int) $order->floor_table_id : null);
+
+            $destinationIncoming = array_intersect_key($data, array_flip([
+                'customer_id',
+                'customer_address_id',
+                'district_id',
+                'delivery_address',
+            ]));
+
+            $destination = OrderDeliveryDestination::resolve(
+                incoming: $destinationIncoming,
+                current: [
+                    'customer_id' => $order->customer_id !== null ? (int) $order->customer_id : null,
+                    'customer_address_id' => $order->customer_address_id !== null ? (int) $order->customer_address_id : null,
+                    'district_id' => $order->district_id !== null ? (int) $order->district_id : null,
+                    'delivery_address' => $order->delivery_address,
+                ],
+            );
+
+            $deliveryAddress = $destination['delivery_address'];
+            $customerId = $destination['customer_id'];
+            $customerAddressId = $destination['customer_address_id'];
+            $districtId = $destination['district_id'];
 
             $fulfillmentType = $this->resolveFulfillmentType($order, $data, $channel, $floorTableId);
 
@@ -51,9 +73,16 @@ class OrderUpdateService
                 $floorTableId = null;
             }
 
-            $deliveryFee = array_key_exists('delivery_fee', $data)
-                ? (float) $data['delivery_fee']
-                : ($fulfillmentType === OrderFulfillment::DELIVERY ? (float) $order->delivery_fee : 0);
+            $feeProvided = array_key_exists('delivery_fee', $data);
+            $explicitFee = $feeProvided ? (float) $data['delivery_fee'] : null;
+
+            if ($feeProvided) {
+                $deliveryFee = $explicitFee;
+            } elseif (array_key_exists('district_id', $data) || array_key_exists('customer_address_id', $data)) {
+                $deliveryFee = $destination['suggested_fee'];
+            } else {
+                $deliveryFee = $fulfillmentType === OrderFulfillment::DELIVERY ? (float) $order->delivery_fee : 0;
+            }
 
             $deliveryFee = OrderFulfillment::normalizeDeliveryFee($fulfillmentType, $deliveryFee);
 
@@ -75,10 +104,8 @@ class OrderUpdateService
                 throw new InvalidArgumentException('Delivery is not enabled for this restaurant.');
             }
 
-            if (array_key_exists('customer_id', $data) && $data['customer_id'] !== null) {
-                if (Customer::query()->whereKey((int) $data['customer_id'])->doesntExist()) {
-                    throw new InvalidArgumentException('Customer not found.');
-                }
+            if ($customerId !== null && Customer::query()->whereKey($customerId)->doesntExist()) {
+                throw new InvalidArgumentException('Customer not found.');
             }
 
             if ($floorTableId !== null) {
@@ -100,6 +127,9 @@ class OrderUpdateService
                 'channel' => $channel,
                 'fulfillment_type' => $fulfillmentType,
                 'floor_table_id' => $floorTableId,
+                'customer_id' => $customerId,
+                'customer_address_id' => $customerAddressId,
+                'district_id' => $districtId,
                 'delivery_address' => $deliveryAddress,
                 'delivery_fee' => $deliveryFee,
                 'tax_rate' => $charges['tax_rate'],
@@ -109,10 +139,6 @@ class OrderUpdateService
 
             if (array_key_exists('notes', $data)) {
                 $attributes['notes'] = $data['notes'];
-            }
-
-            if (array_key_exists('customer_id', $data)) {
-                $attributes['customer_id'] = $data['customer_id'];
             }
 
             $requiresTracking = OrderFulfillment::requiresDeliveryTracking($fulfillmentType);
@@ -136,7 +162,7 @@ class OrderUpdateService
                 'floor_table_id' => $order->floor_table_id,
             ]);
 
-            return $order->fresh(['items', 'table', 'waiter', 'customer']) ?? $order;
+            return $order->fresh(['items', 'table', 'waiter', 'customer', 'district', 'customerAddress.district']) ?? $order;
         });
     }
 

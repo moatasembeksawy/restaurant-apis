@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Delivery\Providers;
 
 use App\Modules\Delivery\Aggregators\Services\AggregatorOrderService;
+use App\Modules\Delivery\Customers\Services\CustomerAddressService;
 use App\Modules\Delivery\Customers\Services\CustomerService;
 use App\Modules\Delivery\QRMenu\Services\QRMenuService;
 use App\Modules\Delivery\Riders\Services\DeliveryService;
@@ -17,6 +18,7 @@ class DeliveryServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(CustomerService::class);
+        $this->app->singleton(CustomerAddressService::class);
         $this->app->singleton(QRMenuService::class);
         $this->app->singleton(DeliveryService::class);
         $this->app->singleton(WhatsAppOrderService::class);

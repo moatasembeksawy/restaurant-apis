@@ -120,6 +120,8 @@ $requests = [
             'delivery_address' => ['nullable', 'string', 'max:500'],
             'delivery_fee' => ['nullable', 'numeric', 'min:0'],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'customer_address_id' => ['nullable', 'integer', 'exists:customer_addresses,id'],
+            'district_id' => ['nullable', 'integer', 'exists:districts,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_item_id' => ['required', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
@@ -133,6 +135,8 @@ $requests = [
             'delivery_address' => ['nullable', 'string', 'max:500'],
             'delivery_fee' => ['nullable', 'numeric', 'min:0'],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'customer_address_id' => ['nullable', 'integer', 'exists:customer_addresses,id'],
+            'district_id' => ['nullable', 'integer', 'exists:districts,id'],
         RULES],
     ['namespace' => 'App\\Modules\\POS\\Orders\\Http\\Requests', 'class' => 'UpdateOrderStatusRequest', 'rules' => <<<'RULES'
             'status' => ['required', 'in:active,cooking,ready,completed,paid,cancelled'],
@@ -409,6 +413,9 @@ $requests = [
             'service_charge_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'service_charge_applies_to' => ['sometimes', 'array'],
             'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
+        RULES],
+    ['namespace' => 'App\\Modules\\Tenant\\Districts\\Http\\Requests', 'class' => 'IndexDistrictRequest', 'rules' => <<<'RULES'
+            'is_active' => ['nullable', 'boolean'],
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateETASettingsRequest', 'rules' => <<<'RULES'
             'eta_client_id' => ['nullable', 'string', 'max:100'],

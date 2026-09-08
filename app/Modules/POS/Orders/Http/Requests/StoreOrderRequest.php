@@ -20,6 +20,8 @@ class StoreOrderRequest extends ApiFormRequest
             'delivery_address' => ['nullable', 'string', 'max:500'],
             'delivery_fee' => ['nullable', 'numeric', 'min:0'],
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
+            'customer_address_id' => ['nullable', 'integer', 'exists:customer_addresses,id'],
+            'district_id' => ['nullable', 'integer', 'exists:districts,id'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.menu_item_id' => ['required', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],

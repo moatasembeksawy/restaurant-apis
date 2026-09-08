@@ -2,43 +2,46 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\Delivery\Customers\Models;
+namespace App\Modules\Tenant\Districts\Models;
 
+use App\Modules\Delivery\Customers\Models\CustomerAddress;
 use App\Shared\Domain\Models\BaseModel;
-use Database\Factories\CustomerFactory;
+use Database\Factories\DistrictFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class Customer extends BaseModel
+class District extends BaseModel
 {
     use HasFactory;
 
     protected static function newFactory(): Factory
     {
-        return CustomerFactory::new();
+        return DistrictFactory::new();
     }
 
     protected $fillable = [
         'tenant_id',
-        'phone',
         'name',
-        'default_address',
-        'loyalty_points',
-        'visit_count',
-        'total_spent',
-        'last_order_at',
+        'delivery_fee',
+        'is_active',
+        'sort_order',
     ];
 
     protected function casts(): array
     {
         return [
-            'loyalty_points' => 'integer',
-            'visit_count' => 'integer',
-            'total_spent' => 'decimal:2',
-            'last_order_at' => 'datetime',
+            'delivery_fee' => 'decimal:2',
+            'is_active' => 'boolean',
+            'sort_order' => 'integer',
         ];
     }
+
+    protected $attributes = [
+        'delivery_fee' => 0,
+        'is_active' => true,
+        'sort_order' => 0,
+    ];
 
     /** @return HasMany<CustomerAddress, $this> */
     public function addresses(): HasMany
