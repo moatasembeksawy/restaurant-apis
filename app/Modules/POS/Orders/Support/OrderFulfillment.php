@@ -86,4 +86,23 @@ final class OrderFulfillment
     {
         return $fulfillmentType === self::DELIVERY;
     }
+
+    public static function normalizeDeliveryFee(string $fulfillmentType, ?float $deliveryFee): float
+    {
+        $fee = round((float) ($deliveryFee ?? 0), 2);
+
+        if ($fee < 0) {
+            throw new InvalidArgumentException('Delivery fee cannot be negative.');
+        }
+
+        if ($fulfillmentType !== self::DELIVERY) {
+            if ($fee > 0) {
+                throw new InvalidArgumentException('Delivery fees can only be applied to delivery orders.');
+            }
+
+            return 0.0;
+        }
+
+        return $fee;
+    }
 }

@@ -292,6 +292,270 @@ it('rejects removing a cooked item from a ready order', function (): void {
         ->assertJsonPath('errors.0.code', 'ITEM_NOT_EDITABLE');
 });
 
+it('updates an order channel, table, and notes', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'floor_table_id' => $this->table->id,
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+        'status' => 'active',
+    ]);
+    $this->table->update(['status' => 'occupied']);
+
+    $otherTable = FloorTable::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'free',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'channel' => 'qr',
+            'floor_table_id' => $otherTable->id,
+            'notes' => 'Moved to window',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.channel', 'qr')
+        ->assertJsonPath('data.floor_table_id', $otherTable->id)
+        ->assertJsonPath('data.fulfillment_type', 'dine_in')
+        ->assertJsonPath('data.notes', 'Moved to window');
+
+    expect($this->table->fresh()->status)->toBe('free');
+    expect($otherTable->fresh()->status)->toBe('occupied');
+});
+
+it('converts a dine-in order to takeaway and frees the table', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'floor_table_id' => $this->table->id,
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+        'status' => 'active',
+    ]);
+    $this->table->update(['status' => 'occupied']);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'fulfillment_type' => 'takeaway',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.fulfillment_type', 'takeaway')
+        ->assertJsonPath('data.floor_table_id', null);
+
+    expect($this->table->fresh()->status)->toBe('free');
+});
+
+it('converts an order to delivery when an address is provided', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'floor_table_id' => $this->table->id,
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+        'status' => 'cooking',
+    ]);
+    $this->table->update(['status' => 'occupied']);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'delivery_address' => 'Nasr City',
+            'delivery_fee' => 20,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.channel', 'own_delivery')
+        ->assertJsonPath('data.fulfillment_type', 'delivery')
+        ->assertJsonPath('data.delivery_address', 'Nasr City')
+        ->assertJsonPath('data.delivery_status', 'pending')
+        ->assertJsonPath('data.floor_table_id', null);
+
+    expect((float) $order->fresh()->delivery_fee)->toBe(20.0);
+    expect($this->table->fresh()->status)->toBe('free');
+});
+
+it('includes delivery_fee in the order total', function (): void {
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'delivery_address' => 'Nasr City',
+            'delivery_fee' => 15.50,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 2],
+            ],
+        ]);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.fulfillment_type', 'delivery');
+
+    expect((float) $response->json('data.delivery_fee'))->toBe(15.5);
+    expect((float) $response->json('data.subtotal'))->toBe(100.0);
+    expect((float) $response->json('data.total'))->toBe(115.5);
+});
+
+it('updates delivery_fee on an open delivery order', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_address' => 'Nasr City',
+        'delivery_fee' => 10.00,
+        'subtotal' => 50.00,
+        'total' => 60.00,
+        'status' => 'active',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'pending',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'delivery_fee' => 25,
+        ])
+        ->assertOk();
+
+    expect((float) $order->fresh()->delivery_fee)->toBe(25.0);
+    expect((float) $order->fresh()->total)->toBe(75.0);
+});
+
+it('clears delivery_fee when converting a delivery order to takeaway', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_address' => 'Nasr City',
+        'delivery_fee' => 20.00,
+        'subtotal' => 50.00,
+        'total' => 70.00,
+        'status' => 'active',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'pending',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'fulfillment_type' => 'takeaway',
+            'channel' => 'dine_in',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.fulfillment_type', 'takeaway');
+
+    expect((float) $order->fresh()->delivery_fee)->toBe(0.0);
+    expect((float) $order->fresh()->total)->toBe(50.0);
+});
+
+it('rejects delivery_fee on a dine-in order', function (): void {
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'floor_table_id' => $this->table->id,
+            'channel' => 'dine_in',
+            'delivery_fee' => 10,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
+});
+
+it('attaches a customer when updating an order', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'active',
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'takeaway',
+    ]);
+    $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'customer_id' => $customer->id,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.customer_id', $customer->id);
+});
+
+it('rejects delivery updates without an address', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'active',
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'takeaway',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'fulfillment_type' => 'delivery',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
+});
+
+it('rejects updating a paid order', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'paid',
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'notes' => 'too late',
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_NOT_EDITABLE');
+});
+
+it('rejects a table from another branch', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'active',
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'takeaway',
+    ]);
+
+    $otherBranch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+    $foreignTable = FloorTable::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'status' => 'free',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}", [
+            'floor_table_id' => $foreignTable->id,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
+});
+
 it('validates order status transitions', function (): void {
     $order = Order::factory()->create([
         'tenant_id' => $this->tenant->id,

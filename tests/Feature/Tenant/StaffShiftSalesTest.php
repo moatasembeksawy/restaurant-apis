@@ -142,6 +142,25 @@ it('allows managers to settle payments without an active shift', function (): vo
     expect(Payment::query()->value('staff_shift_id'))->toBeNull();
 });
 
+it('does not subtract cash refunds twice from expected cash in drawer', function (): void {
+    Sanctum::actingAs($this->manager, ['*'], 'sanctum');
+
+    $this->postJson('/api/v1/staff/shifts/clock-in', ['opening_float' => 500])->assertCreated();
+    payOrderAs($this->manager, $this->order)->assertOk();
+
+    $this->postJson("/api/v1/orders/{$this->order->id}/refund", ['reason' => 'Wrong order'])
+        ->assertOk();
+
+    $this->getJson('/api/v1/staff/shifts/current')
+        ->assertOk()
+        ->assertJsonPath('data.sales.gross_sales', 100)
+        ->assertJsonPath('data.sales.refunds_total', 100)
+        ->assertJsonPath('data.sales.net_sales', 0)
+        ->assertJsonPath('data.sales.cash_collected', 100)
+        ->assertJsonPath('data.sales.cash_refunded', 100)
+        ->assertJsonPath('data.sales.expected_cash_in_drawer', 500);
+});
+
 it('attributes refunds to the manager active shift when present', function (): void {
     Sanctum::actingAs($this->cashier, ['*'], 'sanctum');
     $this->postJson('/api/v1/staff/shifts/clock-in')->assertCreated();

@@ -92,15 +92,11 @@ class StaffShiftSalesService
     {
         $cash = (float) $payments
             ->where('method', 'cash')
-            ->whereNull('refunded_at')
             ->sum('amount');
 
         $splitCash = (float) PaymentSplit::query()
             ->where('method', 'cash')
-            ->whereHas('payment', fn ($query) => $query
-                ->where('staff_shift_id', $shiftId)
-                ->whereNull('refunded_at')
-            )
+            ->whereHas('payment', fn ($query) => $query->where('staff_shift_id', $shiftId))
             ->sum('amount');
 
         return round($cash + $splitCash, 2);

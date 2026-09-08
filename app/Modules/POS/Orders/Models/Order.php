@@ -43,6 +43,7 @@ class Order extends BaseModel
         'delivery_address',
         'subtotal',
         'discount',
+        'delivery_fee',
         'total',
     ];
 
@@ -51,15 +52,21 @@ class Order extends BaseModel
         return [
             'subtotal' => 'decimal:2',
             'discount' => 'decimal:2',
+            'delivery_fee' => 'decimal:2',
             'total' => 'decimal:2',
         ];
     }
 
     // ── Status transitions ─────────────────────────────────────────────────────
 
-    public function canAddItems(): bool
+    public function canEdit(): bool
     {
         return in_array($this->status, ['pending', 'active', 'cooking', 'ready'], true);
+    }
+
+    public function canAddItems(): bool
+    {
+        return $this->canEdit();
     }
 
     public function canTransitionTo(string $newStatus): bool
@@ -81,7 +88,7 @@ class Order extends BaseModel
     public function recalculateTotals(): void
     {
         $this->subtotal = $this->items()->sum('subtotal');
-        $this->total = max(0, $this->subtotal - $this->discount);
+        $this->total = max(0, (float) $this->subtotal - (float) $this->discount) + (float) $this->delivery_fee;
         $this->saveQuietly();
     }
 

@@ -77,6 +77,7 @@ class AggregatorOrderService
             deliveryAddress: $payload['delivery_address'] ?? null,
             externalRef: $externalRef,
             fulfillmentType: 'delivery',
+            deliveryFee: isset($payload['delivery_fee']) ? (float) $payload['delivery_fee'] : null,
         );
 
         AuditLogger::log('aggregator.order_received', $order, [

@@ -35,6 +35,7 @@ class OrderPlacementService
         ?string $deliveryAddress = null,
         ?string $externalRef = null,
         ?string $fulfillmentType = null,
+        ?float $deliveryFee = null,
     ): Order {
         $this->planLimits->check('orders');
 
@@ -51,6 +52,8 @@ class OrderPlacementService
             floorTableId: $floorTableId,
             deliveryAddress: $deliveryAddress,
         );
+
+        $deliveryFee = OrderFulfillment::normalizeDeliveryFee($fulfillmentType, $deliveryFee);
 
         /** @var Tenant $tenant */
         $tenant = app('tenant');
@@ -76,6 +79,7 @@ class OrderPlacementService
             'fulfillment_type' => $fulfillmentType,
             'notes' => $notes,
             'delivery_address' => $deliveryAddress,
+            'delivery_fee' => $deliveryFee,
             'delivery_status' => OrderFulfillment::requiresDeliveryTracking($fulfillmentType) ? 'pending' : null,
             'external_ref' => $externalRef,
             'status' => 'pending',

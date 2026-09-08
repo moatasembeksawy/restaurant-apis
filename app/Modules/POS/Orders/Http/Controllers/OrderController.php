@@ -11,18 +11,23 @@ use App\Modules\POS\Orders\Http\Requests\UpdateOrderStatusRequest;
 use App\Modules\POS\Orders\Http\Resources\OrderResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Services\OrderPlacementService;
+use App\Modules\POS\Orders\Services\OrderUpdateService;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use InvalidArgumentException;
 
 /**
  * @group Orders
  */
 class OrderController extends Controller
 {
-    public function __construct(private readonly OrderPlacementService $orderPlacement) {}
+    public function __construct(
+        private readonly OrderPlacementService $orderPlacement,
+        private readonly OrderUpdateService $orderUpdate,
+    ) {}
 
     public function index(IndexOrderRequest $request): JsonResponse
     {
@@ -56,8 +61,9 @@ class OrderController extends Controller
                 notes: $validated['notes'] ?? null,
                 deliveryAddress: $validated['delivery_address'] ?? null,
                 fulfillmentType: $validated['fulfillment_type'] ?? null,
+                deliveryFee: isset($validated['delivery_fee']) ? (float) $validated['delivery_fee'] : null,
             );
-        } catch (\InvalidArgumentException $e) {
+        } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'ORDER_VALIDATION_FAILED', 422);
         }
 
@@ -71,9 +77,15 @@ class OrderController extends Controller
 
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
-        $validated = $request->validated();
+        if (! $order->canEdit()) {
+            return ApiResponse::error('Cannot update an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+        }
 
-        $order->update($validated);
+        try {
+            $order = $this->orderUpdate->update($order, $request->validated());
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'ORDER_VALIDATION_FAILED', 422);
+        }
 
         return ApiResponse::success(new OrderResource($order), 'Order updated.');
     }

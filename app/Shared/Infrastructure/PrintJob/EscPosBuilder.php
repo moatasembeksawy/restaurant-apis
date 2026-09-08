@@ -131,8 +131,17 @@ class EscPosBuilder
             $this->text($line);
         }
 
-        $this->separator()
-            ->bold()->text('Total: '.number_format((float) $order->total, 2).' EGP')->bold(false)
+        $this->separator();
+
+        if ((float) $order->delivery_fee > 0) {
+            $this->text('Delivery: '.number_format((float) $order->delivery_fee, 2).' EGP');
+        }
+
+        if ((float) $order->discount > 0) {
+            $this->text('Discount: '.number_format((float) $order->discount, 2).' EGP');
+        }
+
+        $this->bold()->text('Total: '.number_format((float) $order->total, 2).' EGP')->bold(false)
             ->text('Paid via: '.$payment->method);
 
         if ($payment->change_due !== null && (float) $payment->change_due > 0) {

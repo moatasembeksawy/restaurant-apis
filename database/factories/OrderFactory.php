@@ -29,6 +29,7 @@ class OrderFactory extends Factory
             'status' => 'active',
             'subtotal' => 100.00,
             'discount' => 0.00,
+            'delivery_fee' => 0.00,
             'total' => 100.00,
         ];
     }

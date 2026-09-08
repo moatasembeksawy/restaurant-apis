@@ -17,6 +17,15 @@ it('infers dine-in when a table is linked', function (): void {
     expect(OrderFulfillment::resolve('qr', 12, null))->toBe('dine_in');
 });
 
+it('allows a delivery fee on delivery orders and zeros it otherwise', function (): void {
+    expect(OrderFulfillment::normalizeDeliveryFee(OrderFulfillment::DELIVERY, 15.5))->toBe(15.5);
+    expect(OrderFulfillment::normalizeDeliveryFee(OrderFulfillment::DINE_IN, null))->toBe(0.0);
+});
+
+it('rejects a positive delivery fee on non-delivery orders', function (): void {
+    OrderFulfillment::normalizeDeliveryFee(OrderFulfillment::TAKEAWAY, 10);
+})->throws(InvalidArgumentException::class, 'Delivery fees can only be applied');
+
 it('rejects delivery without an address', function (): void {
     OrderFulfillment::validate(
         fulfillmentType: OrderFulfillment::DELIVERY,
