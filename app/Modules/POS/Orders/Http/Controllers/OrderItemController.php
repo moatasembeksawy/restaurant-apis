@@ -7,6 +7,7 @@ namespace App\Modules\POS\Orders\Http\Controllers;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderItemAdded;
 use App\Modules\POS\Orders\Http\Requests\StoreOrderItemRequest;
+use App\Modules\POS\Orders\Http\Requests\UpdateOrderItemRequest;
 use App\Modules\POS\Orders\Http\Resources\OrderItemResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
@@ -50,6 +51,48 @@ class OrderItemController extends Controller
         SafeBroadcast::toOthers(new OrderItemAdded($item->fresh('order.table')));
 
         return ApiResponse::created(new OrderItemResource($item), 'Item added to order.');
+    }
+
+    public function update(UpdateOrderItemRequest $request, Order $order, OrderItem $item): JsonResponse
+    {
+        if ($item->order_id !== $order->id) {
+            return ApiResponse::error('Item does not belong to this order.', 'ITEM_NOT_FOUND', 404);
+        }
+
+        if (! $order->canAddItems()) {
+            return ApiResponse::error('Cannot update items on an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+        }
+
+        if (! in_array($item->status, ['pending', 'ready'], true)) {
+            return ApiResponse::error('Cannot update an item that is already '.$item->status.'.', 'ITEM_NOT_EDITABLE', 422);
+        }
+
+        $validated = $request->validated();
+        $quantity = (int) $validated['quantity'];
+        $previousQuantity = (int) $item->quantity;
+
+        $attributes = [
+            'quantity' => $quantity,
+            'subtotal' => (float) $item->unit_price * $quantity,
+        ];
+
+        if (array_key_exists('notes', $validated)) {
+            $attributes['notes'] = $validated['notes'];
+        }
+
+        if ($item->status === 'ready' && $quantity > $previousQuantity) {
+            $attributes['status'] = 'pending';
+            $attributes['cooked_at'] = null;
+        }
+
+        $item->update($attributes);
+        $order->recalculateTotals();
+
+        if ($quantity > $previousQuantity && in_array($order->status, ['ready', 'cooking'], true)) {
+            $order->update(['status' => 'cooking']);
+        }
+
+        return ApiResponse::success(new OrderItemResource($item->fresh()), 'Item updated.');
     }
 
     public function destroy(Order $order, OrderItem $item): JsonResponse|Response

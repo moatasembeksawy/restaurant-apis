@@ -316,6 +316,117 @@ it('rejects adding items to a paid order', function (): void {
         ->assertJsonPath('errors.0.code', 'ORDER_NOT_EDITABLE');
 });
 
+it('allows updating quantity on a pending order item', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'active',
+    ]);
+
+    $item = OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'pending',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}/items/{$item->id}", [
+            'quantity' => 3,
+            'notes' => 'extra spicy',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.quantity', 3)
+        ->assertJsonPath('data.notes', 'extra spicy');
+
+    expect((float) $item->fresh()->subtotal)->toBe(150.0);
+    expect((float) $order->fresh()->total)->toBe(150.0);
+});
+
+it('reopens a ready order when pending item quantity increases', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'ready',
+    ]);
+
+    $item = OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'pending',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}/items/{$item->id}", [
+            'quantity' => 2,
+        ])
+        ->assertOk();
+
+    expect($order->fresh()->status)->toBe('cooking');
+});
+
+it('allows updating quantity on a ready item and sends it back to the kitchen', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'ready',
+    ]);
+
+    $item = OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'ready',
+        'cooked_at' => now(),
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}/items/{$item->id}", [
+            'quantity' => 2,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.quantity', 2)
+        ->assertJsonPath('data.status', 'pending');
+
+    expect($item->fresh()->cooked_at)->toBeNull();
+    expect($order->fresh()->status)->toBe('cooking');
+});
+
+it('rejects updating quantity on a cooking item', function (): void {
+    $order = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'cooking',
+    ]);
+
+    $item = OrderItem::create([
+        'order_id' => $order->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 50.00,
+        'quantity' => 1,
+        'subtotal' => 50.00,
+        'status' => 'cooking',
+    ]);
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/orders/{$order->id}/items/{$item->id}", [
+            'quantity' => 2,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ITEM_NOT_EDITABLE');
+});
+
 it('allows removing a pending late-add from a cooking order', function (): void {
     $order = Order::factory()->create([
         'tenant_id' => $this->tenant->id,

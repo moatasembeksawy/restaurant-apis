@@ -142,6 +142,10 @@ $requests = [
             'quantity' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
         RULES],
+    ['namespace' => 'App\\Modules\\POS\\Orders\\Http\\Requests', 'class' => 'UpdateOrderItemRequest', 'rules' => <<<'RULES'
+            'quantity' => ['required', 'integer', 'min:1'],
+            'notes' => ['nullable', 'string'],
+        RULES],
 
     // POS — Menu
     ['namespace' => 'App\\Modules\\POS\\Menu\\Http\\Requests', 'class' => 'IndexMenuItemRequest', 'rules' => <<<'RULES'

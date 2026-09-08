@@ -75,6 +75,7 @@ Route::post('orders', [OrderController::class, 'store'])->middleware('permission
 Route::match(['put', 'patch'], 'orders/{order}', [OrderController::class, 'update'])->middleware('permission:orders.update');
 Route::patch('orders/{order}/status', [OrderController::class, 'updateStatus'])->middleware('permission:orders.update');
 Route::post('orders/{order}/items', [OrderItemController::class, 'store'])->middleware('permission:orders.update');
+Route::match(['put', 'patch'], 'orders/{order}/items/{item}', [OrderItemController::class, 'update'])->middleware('permission:orders.update');
 Route::delete('orders/{order}/items/{item}', [OrderItemController::class, 'destroy'])->middleware('permission:orders.update');
 
 // ── Kitchen Display ────────────────────────────────────────────────────────────

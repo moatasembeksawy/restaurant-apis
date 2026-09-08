@@ -1871,6 +1871,56 @@ Destroy — orders/{order}/items/{item}
 
 ---
 
+#### `PATCH` /api/v1/orders/{order}/items/{item}
+
+Update — orders/{order}/items/{item}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.update`
+- **Plan features:** _None_
+- **Path params:** `{order}`, `{item}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `quantity` | `required, integer, min:1` |
+| `notes` | `nullable, string` |
+
+```json
+{
+    "quantity": 2,
+    "notes": "بدون بصل"
+}
+```
+
+---
+
+#### `PUT` /api/v1/orders/{order}/items/{item}
+
+Update — orders/{order}/items/{item}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.update`
+- **Plan features:** _None_
+- **Path params:** `{order}`, `{item}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `quantity` | `required, integer, min:1` |
+| `notes` | `nullable, string` |
+
+```json
+{
+    "quantity": 2,
+    "notes": "بدون بصل"
+}
+```
+
+---
+
 #### `POST` /api/v1/orders/{order}/pay
 
 Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).

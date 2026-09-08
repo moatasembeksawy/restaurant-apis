@@ -6143,6 +6143,128 @@
                             ]
                         },
                         {
+                            "name": "PUT · orders/{order}/items/{item}",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/orders/{{order_id}}/items/{{menu_item_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "orders",
+                                        "{order}",
+                                        "items",
+                                        "{item}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — orders/{order}/items/{item}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · orders/{order}/items/{item}",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/orders/{{order_id}}/items/{{menu_item_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "orders",
+                                        "{order}",
+                                        "items",
+                                        "{item}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — orders/{order}/items/{item}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "DELETE · orders/{order}/items/{item}",
                             "request": {
                                 "method": "DELETE",
