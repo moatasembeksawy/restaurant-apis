@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\POS\Billing\Services\ETAService;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
@@ -122,4 +123,45 @@ it('lists failed invoices', function (): void {
 
     expect($response->json('data'))->toHaveCount(1);
     expect($response->json('data.0.eta_status'))->toBe('failed');
+});
+
+it('marks invoices as skipped when eta credentials are missing', function (): void {
+    $this->tenant->update([
+        'eta_client_id' => null,
+        'eta_client_secret' => null,
+    ]);
+
+    config([
+        'services.eta.client_id' => '',
+        'services.eta.client_secret' => '',
+    ]);
+
+    $this->invoice->update(['eta_status' => 'pending']);
+
+    app(ETAService::class)->submit($this->invoice->fresh());
+
+    $invoice = $this->invoice->fresh();
+
+    expect($invoice->eta_status)->toBe('skipped');
+    expect($invoice->eta_response)->toMatchArray([
+        'reason' => 'ETA credentials not configured for this tenant.',
+    ]);
+});
+
+it('lists and resubmits skipped eta invoices', function (): void {
+    Queue::fake();
+
+    $this->invoice->update(['eta_status' => 'skipped']);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/invoices/failed')
+        ->assertOk()
+        ->assertJsonPath('data.0.eta_status', 'skipped');
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/invoices/{$this->invoice->id}/resubmit")
+        ->assertOk()
+        ->assertJsonPath('data.eta_status', 'pending');
+
+    Queue::assertPushed(SubmitETAInvoiceJob::class);
 });
