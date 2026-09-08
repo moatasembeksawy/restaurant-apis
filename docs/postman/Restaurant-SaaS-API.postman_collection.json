@@ -1952,7 +1952,7 @@
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{base_url}}/settings/districts?is_active=true",
+                                    "raw": "{{base_url}}/settings/districts?branch_id=%7B%7Bbranch_id%7D%7D&is_active=true",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -1962,13 +1962,18 @@
                                     ],
                                     "query": [
                                         {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer, exists:branches,id"
+                                        },
+                                        {
                                             "key": "is_active",
                                             "value": "true",
                                             "description": "nullable, boolean"
                                         }
                                     ]
                                 },
-                                "description": "List delivery districts and their fees. POS uses this to show the fee when a district is selected.\n\nAuth: Bearer token + tenant header"
+                                "description": "List delivery districts and their fees for a branch. Pass branch_id (defaults to the authenticated user branch). POS uses this to show the fee when a district is selected.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -2068,16 +2073,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Create a delivery district with a default fee. Owners and managers only.\n\nAuth: Bearer token + tenant header",
-                                "body": {
-                                    "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"delivery_fee\": 15.5,\n    \"is_active\": true,\n    \"sort_order\": 1\n}",
-                                    "options": {
-                                        "raw": {
-                                            "language": "json"
-                                        }
-                                    }
-                                }
+                                "description": "Create a delivery district with a fee for a specific branch. Owners and managers only. The same district name can exist on another branch with a different fee.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {

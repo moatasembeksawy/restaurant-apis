@@ -16,11 +16,16 @@ class UpdateDistrictRequest extends ApiFormRequest
         $tenantId = $this->user()?->tenant_id;
         $district = $this->route('district');
         $districtId = $district instanceof District ? $district->id : $district;
+        $branchId = $district instanceof District ? $district->branch_id : null;
 
         $uniqueName = Rule::unique('districts', 'name')->ignore($districtId);
 
         if ($tenantId !== null) {
             $uniqueName->where('tenant_id', $tenantId);
+        }
+
+        if ($branchId !== null) {
+            $uniqueName->where('branch_id', $branchId);
         }
 
         return [

@@ -122,7 +122,7 @@ class TenantSeeder extends Seeder
 
         // ── Seed demo customer (Postman {{customer_id}}) ───────────────────────
         $customer = $this->seedCustomer($tenant);
-        $this->seedDistrictsAndAddresses($tenant, $customer);
+        $this->seedDistrictsAndAddresses($tenant, $branch, $customer);
 
         // ── Assign Spatie roles ────────────────────────────────────────────────
         User::query()
@@ -219,20 +219,20 @@ class TenantSeeder extends Seeder
         );
     }
 
-    private function seedDistrictsAndAddresses(Tenant $tenant, Customer $customer): void
+    private function seedDistrictsAndAddresses(Tenant $tenant, Branch $branch, Customer $customer): void
     {
         app()->instance('tenant', $tenant);
 
         $dokki = District::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'الدقي'],
+            ['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'الدقي'],
             ['delivery_fee' => 15.00, 'is_active' => true, 'sort_order' => 1],
         );
         $nasr = District::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'مدينة نصر'],
+            ['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'مدينة نصر'],
             ['delivery_fee' => 25.00, 'is_active' => true, 'sort_order' => 2],
         );
         District::firstOrCreate(
-            ['tenant_id' => $tenant->id, 'name' => 'المعادي'],
+            ['tenant_id' => $tenant->id, 'branch_id' => $branch->id, 'name' => 'المعادي'],
             ['delivery_fee' => 30.00, 'is_active' => true, 'sort_order' => 3],
         );
 

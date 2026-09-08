@@ -57,6 +57,7 @@ class OrderUpdateService
                     'district_id' => $order->district_id !== null ? (int) $order->district_id : null,
                     'delivery_address' => $order->delivery_address,
                 ],
+                branchId: (int) $order->branch_id,
             );
 
             $deliveryAddress = $destination['delivery_address'];

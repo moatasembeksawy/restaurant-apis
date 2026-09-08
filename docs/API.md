@@ -3351,7 +3351,7 @@ Update — settings
 
 #### `GET` /api/v1/settings/districts
 
-List delivery districts and their fees. POS uses this to show the fee when a district is selected.
+List delivery districts and their fees for a branch. Pass branch_id (defaults to the authenticated user branch). POS uses this to show the fee when a district is selected.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** _None_
@@ -3362,13 +3362,14 @@ List delivery districts and their fees. POS uses this to show the fee when a dis
 
 | Parameter | Rules |
 |-----------|-------|
+| `branch_id` | `nullable, integer, exists:branches,id` |
 | `is_active` | `nullable, boolean` |
 
 ---
 
 #### `POST` /api/v1/settings/districts
 
-Create a delivery district with a default fee. Owners and managers only.
+Create a delivery district with a fee for a specific branch. Owners and managers only. The same district name can exist on another branch with a different fee.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** _None_
@@ -3377,20 +3378,10 @@ Create a delivery district with a default fee. Owners and managers only.
 
 **Request body**
 
-| Parameter | Rules |
-|-----------|-------|
-| `name` | `required, string, max:100, unique:districts,name,NULL,id` |
-| `delivery_fee` | `required, numeric, min:0` |
-| `is_active` | `sometimes, boolean` |
-| `sort_order` | `sometimes, integer, min:0` |
+_None_
 
 ```json
-{
-    "name": "Downtown Branch",
-    "delivery_fee": 15.5,
-    "is_active": true,
-    "sort_order": 1
-}
+{}
 ```
 
 ---

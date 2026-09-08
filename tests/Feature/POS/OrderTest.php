@@ -791,6 +791,7 @@ it('blocks cross-tenant order access', function (): void {
 it('applies the district delivery fee when a district is chosen', function (): void {
     $district = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'الدقي',
         'delivery_fee' => 20,
     ]);
@@ -817,6 +818,7 @@ it('applies the district delivery fee when a district is chosen', function (): v
 it('applies the address district fee when a customer address is chosen', function (): void {
     $district = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'delivery_fee' => 18,
     ]);
     $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
@@ -851,6 +853,7 @@ it('applies the address district fee when a customer address is chosen', functio
 it('allows overriding the district delivery fee', function (): void {
     $district = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'delivery_fee' => 20,
     ]);
 
@@ -876,11 +879,13 @@ it('allows overriding the district delivery fee', function (): void {
 it('updates the delivery fee when the district is changed on an open order', function (): void {
     $dokki = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'الدقي',
         'delivery_fee' => 15,
     ]);
     $nasr = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'مدينة نصر',
         'delivery_fee' => 28,
     ]);
@@ -917,4 +922,75 @@ it('updates the delivery fee when the district is changed on an open order', fun
 
     expect((float) $order->fresh()->delivery_fee)->toBe(28.0);
     expect((float) $order->fresh()->total)->toBe(78.0);
+});
+
+it('uses the ordering branch fee when the address district belongs to another branch', function (): void {
+    $otherBranch = Branch::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'is_default' => false,
+    ]);
+
+    $cairoDokki = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 40,
+    ]);
+    $thisBranchDokki = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 12,
+    ]);
+
+    $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
+    $address = CustomerAddress::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'customer_id' => $customer->id,
+        'district_id' => $cairoDokki->id,
+        'address' => '١٢ شارع التحرير',
+        'is_default' => true,
+    ]);
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'customer_address_id' => $address->id,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.district_id', $thisBranchDokki->id);
+
+    expect((float) $response->json('data.delivery_fee'))->toBe(12.0);
+});
+
+it('rejects a district from another branch on an order', function (): void {
+    $otherBranch = Branch::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'is_default' => false,
+    ]);
+    $otherDistrict = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'name' => 'المعادي',
+        'delivery_fee' => 50,
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'own_delivery',
+            'fulfillment_type' => 'delivery',
+            'delivery_address' => 'المعادي',
+            'district_id' => $otherDistrict->id,
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
 });

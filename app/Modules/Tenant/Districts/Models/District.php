@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Districts\Models;
 
 use App\Modules\Delivery\Customers\Models\CustomerAddress;
+use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
 use Database\Factories\DistrictFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class District extends BaseModel
@@ -22,6 +24,7 @@ class District extends BaseModel
 
     protected $fillable = [
         'tenant_id',
+        'branch_id',
         'name',
         'delivery_fee',
         'is_active',
@@ -42,6 +45,12 @@ class District extends BaseModel
         'is_active' => true,
         'sort_order' => 0,
     ];
+
+    /** @return BelongsTo<Branch, $this> */
+    public function branch(): BelongsTo
+    {
+        return $this->belongsTo(Branch::class);
+    }
 
     /** @return HasMany<CustomerAddress, $this> */
     public function addresses(): HasMany

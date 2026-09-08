@@ -25,8 +25,16 @@ class DistrictController extends Controller
     public function index(IndexDistrictRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $branchId = isset($validated['branch_id'])
+            ? (int) $validated['branch_id']
+            : $request->user()?->branch_id;
+
+        if ($branchId === null) {
+            return ApiResponse::success([]);
+        }
 
         $districts = District::query()
+            ->where('branch_id', $branchId)
             ->when(
                 array_key_exists('is_active', $validated),
                 fn ($query) => $query->where('is_active', $request->boolean('is_active')),
@@ -42,7 +50,14 @@ class DistrictController extends Controller
     {
         $this->authorizeDistrictManagement($request);
 
-        $district = District::create($request->validated());
+        $validated = $request->validated();
+        $validated['branch_id'] = $validated['branch_id'] ?? $request->user()?->branch_id;
+
+        if ($validated['branch_id'] === null) {
+            return ApiResponse::error('branch_id is required.', 'VALIDATION_ERROR', 422);
+        }
+
+        $district = District::create($validated);
         $district->refresh();
 
         AuditLogger::log('district.created', $district);

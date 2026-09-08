@@ -58,6 +58,7 @@ class OrderPlacementService
                 'district_id' => null,
                 'delivery_address' => null,
             ],
+            branchId: $branchId,
         );
 
         $customerId = $destination['customer_id'];

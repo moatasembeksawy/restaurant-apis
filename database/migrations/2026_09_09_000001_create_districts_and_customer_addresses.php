@@ -14,14 +14,15 @@ return new class extends Migration
         Schema::create('districts', function (Blueprint $table): void {
             $table->id();
             $table->foreignId('tenant_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('branch_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->decimal('delivery_fee', 10, 2)->default(0);
             $table->boolean('is_active')->default(true);
             $table->unsignedInteger('sort_order')->default(0);
             $table->timestamps();
 
-            $table->unique(['tenant_id', 'name']);
-            $table->index(['tenant_id', 'is_active']);
+            $table->unique(['tenant_id', 'branch_id', 'name']);
+            $table->index(['tenant_id', 'branch_id', 'is_active']);
         });
 
         Schema::create('customer_addresses', function (Blueprint $table): void {

@@ -13,10 +13,9 @@ final class OrderDeliveryDestination
     /**
      * Resolve the delivery address, district, and suggested fee for an order.
      *
-     * Incoming keys override current values. Selecting a customer address fills
-     * the street address and district (and therefore the suggested fee) unless
-     * those fields are also sent. An explicit delivery_fee on the order still
-     * wins at the caller.
+     * Districts belong to a branch. Selecting a customer address fills the
+     * street and then maps the address district onto this branch (same name)
+     * so each branch can charge its own fee.
      *
      * @param  array{
      *     customer_id?: int|null,
@@ -38,7 +37,7 @@ final class OrderDeliveryDestination
      *     suggested_fee: float|null
      * }
      */
-    public static function resolve(array $incoming, array $current): array
+    public static function resolve(array $incoming, array $current, int $branchId): array
     {
         $customerId = array_key_exists('customer_id', $incoming)
             ? self::nullableInt($incoming['customer_id'])
@@ -52,6 +51,8 @@ final class OrderDeliveryDestination
         $deliveryAddress = array_key_exists('delivery_address', $incoming)
             ? self::nullableString($incoming['delivery_address'])
             : $current['delivery_address'];
+
+        $mappedFromAddress = false;
 
         if ($customerAddressId !== null && array_key_exists('customer_address_id', $incoming)) {
             $address = CustomerAddress::query()->with('district')->find($customerAddressId);
@@ -71,17 +72,21 @@ final class OrderDeliveryDestination
             }
 
             if (! array_key_exists('district_id', $incoming)) {
-                $districtId = $address->district_id !== null ? (int) $address->district_id : null;
+                $districtId = self::districtIdForBranch($address->district, $branchId);
+                $mappedFromAddress = true;
             }
         }
 
         $district = self::resolveDistrict(
             $districtId,
+            $branchId,
             newlySelected: array_key_exists('district_id', $incoming)
                 || (
                     array_key_exists('customer_address_id', $incoming)
+                    && ! array_key_exists('district_id', $incoming)
                     && $districtId !== $current['district_id']
                 ),
+            allowMissingOnBranch: $mappedFromAddress,
         );
 
         return [
@@ -102,8 +107,30 @@ final class OrderDeliveryDestination
         return $suggestedFee;
     }
 
-    private static function resolveDistrict(?int $districtId, bool $newlySelected): ?District
+    private static function districtIdForBranch(?District $district, int $branchId): ?int
     {
+        if ($district === null) {
+            return null;
+        }
+
+        if ((int) $district->branch_id === $branchId) {
+            return (int) $district->id;
+        }
+
+        $mapped = District::query()
+            ->where('branch_id', $branchId)
+            ->where('name', $district->name)
+            ->first();
+
+        return $mapped !== null ? (int) $mapped->id : null;
+    }
+
+    private static function resolveDistrict(
+        ?int $districtId,
+        int $branchId,
+        bool $newlySelected,
+        bool $allowMissingOnBranch = false,
+    ): ?District {
         if ($districtId === null) {
             return null;
         }
@@ -112,6 +139,14 @@ final class OrderDeliveryDestination
 
         if ($district === null) {
             throw new InvalidArgumentException('District not found.');
+        }
+
+        if ((int) $district->branch_id !== $branchId) {
+            if ($allowMissingOnBranch) {
+                return null;
+            }
+
+            throw new InvalidArgumentException('District does not belong to this branch.');
         }
 
         if ($newlySelected && ! $district->is_active) {

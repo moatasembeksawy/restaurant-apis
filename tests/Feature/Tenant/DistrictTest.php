@@ -32,6 +32,7 @@ beforeEach(function (): void {
 it('lets staff list districts with their delivery fees', function (): void {
     District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'الدقي',
         'delivery_fee' => 15,
         'sort_order' => 1,
@@ -50,6 +51,7 @@ it('lets staff list districts with their delivery fees', function (): void {
 it('creates a district in settings', function (): void {
     $this->withToken($this->token)
         ->postJson('/api/v1/settings/districts', [
+            'branch_id' => $this->branch->id,
             'name' => 'مدينة نصر',
             'delivery_fee' => 25.5,
         ])
@@ -63,6 +65,7 @@ it('creates a district in settings', function (): void {
 it('updates a district delivery fee', function (): void {
     $district = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'delivery_fee' => 10,
     ]);
 
@@ -78,6 +81,7 @@ it('updates a district delivery fee', function (): void {
 it('blocks waiters from creating districts', function (): void {
     $this->withToken($this->waiter->createToken('test')->plainTextToken)
         ->postJson('/api/v1/settings/districts', [
+            'branch_id' => $this->branch->id,
             'name' => 'المعادي',
             'delivery_fee' => 30,
         ])
@@ -87,11 +91,13 @@ it('blocks waiters from creating districts', function (): void {
 it('filters districts by active status', function (): void {
     District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'نشط',
         'is_active' => true,
     ]);
     District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'متوقف',
         'is_active' => false,
     ]);
@@ -103,16 +109,70 @@ it('filters districts by active status', function (): void {
         ->assertJsonPath('data.0.name', 'نشط');
 });
 
-it('rejects duplicate district names for the same tenant', function (): void {
+it('rejects duplicate district names for the same branch', function (): void {
     District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'الدقي',
     ]);
 
     $this->withToken($this->token)
         ->postJson('/api/v1/settings/districts', [
+            'branch_id' => $this->branch->id,
             'name' => 'الدقي',
             'delivery_fee' => 20,
         ])
         ->assertUnprocessable();
+});
+
+it('allows the same district name with different fees on another branch', function (): void {
+    $otherBranch = Branch::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'is_default' => false,
+    ]);
+
+    District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 15,
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/settings/districts', [
+            'branch_id' => $otherBranch->id,
+            'name' => 'الدقي',
+            'delivery_fee' => 35,
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.branch_id', $otherBranch->id);
+
+    expect((float) District::query()->where('branch_id', $otherBranch->id)->first()->delivery_fee)->toBe(35.0);
+});
+
+it('lists only districts for the requested branch', function (): void {
+    $otherBranch = Branch::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'is_default' => false,
+    ]);
+
+    District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 15,
+    ]);
+    District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'name' => 'الدقي',
+        'delivery_fee' => 40,
+    ]);
+
+    $response = $this->withToken($this->token)
+        ->getJson('/api/v1/settings/districts?branch_id='.$otherBranch->id)
+        ->assertOk()
+        ->assertJsonCount(1, 'data');
+
+    expect((float) $response->json('data.0.delivery_fee'))->toBe(40.0);
 });

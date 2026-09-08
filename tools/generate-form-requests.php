@@ -421,6 +421,7 @@ $requests = [
             'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Districts\\Http\\Requests', 'class' => 'IndexDistrictRequest', 'rules' => <<<'RULES'
+            'branch_id' => ['nullable', 'integer'],
             'is_active' => ['nullable', 'boolean'],
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateETASettingsRequest', 'rules' => <<<'RULES'

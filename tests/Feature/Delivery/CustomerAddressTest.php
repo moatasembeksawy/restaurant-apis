@@ -23,6 +23,7 @@ beforeEach(function (): void {
     $this->customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
     $this->district = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'الدقي',
         'delivery_fee' => 15,
     ]);
@@ -34,6 +35,7 @@ beforeEach(function (): void {
 it('adds multiple addresses to a customer', function (): void {
     $work = District::factory()->create([
         'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
         'name' => 'مدينة نصر',
         'delivery_fee' => 25,
     ]);
