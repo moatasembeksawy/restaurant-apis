@@ -39,13 +39,16 @@ final class OrderDeliveryDestination
      */
     public static function resolve(array $incoming, array $current, int $branchId): array
     {
+        $districtProvided = array_key_exists('district_id', $incoming);
+        $addressProvided = array_key_exists('customer_address_id', $incoming);
+
         $customerId = array_key_exists('customer_id', $incoming)
             ? self::nullableInt($incoming['customer_id'])
             : $current['customer_id'];
-        $customerAddressId = array_key_exists('customer_address_id', $incoming)
+        $customerAddressId = $addressProvided
             ? self::nullableInt($incoming['customer_address_id'])
             : $current['customer_address_id'];
-        $districtId = array_key_exists('district_id', $incoming)
+        $districtId = $districtProvided
             ? self::nullableInt($incoming['district_id'])
             : $current['district_id'];
         $deliveryAddress = array_key_exists('delivery_address', $incoming)
@@ -54,7 +57,7 @@ final class OrderDeliveryDestination
 
         $mappedFromAddress = false;
 
-        if ($customerAddressId !== null && array_key_exists('customer_address_id', $incoming)) {
+        if ($addressProvided && $customerAddressId !== null) {
             $address = CustomerAddress::query()->with('district')->find($customerAddressId);
 
             if ($address === null) {
@@ -71,7 +74,7 @@ final class OrderDeliveryDestination
                 $deliveryAddress = $address->address;
             }
 
-            if (! array_key_exists('district_id', $incoming)) {
+            if (! $districtProvided) {
                 $districtId = self::districtIdForBranch($address->district, $branchId);
                 $mappedFromAddress = true;
             }
@@ -80,12 +83,8 @@ final class OrderDeliveryDestination
         $district = self::resolveDistrict(
             $districtId,
             $branchId,
-            newlySelected: array_key_exists('district_id', $incoming)
-                || (
-                    array_key_exists('customer_address_id', $incoming)
-                    && ! array_key_exists('district_id', $incoming)
-                    && $districtId !== $current['district_id']
-                ),
+            newlySelected: $districtProvided
+                || ($mappedFromAddress && $districtId !== $current['district_id']),
             allowMissingOnBranch: $mappedFromAddress,
         );
 
