@@ -12,12 +12,12 @@ class CustomerResource extends ModelResource
     /** @return array<string, mixed> */
     protected function extras(Request $request): array
     {
-        if (! $this->relationLoaded('addresses')) {
+        if (! $this->resource->relationLoaded('addresses')) {
             return [];
         }
 
         return [
-            'addresses' => CustomerAddressResource::collection($this->addresses)->resolve($request),
+            'addresses' => CustomerAddressResource::collection($this->resource->addresses)->resolve($request),
         ];
     }
 }

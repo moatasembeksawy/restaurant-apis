@@ -21,6 +21,7 @@ class BranchResource extends ModelResource
         return [
             'qr_menu_url' => $this->resource->qrMenuUrl(),
             'effective_tax_rate' => $charges['tax_rate'],
+            'effective_tax_rate_applies_to' => $charges['tax_rate_applies_to'],
             'effective_service_charge_rate' => $charges['service_charge_rate'],
             'effective_service_charge_applies_to' => $charges['service_charge_applies_to'],
         ];

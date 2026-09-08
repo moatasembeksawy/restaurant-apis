@@ -80,7 +80,6 @@ final class OrderDeliveryDestination
             newlySelected: array_key_exists('district_id', $incoming)
                 || (
                     array_key_exists('customer_address_id', $incoming)
-                    && ! array_key_exists('district_id', $incoming)
                     && $districtId !== $current['district_id']
                 ),
         );

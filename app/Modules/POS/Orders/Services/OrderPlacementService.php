@@ -116,6 +116,7 @@ class OrderPlacementService
             'delivery_address' => $deliveryAddress,
             'delivery_fee' => $deliveryFee,
             'tax_rate' => $charges['tax_rate'],
+            'tax_rate_applies_to' => $charges['tax_rate_applies_to'],
             'service_charge_rate' => $charges['service_charge_rate'],
             'service_charge_applies_to' => $charges['service_charge_applies_to'],
             'delivery_status' => OrderFulfillment::requiresDeliveryTracking($fulfillmentType) ? 'pending' : null,

@@ -44,6 +44,7 @@ class Tenant extends Model
         'trial_ends_at',
         'grace_period_ends_at',
         'tax_rate',
+        'tax_rate_applies_to',
         'service_charge_rate',
         'service_charge_applies_to',
     ];
@@ -57,6 +58,7 @@ class Tenant extends Model
             'custom_domain_verified_at' => 'datetime',
             'eta_client_secret' => 'encrypted',
             'tax_rate' => 'decimal:2',
+            'tax_rate_applies_to' => 'array',
             'service_charge_rate' => 'decimal:2',
             'service_charge_applies_to' => 'array',
         ];

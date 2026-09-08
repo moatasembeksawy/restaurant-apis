@@ -12,7 +12,7 @@ class OrderResource extends ModelResource
     /** @return array<string, mixed> */
     protected function extras(Request $request): array
     {
-        $district = $this->relationLoaded('district') ? $this->district : null;
+        $district = $this->resource->relationLoaded('district') ? $this->resource->district : null;
 
         return [
             'district_delivery_fee' => $district !== null ? (float) $district->delivery_fee : null,

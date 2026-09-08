@@ -62,12 +62,14 @@ it('allows a branch to override tenant tax settings', function (): void {
     $this->withToken($this->token)
         ->patchJson("/api/v1/branches/{$this->branch->id}", [
             'tax_rate' => 0,
+            'tax_rate_applies_to' => ['dine_in'],
             'service_charge_rate' => 10,
             'service_charge_applies_to' => ['dine_in', 'takeaway'],
         ])
         ->assertOk()
         ->assertJsonPath('data.tax_rate', '0.00')
         ->assertJsonPath('data.effective_tax_rate', 0)
+        ->assertJsonPath('data.effective_tax_rate_applies_to', ['dine_in'])
         ->assertJsonPath('data.effective_service_charge_rate', 10);
 
     expect((float) $this->branch->fresh()->tax_rate)->toBe(0.0);

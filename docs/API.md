@@ -2986,6 +2986,8 @@ Store — branches
 | `phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
 | `tax_rate` | `nullable, numeric, min:0, max:100` |
+| `tax_rate_applies_to` | `nullable, array` |
+| `tax_rate_applies_to.*` | `in:dine_in,takeaway,delivery` |
 | `service_charge_rate` | `nullable, numeric, min:0, max:100` |
 | `service_charge_applies_to` | `nullable, array` |
 | `service_charge_applies_to.*` | `in:dine_in,takeaway,delivery` |
@@ -2998,6 +3000,11 @@ Store — branches
     "phone": "+201012345678",
     "timezone": "Africa/Cairo",
     "tax_rate": 14,
+    "tax_rate_applies_to": [
+        "dine_in",
+        "takeaway",
+        "delivery"
+    ],
     "service_charge_rate": 12,
     "service_charge_applies_to": [
         "dine_in"
@@ -3027,6 +3034,8 @@ Update — branches/{branch}
 | `timezone` | `nullable, timezone` |
 | `is_active` | `sometimes, boolean` |
 | `tax_rate` | `nullable, numeric, min:0, max:100` |
+| `tax_rate_applies_to` | `nullable, array` |
+| `tax_rate_applies_to.*` | `in:dine_in,takeaway,delivery` |
 | `service_charge_rate` | `nullable, numeric, min:0, max:100` |
 | `service_charge_applies_to` | `nullable, array` |
 | `service_charge_applies_to.*` | `in:dine_in,takeaway,delivery` |
@@ -3040,6 +3049,11 @@ Update — branches/{branch}
     "timezone": "Africa/Cairo",
     "is_active": true,
     "tax_rate": 14,
+    "tax_rate_applies_to": [
+        "dine_in",
+        "takeaway",
+        "delivery"
+    ],
     "service_charge_rate": 12,
     "service_charge_applies_to": [
         "dine_in"
@@ -3306,6 +3320,8 @@ Update — settings
 | `talabat_webhook_secret` | `nullable, string, max:255` |
 | `elmenus_webhook_secret` | `nullable, string, max:255` |
 | `tax_rate` | `sometimes, numeric, min:0, max:100` |
+| `tax_rate_applies_to` | `sometimes, array` |
+| `tax_rate_applies_to.*` | `in:dine_in,takeaway,delivery` |
 | `service_charge_rate` | `sometimes, numeric, min:0, max:100` |
 | `service_charge_applies_to` | `sometimes, array` |
 | `service_charge_applies_to.*` | `in:dine_in,takeaway,delivery` |
@@ -3319,6 +3335,11 @@ Update — settings
     "talabat_webhook_secret": "kitchen-secret-12345678",
     "elmenus_webhook_secret": "kitchen-secret-12345678",
     "tax_rate": 14,
+    "tax_rate_applies_to": [
+        "dine_in",
+        "takeaway",
+        "delivery"
+    ],
     "service_charge_rate": 12,
     "service_charge_applies_to": [
         "dine_in"

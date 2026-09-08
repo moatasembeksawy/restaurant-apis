@@ -67,11 +67,13 @@ it('updates tenant tax and service charge settings', function (): void {
     $this->withToken($this->token)
         ->patchJson('/api/v1/settings', [
             'tax_rate' => 14,
+            'tax_rate_applies_to' => ['dine_in', 'takeaway'],
             'service_charge_rate' => 12,
             'service_charge_applies_to' => ['dine_in'],
         ])
         ->assertOk()
         ->assertJsonPath('data.tax_rate', 14)
+        ->assertJsonPath('data.tax_rate_applies_to', ['dine_in', 'takeaway'])
         ->assertJsonPath('data.service_charge_rate', 12)
         ->assertJsonPath('data.service_charge_applies_to', ['dine_in']);
 

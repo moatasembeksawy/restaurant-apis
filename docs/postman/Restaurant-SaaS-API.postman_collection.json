@@ -830,7 +830,7 @@
                                 "description": "Update — settings\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2180,7 +2180,7 @@
                                 "description": "Update — settings\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2404,7 +2404,7 @@
                                 "description": "Store — branches\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2463,7 +2463,7 @@
                                 "description": "Update — branches/{branch}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"is_active\": true,\n    \"tax_rate\": 14,\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"is_active\": true,\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"

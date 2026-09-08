@@ -19,6 +19,8 @@ class UpdateBranchRequest extends ApiFormRequest
             'timezone' => ['nullable', 'timezone'],
             'is_active' => ['sometimes', 'boolean'],
             'tax_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
+            'tax_rate_applies_to' => ['nullable', 'array'],
+            'tax_rate_applies_to.*' => ['in:dine_in,takeaway,delivery'],
             'service_charge_rate' => ['nullable', 'numeric', 'min:0', 'max:100'],
             'service_charge_applies_to' => ['nullable', 'array'],
             'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],

@@ -521,6 +521,7 @@ function exampleValue(string $field, array $rules, int $depth = 0): mixed
         'district_id' => 1,
         'customer_address_id' => 1,
         'tax_rate' => 14,
+        'tax_rate_applies_to' => ['dine_in', 'takeaway', 'delivery'],
         'service_charge_rate' => 12,
         'service_charge_applies_to' => ['dine_in'],
     ];

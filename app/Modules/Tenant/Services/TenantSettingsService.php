@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Services;
 
+use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\SubscriptionService;
 use App\Shared\Support\Audit\AuditLogger;
@@ -31,8 +32,9 @@ class TenantSettingsService
             'has_talabat_webhook_secret' => ! empty($tenant->talabat_webhook_secret),
             'has_elmenus_webhook_secret' => ! empty($tenant->elmenus_webhook_secret),
             'tax_rate' => (float) $tenant->tax_rate,
+            'tax_rate_applies_to' => $tenant->tax_rate_applies_to ?? OrderCharges::DEFAULT_TAX_RATE_APPLIES_TO,
             'service_charge_rate' => (float) $tenant->service_charge_rate,
-            'service_charge_applies_to' => $tenant->service_charge_applies_to ?? ['dine_in'],
+            'service_charge_applies_to' => $tenant->service_charge_applies_to ?? OrderCharges::DEFAULT_SERVICE_CHARGE_APPLIES_TO,
             'subscription' => $this->subscriptions->currentPlanDetails($tenant),
         ];
     }
@@ -89,7 +91,7 @@ class TenantSettingsService
             $auditFields[] = 'elmenus_webhook_secret';
         }
 
-        foreach (['tax_rate', 'service_charge_rate', 'service_charge_applies_to'] as $field) {
+        foreach (['tax_rate', 'tax_rate_applies_to', 'service_charge_rate', 'service_charge_applies_to'] as $field) {
             if (array_key_exists($field, $data)) {
                 $updates[$field] = $data[$field];
                 $auditFields[] = $field;

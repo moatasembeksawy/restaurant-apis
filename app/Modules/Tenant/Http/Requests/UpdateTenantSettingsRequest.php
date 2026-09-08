@@ -19,6 +19,8 @@ class UpdateTenantSettingsRequest extends ApiFormRequest
             'talabat_webhook_secret' => ['nullable', 'string', 'max:255'],
             'elmenus_webhook_secret' => ['nullable', 'string', 'max:255'],
             'tax_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
+            'tax_rate_applies_to' => ['sometimes', 'array'],
+            'tax_rate_applies_to.*' => ['in:dine_in,takeaway,delivery'],
             'service_charge_rate' => ['sometimes', 'numeric', 'min:0', 'max:100'],
             'service_charge_applies_to' => ['sometimes', 'array'],
             'service_charge_applies_to.*' => ['in:dine_in,takeaway,delivery'],

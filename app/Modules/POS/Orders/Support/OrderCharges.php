@@ -13,19 +13,32 @@ final class OrderCharges
     /** @var list<string> */
     public const DEFAULT_SERVICE_CHARGE_APPLIES_TO = [OrderFulfillment::DINE_IN];
 
+    /** @var list<string> */
+    public const DEFAULT_TAX_RATE_APPLIES_TO = [
+        OrderFulfillment::DINE_IN,
+        OrderFulfillment::TAKEAWAY,
+        OrderFulfillment::DELIVERY,
+    ];
+
     /**
      * Branch values override tenant defaults. Null on the branch means inherit.
      *
-     * @return array{tax_rate: float, service_charge_rate: float, service_charge_applies_to: list<string>}
+     * @return array{tax_rate: float, tax_rate_applies_to: list<string>, service_charge_rate: float, service_charge_applies_to: list<string>}
      */
     public static function resolve(?Tenant $tenant, ?Branch $branch): array
     {
         return [
             'tax_rate' => self::rate($branch?->tax_rate, $tenant?->tax_rate),
+            'tax_rate_applies_to' => self::appliesTo(
+                $branch?->tax_rate_applies_to,
+                $tenant?->tax_rate_applies_to,
+                self::DEFAULT_TAX_RATE_APPLIES_TO,
+            ),
             'service_charge_rate' => self::rate($branch?->service_charge_rate, $tenant?->service_charge_rate),
             'service_charge_applies_to' => self::appliesTo(
                 $branch?->service_charge_applies_to,
                 $tenant?->service_charge_applies_to,
+                self::DEFAULT_SERVICE_CHARGE_APPLIES_TO,
             ),
         ];
     }
@@ -36,14 +49,26 @@ final class OrderCharges
     public static function compute(Order $order): array
     {
         $net = max(0, (float) $order->subtotal - (float) $order->discount);
-        $appliesTo = self::appliesTo($order->service_charge_applies_to, null);
+        $serviceAppliesTo = self::appliesTo(
+            $order->service_charge_applies_to,
+            null,
+            self::DEFAULT_SERVICE_CHARGE_APPLIES_TO,
+        );
+        $taxAppliesTo = self::appliesTo(
+            $order->tax_rate_applies_to,
+            null,
+            self::DEFAULT_TAX_RATE_APPLIES_TO,
+        );
 
         $serviceCharge = 0.0;
-        if ((float) $order->service_charge_rate > 0 && in_array($order->fulfillment_type, $appliesTo, true)) {
+        if ((float) $order->service_charge_rate > 0 && in_array($order->fulfillment_type, $serviceAppliesTo, true)) {
             $serviceCharge = round($net * ((float) $order->service_charge_rate / 100), 2);
         }
 
-        $tax = round(($net + $serviceCharge) * ((float) $order->tax_rate / 100), 2);
+        $tax = 0.0;
+        if ((float) $order->tax_rate > 0 && in_array($order->fulfillment_type, $taxAppliesTo, true)) {
+            $tax = round(($net + $serviceCharge) * ((float) $order->tax_rate / 100), 2);
+        }
 
         return [
             'service_charge' => $serviceCharge,
@@ -61,13 +86,16 @@ final class OrderCharges
         return round((float) ($tenantRate ?? 0), 2);
     }
 
-    /** @return list<string> */
-    private static function appliesTo(mixed $branchAppliesTo, mixed $tenantAppliesTo): array
+    /**
+     * @param  list<string>  $default
+     * @return list<string>
+     */
+    private static function appliesTo(mixed $branchAppliesTo, mixed $tenantAppliesTo, array $default): array
     {
-        $source = $branchAppliesTo ?? $tenantAppliesTo ?? self::DEFAULT_SERVICE_CHARGE_APPLIES_TO;
+        $source = $branchAppliesTo ?? $tenantAppliesTo ?? $default;
 
         if (! is_array($source)) {
-            return self::DEFAULT_SERVICE_CHARGE_APPLIES_TO;
+            return $default;
         }
 
         /** @var list<string> $filtered */

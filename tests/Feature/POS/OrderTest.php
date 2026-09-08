@@ -223,6 +223,29 @@ it('skips service charge on takeaway when settings apply only to dine-in', funct
     expect((float) $response->json('data.total'))->toBe(114.0);
 });
 
+it('skips tax on takeaway when settings apply only to dine-in', function (): void {
+    $this->tenant->update([
+        'tax_rate' => 14,
+        'tax_rate_applies_to' => ['dine_in'],
+        'service_charge_rate' => 0,
+    ]);
+    app()->instance('tenant', $this->tenant->fresh());
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'fulfillment_type' => 'takeaway',
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 2],
+            ],
+        ]);
+
+    $response->assertCreated();
+    expect((float) $response->json('data.tax'))->toBe(0.0);
+    expect((float) $response->json('data.total'))->toBe(100.0);
+});
+
 it('uses branch tax override instead of tenant tax', function (): void {
     $this->tenant->update(['tax_rate' => 14, 'service_charge_rate' => 0]);
     $this->branch->update(['tax_rate' => 0]);
