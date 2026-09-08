@@ -56,9 +56,9 @@ class OpsController extends Controller
             ],
             'horizon' => $horizonStatus,
             'reverb' => [
-                'host' => config('broadcasting.connections.reverb.options.host'),
-                'port' => config('broadcasting.connections.reverb.options.port'),
-                'scheme' => config('broadcasting.connections.reverb.options.scheme', 'http'),
+                'host' => config('broadcasting.connections.reverb.client.host', config('broadcasting.connections.reverb.options.host')),
+                'port' => config('broadcasting.connections.reverb.client.port', config('broadcasting.connections.reverb.options.port')),
+                'scheme' => config('broadcasting.connections.reverb.client.scheme', config('broadcasting.connections.reverb.options.scheme', 'http')),
             ],
             'checked_at' => now()->toIso8601String(),
         ]));

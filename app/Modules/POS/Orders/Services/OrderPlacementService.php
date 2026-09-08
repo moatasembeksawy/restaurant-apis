@@ -14,6 +14,7 @@ use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Broadcasting\SafeBroadcast;
 use InvalidArgumentException;
 
 class OrderPlacementService
@@ -109,7 +110,7 @@ class OrderPlacementService
 
         $order->update(['status' => 'active']);
 
-        broadcast(new OrderPlaced($order->load('items')))->toOthers();
+        SafeBroadcast::toOthers(new OrderPlaced($order->load('items')));
 
         AuditLogger::log('order.placed', $order, [
             'channel' => $order->channel,

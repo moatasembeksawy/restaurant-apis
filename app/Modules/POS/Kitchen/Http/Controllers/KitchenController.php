@@ -13,6 +13,7 @@ use App\Modules\POS\Orders\Http\Resources\OrderItemResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Broadcasting\SafeBroadcast;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -63,7 +64,7 @@ class KitchenController extends Controller
         if ($allReady) {
             $order->update(['status' => 'ready']);
             $order = $order->fresh(['table', 'customer', 'tenant']);
-            broadcast(new OrderReady($order))->toOthers();
+            SafeBroadcast::toOthers(new OrderReady($order));
 
             if ($order->customer_id && $order->tenant->whatsapp_phone_number_id && $order->tenant->hasFeature('whatsapp_ordering')) {
                 SendWhatsAppNotificationJob::dispatch($order, 'order_ready');
@@ -72,7 +73,7 @@ class KitchenController extends Controller
             $order->update(['status' => 'cooking']);
         }
 
-        broadcast(new OrderItemReady($item->fresh()))->toOthers();
+        SafeBroadcast::toOthers(new OrderItemReady($item->fresh()));
 
         AuditLogger::log('kitchen.item_ready', $item, [
             'order_id' => $order->id,

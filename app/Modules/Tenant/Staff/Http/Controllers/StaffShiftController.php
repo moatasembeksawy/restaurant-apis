@@ -75,7 +75,7 @@ class StaffShiftController extends Controller
         try {
             $shift = $this->shifts->clockIn(
                 user: $request->user(),
-                branchId: $validated['branch_id'] ?? null,
+                branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
                 notes: $validated['notes'] ?? null,
                 openingFloat: isset($validated['opening_float']) ? (float) $validated['opening_float'] : null,
             );

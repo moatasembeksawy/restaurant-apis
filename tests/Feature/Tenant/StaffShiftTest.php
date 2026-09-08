@@ -58,6 +58,18 @@ it('lists active shifts for the branch', function (): void {
     expect($response->json('data.0.user_id'))->toBe($this->cashier->id);
 });
 
+it('clocks staff in when branch_id is sent as a string', function (): void {
+    $this->withToken($this->token)
+        ->postJson('/api/v1/staff/shifts/clock-in', [
+            'branch_id' => (string) $this->branch->id,
+            'notes' => 'بدون يصل',
+            'opening_float' => 500,
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.branch_id', $this->branch->id)
+        ->assertJsonPath('data.is_active', true);
+});
+
 it('rejects double clock-in', function (): void {
     $this->withToken($this->token)
         ->postJson('/api/v1/staff/shifts/clock-in')

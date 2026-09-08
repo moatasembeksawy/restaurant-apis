@@ -6,10 +6,12 @@ use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Support\Facades\Event;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create([
@@ -70,6 +72,26 @@ it('allows a waiter to place an order', function (): void {
     // Table should now be occupied
     expect($this->table->fresh()->status)->toBe('occupied');
     expect(Order::query()->latest('id')->first()->fulfillment_type)->toBe('dine_in');
+});
+
+it('places an order even when the kitchen websocket is down', function (): void {
+    Event::listen(OrderPlaced::class, function (): void {
+        throw new RuntimeException('Pusher error: cURL error 7: Failed to connect to localhost:8080');
+    });
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'floor_table_id' => $this->table->id,
+            'channel' => 'dine_in',
+            'items' => [
+                ['menu_item_id' => $this->menuItem->id, 'quantity' => 1],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.status', 'active');
+
+    expect(Order::query()->count())->toBe(1);
 });
 
 it('attaches a customer when placing an order', function (): void {

@@ -36,6 +36,7 @@ services:
       CACHE_STORE: redis
       QUEUE_CONNECTION: redis
       SESSION_DRIVER: redis
+      REVERB_SERVER_HOST: reverb
     depends_on:
       mysql:
         condition: service_healthy
@@ -58,6 +59,7 @@ services:
       DB_HOST: mysql
       REDIS_HOST: redis
       QUEUE_CONNECTION: redis
+      REVERB_SERVER_HOST: reverb
     depends_on:
       mysql:
         condition: service_healthy
@@ -89,10 +91,8 @@ services:
       - .:/var/www/html
       - vendor_data:/var/www/html/vendor
     command: >
-      sh -c "composer install --no-interaction &&
+      sh -c "until [ -f vendor/autoload.php ]; do sleep 1; done;
              php artisan reverb:start --host=0.0.0.0 --port=8080"
-    profiles:
-      - workers
 
 volumes:
   mysql_data:
