@@ -5,10 +5,12 @@ declare(strict_types=1);
 namespace App\Modules\POS\Orders\Http\Controllers;
 
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Orders\Events\OrderItemAdded;
 use App\Modules\POS\Orders\Http\Requests\StoreOrderItemRequest;
 use App\Modules\POS\Orders\Http\Resources\OrderItemResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
+use App\Shared\Support\Broadcasting\SafeBroadcast;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -21,7 +23,7 @@ class OrderItemController extends Controller
 {
     public function store(StoreOrderItemRequest $request, Order $order): JsonResponse
     {
-        if (! in_array($order->status, ['pending', 'active'])) {
+        if (! $order->canAddItems()) {
             return ApiResponse::error('Cannot add items to an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
         }
 
@@ -41,6 +43,12 @@ class OrderItemController extends Controller
 
         $order->recalculateTotals();
 
+        if ($order->status === 'ready') {
+            $order->update(['status' => 'cooking']);
+        }
+
+        SafeBroadcast::toOthers(new OrderItemAdded($item->fresh('order.table')));
+
         return ApiResponse::created(new OrderItemResource($item), 'Item added to order.');
     }
 
@@ -50,8 +58,12 @@ class OrderItemController extends Controller
             return ApiResponse::error('Item does not belong to this order.', 'ITEM_NOT_FOUND', 404);
         }
 
-        if (! in_array($order->status, ['pending', 'active'])) {
+        if (! $order->canAddItems()) {
             return ApiResponse::error('Cannot remove items from an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+        }
+
+        if ($item->status !== 'pending') {
+            return ApiResponse::error('Cannot remove an item that is already '.$item->status.'.', 'ITEM_NOT_EDITABLE', 422);
         }
 
         $item->delete();

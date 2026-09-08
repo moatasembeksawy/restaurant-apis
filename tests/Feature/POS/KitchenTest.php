@@ -5,13 +5,13 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Orders\Events\OrderItemReady;
+use App\Modules\POS\Orders\Events\OrderReady;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Event;
-use App\Modules\POS\Orders\Events\OrderItemReady;
-use App\Modules\POS\Orders\Events\OrderReady;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create([
@@ -79,6 +79,35 @@ it('returns kitchen queue with pending items', function (): void {
 
     expect($response->json('data'))->toHaveCount(1);
     expect($response->json('data.0.items'))->toHaveCount(1);
+});
+
+it('returns a late-added item on a ready order in the kitchen queue', function (): void {
+    $this->order->update(['status' => 'ready']);
+    $this->item->update(['status' => 'ready']);
+    $this->cook->givePermissionTo('orders.update');
+
+    $dessert = MenuItem::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'category_id' => MenuCategory::factory()->create(['tenant_id' => $this->tenant->id])->id,
+        'name_ar' => 'أرز باللبن',
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/items", [
+            'menu_item_id' => $dessert->id,
+            'quantity' => 1,
+        ])
+        ->assertCreated();
+
+    expect($this->order->fresh()->status)->toBe('cooking');
+
+    $response = $this->withToken($this->token)
+        ->getJson('/api/v1/kitchen/queue?branch_id='.$this->branch->id)
+        ->assertOk();
+
+    expect($response->json('data'))->toHaveCount(1);
+    expect($response->json('data.0.items'))->toHaveCount(1);
+    expect($response->json('data.0.items.0.item_name_ar'))->toBe('أرز باللبن');
 });
 
 it('sets order to cooking when only some items are ready', function (): void {

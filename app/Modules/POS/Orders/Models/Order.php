@@ -57,13 +57,18 @@ class Order extends BaseModel
 
     // ── Status transitions ─────────────────────────────────────────────────────
 
+    public function canAddItems(): bool
+    {
+        return in_array($this->status, ['pending', 'active', 'cooking', 'ready'], true);
+    }
+
     public function canTransitionTo(string $newStatus): bool
     {
         $allowed = [
             'pending' => ['active', 'cancelled'],
             'active' => ['cooking', 'ready', 'completed', 'cancelled'],
             'cooking' => ['ready', 'cancelled'],
-            'ready' => ['completed', 'cancelled'],
+            'ready' => ['cooking', 'completed', 'cancelled'],
             'completed' => ['paid'],
             'paid' => ['refunded'],
             'refunded' => [],
