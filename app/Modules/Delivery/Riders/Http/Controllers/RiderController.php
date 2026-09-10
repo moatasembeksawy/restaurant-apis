@@ -7,6 +7,7 @@ namespace App\Modules\Delivery\Riders\Http\Controllers;
 use App\Models\User;
 use App\Modules\Delivery\Riders\Http\Requests\AssignRiderRequest;
 use App\Modules\Delivery\Riders\Http\Requests\IndexRiderRequest;
+use App\Modules\Delivery\Riders\Http\Requests\IndexUnassignedDeliveryRequest;
 use App\Modules\Delivery\Riders\Http\Requests\UpdateDeliveryStatusRequest;
 use App\Modules\Delivery\Riders\Http\Resources\RiderResource;
 use App\Modules\Delivery\Riders\Services\DeliveryService;
@@ -77,5 +78,26 @@ class RiderController extends Controller
             ->get();
 
         return ApiResponse::success(OrderResource::collection($orders));
+    }
+
+    /**
+     * Dispatcher queue of delivery orders that are not yet assigned to a rider.
+     */
+    public function unassigned(IndexUnassignedDeliveryRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $branchId = $validated['branch_id'] ?? null;
+
+        $orders = Order::query()
+            ->where('fulfillment_type', 'delivery')
+            ->whereNull('rider_id')
+            ->where('delivery_status', 'pending')
+            ->whereNotIn('status', ['cancelled', 'completed', 'paid', 'refunded'])
+            ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
+            ->with(['items', 'customer', 'district', 'customerAddress'])
+            ->orderBy('created_at')
+            ->paginate((int) ($validated['per_page'] ?? 25));
+
+        return ApiResponse::paginated($orders, OrderResource::class);
     }
 }

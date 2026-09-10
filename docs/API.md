@@ -511,6 +511,25 @@ Orders — customers/{customer}/orders
 
 ---
 
+#### `GET` /api/v1/deliveries/unassigned
+
+Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `riders`
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
+| `per_page` | `nullable, integer, min:1, max:100` |
+| `page` | `nullable, integer, min:1` |
+
+---
+
 #### `POST` /api/v1/orders/{order}/assign-rider
 
 Assign — orders/{order}/assign-rider

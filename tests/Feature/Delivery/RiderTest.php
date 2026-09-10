@@ -86,6 +86,80 @@ it('shows rider active deliveries', function (): void {
         ->assertJsonCount(1, 'data');
 });
 
+it('lists unassigned delivery orders', function (): void {
+    $assigned = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'assigned',
+        'rider_id' => $this->rider->id,
+        'status' => 'active',
+    ]);
+
+    $delivered = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'delivered',
+        'rider_id' => $this->rider->id,
+        'status' => 'completed',
+    ]);
+
+    $cancelled = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'pending',
+        'status' => 'cancelled',
+    ]);
+
+    $dineIn = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+        'delivery_status' => null,
+        'status' => 'active',
+    ]);
+
+    $response = $this->withToken($this->token)
+        ->getJson('/api/v1/deliveries/unassigned')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $this->order->id)
+        ->assertJsonPath('data.0.delivery_status', 'pending');
+
+    expect($response->json('data.0.rider_id'))->toBeNull();
+    expect(collect($response->json('data'))->pluck('id'))
+        ->not->toContain($assigned->id, $delivered->id, $cancelled->id, $dineIn->id);
+});
+
+it('filters unassigned deliveries by branch', function (): void {
+    $otherBranch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+    Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'pending',
+        'status' => 'active',
+    ]);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/deliveries/unassigned?branch_id='.$this->branch->id)
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $this->order->id);
+});
+
 it('rejects rider assignment for dine-in orders', function (): void {
     $this->order->update([
         'channel' => 'dine_in',

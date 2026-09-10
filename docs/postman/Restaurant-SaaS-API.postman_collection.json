@@ -11634,6 +11634,83 @@
                     "description": ""
                 }
             ]
+        },
+        {
+            "name": "99 · Other",
+            "item": [
+                {
+                    "name": "deliveries/unassigned",
+                    "item": [
+                        {
+                            "name": "GET · deliveries/unassigned",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/deliveries/unassigned?branch_id=%7B%7Bbranch_id%7D%7D&per_page=25&page=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "deliveries",
+                                        "unassigned"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "nullable, integer, min:1"
+                                        }
+                                    ]
+                                },
+                                "description": "Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": ""
+                }
+            ]
         }
     ]
 }
