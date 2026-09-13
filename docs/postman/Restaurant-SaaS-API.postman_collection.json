@@ -635,7 +635,7 @@
                                 "description": "Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"method\": \"cash\",\n    \"amount\": 45,\n    \"cash_tendered\": 1,\n    \"discount_type\": \"percentage\",\n    \"discount_value\": 1,\n    \"discount_reason\": \"خصم موظف\",\n    \"reference\": \"مثال\",\n    \"splits\": [\n        {\n            \"method\": \"cash\",\n            \"amount\": 25,\n            \"reference\": \"مثال\"\n        },\n        {\n            \"method\": \"vodafone_cash\",\n            \"amount\": 20,\n            \"reference\": \"مثال\"\n        }\n    ],\n    \"loyalty_points\": 50\n}",
+                                    "raw": "{\n    \"method\": \"\\\"cash\\\"\",\n    \"amount\": 45,\n    \"cash_tendered\": 1,\n    \"discount_type\": \"percentage\",\n    \"discount_value\": 1,\n    \"discount_reason\": \"خصم موظف\",\n    \"reference\": \"مثال\",\n    \"splits\": [\n        {\n            \"method\": \"cash\",\n            \"amount\": 25,\n            \"reference\": \"مثال\"\n        },\n        {\n            \"method\": \"vodafone_cash\",\n            \"amount\": 20,\n            \"reference\": \"مثال\"\n        }\n    ],\n    \"loyalty_points\": 50\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -692,7 +692,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Refund a settled order payment.\n\nAuth: Bearer token + tenant header",
+                                "description": "Refund — orders/{order}/refund\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"reason\": \"طلب العميل إلغاء الطلب\"\n}",
@@ -6703,7 +6703,7 @@
                                 "description": "Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"method\": \"cash\",\n    \"amount\": 45,\n    \"cash_tendered\": 1,\n    \"discount_type\": \"percentage\",\n    \"discount_value\": 1,\n    \"discount_reason\": \"خصم موظف\",\n    \"reference\": \"مثال\",\n    \"splits\": [\n        {\n            \"method\": \"cash\",\n            \"amount\": 25,\n            \"reference\": \"مثال\"\n        },\n        {\n            \"method\": \"vodafone_cash\",\n            \"amount\": 20,\n            \"reference\": \"مثال\"\n        }\n    ],\n    \"loyalty_points\": 50\n}",
+                                    "raw": "{\n    \"method\": \"\\\"cash\\\"\",\n    \"amount\": 45,\n    \"cash_tendered\": 1,\n    \"discount_type\": \"percentage\",\n    \"discount_value\": 1,\n    \"discount_reason\": \"خصم موظف\",\n    \"reference\": \"مثال\",\n    \"splits\": [\n        {\n            \"method\": \"cash\",\n            \"amount\": 25,\n            \"reference\": \"مثال\"\n        },\n        {\n            \"method\": \"vodafone_cash\",\n            \"amount\": 20,\n            \"reference\": \"مثال\"\n        }\n    ],\n    \"loyalty_points\": 50\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -6760,7 +6760,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Refund a settled order payment.\n\nAuth: Bearer token + tenant header",
+                                "description": "Refund — orders/{order}/refund\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"reason\": \"طلب العميل إلغاء الطلب\"\n}",
@@ -8793,7 +8793,7 @@
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{base_url}}/inventory/ingredients?branch_id=%7B%7Bbranch_id%7D%7D&active=true&per_page=25&page=1",
+                                    "raw": "{{base_url}}/inventory/ingredients?branch_id=%7B%7Bbranch_id%7D%7D&catalog_id=1&active=true&per_page=25&page=1",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -8805,6 +8805,11 @@
                                         {
                                             "key": "branch_id",
                                             "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "catalog_id",
+                                            "value": "1",
                                             "description": "nullable, integer"
                                         },
                                         {
@@ -8984,7 +8989,7 @@
                                 "description": "Store — inventory/ingredients\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
+                                    "raw": "{\n    \"catalog_id\": 1,\n    \"branch_id\": \"{{branch_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -10276,7 +10281,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Store — inventory/transfers\n\nAuth: Bearer token + tenant header",
+                                "description": "Move stock between branches by catalog. If the destination branch has no stock row for that SKU, one is created automatically.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"from_branch_id\": 1,\n    \"to_branch_id\": 1,\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\"\n}",
@@ -11712,6 +11717,73 @@
                                     ]
                                 },
                                 "description": "Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": ""
+                },
+                {
+                    "name": "inventory/catalogs",
+                    "item": [
+                        {
+                            "name": "GET · inventory/catalogs",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/catalogs?per_page=25&page=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "catalogs"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "nullable, integer, min:1"
+                                        }
+                                    ]
+                                },
+                                "description": "Shared ingredient catalog (SKU identity). Each catalog item can have a stock row per branch. Create stock at a branch with POST /inventory/ingredients and catalog_id.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {

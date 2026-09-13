@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\IngredientCatalog;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 
@@ -34,13 +35,62 @@ it('creates and lists ingredients', function (): void {
             'unit_cost' => 250,
         ])
         ->assertCreated()
-        ->assertJsonPath('data.name_ar', 'لحم بقري');
+        ->assertJsonPath('data.name_ar', 'لحم بقري')
+        ->assertJsonPath('data.sku', 'BEEF-KG');
 
     $response = $this->withToken($this->token)
         ->getJson('/api/v1/inventory/ingredients')
         ->assertOk();
 
     expect($response->json('data'))->toHaveCount(1);
+});
+
+it('reuses the catalog when the same item is opened at another branch', function (): void {
+    $other = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+    $first = $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'branch_id' => $this->branch->id,
+            'name_ar' => 'طماطم',
+            'name_en' => 'Tomato',
+            'unit' => 'kg',
+        ])
+        ->assertCreated();
+
+    $second = $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'catalog_id' => $first->json('data.catalog_id'),
+            'branch_id' => $other->id,
+            'current_stock' => 3,
+        ])
+        ->assertCreated();
+
+    expect($second->json('data.catalog_id'))->toBe($first->json('data.catalog_id'));
+    expect($second->json('data.name_ar'))->toBe('طماطم');
+    expect(IngredientCatalog::query()->count())->toBe(1);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'catalog_id' => $first->json('data.catalog_id'),
+            'branch_id' => $this->branch->id,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'INGREDIENT_ERROR');
+});
+
+it('lists ingredient catalogs', function (): void {
+    Ingredient::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'name_ar' => 'طماطم',
+        'name_en' => 'Tomato',
+        'unit' => 'kg',
+    ]);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/inventory/catalogs')
+        ->assertOk()
+        ->assertJsonPath('data.0.name_ar', 'طماطم');
 });
 
 it('returns low stock ingredients', function (): void {

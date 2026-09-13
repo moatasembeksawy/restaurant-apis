@@ -7,17 +7,13 @@ namespace App\Modules\Inventory\Stock\Http\Requests;
 use App\Shared\Support\Http\Requests\ApiFormRequest;
 use App\Shared\Support\Http\Requests\Concerns\HasPaginationRules;
 
-class IndexIngredientRequest extends ApiFormRequest
+class IndexIngredientCatalogRequest extends ApiFormRequest
 {
     use HasPaginationRules;
 
     /** @return array<string, mixed> */
     public function rules(): array
     {
-        return array_merge([
-            'branch_id' => ['nullable', 'integer'],
-            'catalog_id' => ['nullable', 'integer'],
-            'active' => ['nullable', 'boolean'],
-        ], $this->paginationRules());
+        return $this->paginationRules();
     }
 }

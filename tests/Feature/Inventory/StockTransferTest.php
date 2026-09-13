@@ -73,21 +73,28 @@ it('transfers stock between branches', function (): void {
 
     expect((float) $response->json('data.from_ingredient.current_stock'))->toBe(16.0);
     expect((float) $response->json('data.to_ingredient.current_stock'))->toBe(9.0);
+    expect($response->json('data.created_at_destination'))->toBeFalse();
+    expect($this->source->fresh()->catalog_id)->toBe($this->target->fresh()->catalog_id);
     expect(StockTransfer::query()->count())->toBe(1);
 });
 
-it('rejects transfer when destination ingredient is missing', function (): void {
-    $this->target->update(['name_ar' => 'بصل']);
+it('opens a destination stock row when the catalog is missing there', function (): void {
+    $this->target->delete();
 
-    $this->withToken($this->token)
+    $response = $this->withToken($this->token)
         ->postJson('/api/v1/inventory/transfers', [
             'from_branch_id' => $this->branchA->id,
             'to_branch_id' => $this->branchB->id,
             'ingredient_id' => $this->source->id,
             'quantity' => 2,
         ])
-        ->assertUnprocessable()
-        ->assertJsonPath('errors.0.code', 'STOCK_TRANSFER_FAILED');
+        ->assertCreated();
+
+    expect($response->json('data.created_at_destination'))->toBeTrue();
+    expect((float) $response->json('data.to_ingredient.current_stock'))->toBe(2.0);
+    expect($response->json('data.to_ingredient.branch_id'))->toBe($this->branchB->id);
+    expect($response->json('data.to_ingredient.catalog_id'))->toBe($this->source->fresh()->catalog_id);
+    expect(Ingredient::query()->where('branch_id', $this->branchB->id)->count())->toBe(1);
 });
 
 it('blocks transfers on pro plan', function (): void {

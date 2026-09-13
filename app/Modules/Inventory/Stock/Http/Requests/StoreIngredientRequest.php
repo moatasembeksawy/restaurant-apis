@@ -12,10 +12,11 @@ class StoreIngredientRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
+            'catalog_id' => ['nullable', 'integer'],
             'branch_id' => ['nullable', 'integer'],
-            'name_ar' => ['required', 'string', 'max:100'],
+            'name_ar' => ['required_without:catalog_id', 'nullable', 'string', 'max:100'],
             'name_en' => ['nullable', 'string', 'max:100'],
-            'unit' => ['required', 'in:kg,g,l,ml,piece'],
+            'unit' => ['required_without:catalog_id', 'nullable', 'in:kg,g,l,ml,piece'],
             'current_stock' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'numeric', 'min:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],

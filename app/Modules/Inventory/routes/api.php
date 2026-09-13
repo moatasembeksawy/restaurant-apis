@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Modules\Inventory\Recipes\Http\Controllers\RecipeController;
+use App\Modules\Inventory\Stock\Http\Controllers\IngredientCatalogController;
 use App\Modules\Inventory\Stock\Http\Controllers\IngredientController;
 use App\Modules\Inventory\Stock\Http\Controllers\StockCountController;
 use App\Modules\Inventory\Stock\Http\Controllers\StockMovementController;
@@ -13,6 +14,7 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('feature:inventory')->group(function (): void {
     Route::middleware('permission:inventory.view')->group(function (): void {
+        Route::get('inventory/catalogs', [IngredientCatalogController::class, 'index']);
         Route::get('inventory/ingredients', [IngredientController::class, 'index']);
         Route::get('inventory/ingredients/{ingredient}', [IngredientController::class, 'show']);
         Route::get('inventory/low-stock', [IngredientController::class, 'lowStock']);

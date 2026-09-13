@@ -39,14 +39,18 @@ $requests = [
 
     // Inventory — Stock
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'IndexIngredientRequest', 'uses' => ['App\\Shared\\Support\\Http\\Requests\\Concerns\\HasPaginationRules'], 'rules' => <<<'RULES'
+            'catalog_id' => ['nullable', 'integer'],
             'branch_id' => ['nullable', 'integer'],
             'active' => ['nullable', 'boolean'],
         RULES],
+    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'IndexIngredientCatalogRequest', 'uses' => ['App\\Shared\\Support\\Http\\Requests\\Concerns\\HasPaginationRules'], 'rules' => <<<'RULES'
+        RULES],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'StoreIngredientRequest', 'rules' => <<<'RULES'
+            'catalog_id' => ['nullable', 'integer'],
             'branch_id' => ['nullable', 'integer'],
-            'name_ar' => ['required', 'string', 'max:100'],
+            'name_ar' => ['required_without:catalog_id', 'nullable', 'string', 'max:100'],
             'name_en' => ['nullable', 'string', 'max:100'],
-            'unit' => ['required', 'in:kg,g,l,ml,piece'],
+            'unit' => ['required_without:catalog_id', 'nullable', 'in:kg,g,l,ml,piece'],
             'current_stock' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'numeric', 'min:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],

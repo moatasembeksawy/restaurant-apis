@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Stock\Models;
 
+use App\Modules\Inventory\Stock\Services\IngredientCatalogService;
 use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
 use Database\Factories\IngredientFactory;
@@ -21,9 +22,29 @@ class Ingredient extends BaseModel
         return IngredientFactory::new();
     }
 
+    protected static function booted(): void
+    {
+        static::creating(function (self $ingredient): void {
+            if ($ingredient->catalog_id) {
+                return;
+            }
+
+            $catalog = app(IngredientCatalogService::class)->findOrCreate(
+                catalogId: null,
+                nameAr: $ingredient->name_ar,
+                nameEn: $ingredient->name_en,
+                unit: $ingredient->unit,
+                tenantId: $ingredient->tenant_id,
+            );
+
+            $ingredient->catalog_id = $catalog->id;
+        });
+    }
+
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'catalog_id',
         'name_ar',
         'name_en',
         'unit',
@@ -46,6 +67,11 @@ class Ingredient extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function catalog(): BelongsTo
+    {
+        return $this->belongsTo(IngredientCatalog::class, 'catalog_id');
     }
 
     public function movements(): HasMany

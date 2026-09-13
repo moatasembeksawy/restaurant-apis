@@ -39,6 +39,7 @@ const ERROR_CODES = [
     ['402', 'FEATURE_NOT_AVAILABLE', 'Plan does not include required feature'],
     ['402', 'PLAN_LIMIT_EXCEEDED', 'Plan limit reached (branches, users, orders)'],
     ['422', 'VALIDATION_ERROR', 'Request validation failed (includes field)'],
+    ['422', 'INGREDIENT_ERROR', 'Ingredient catalog missing, already stocked at that branch, or identity update failed'],
     ['400', 'ERROR', 'Generic client error'],
     ['400', 'TENANT_REQUIRED', 'X-Tenant-Subdomain header required'],
 ];
@@ -76,7 +77,8 @@ const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => 'Place a dine-in or takeaway order from the public QR menu.',
     'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@store' => 'Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.',
     'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@settle' => 'Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).',
-    'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@refund' => 'Refund a settled order payment.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientCatalogController@index' => 'Shared ingredient catalog (SKU identity). Each catalog item can have a stock row per branch. Create stock at a branch with POST /inventory/ingredients and catalog_id.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Move stock between branches by catalog. If the destination branch has no stock row for that SKU, one is created automatically.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@verifyDomain' => 'Verify custom domain DNS configuration for white-label access.',
     'App\\Modules\\Tenant\\Districts\\Http\\Controllers\\DistrictController@index' => 'List delivery districts and their fees for a branch. Pass branch_id (defaults to the authenticated user branch). POS uses this to show the fee when a district is selected.',
     'App\\Modules\\Tenant\\Districts\\Http\\Controllers\\DistrictController@store' => 'Create a delivery district with a fee for a specific branch. Owners and managers only. The same district name can exist on another branch with a different fee.',

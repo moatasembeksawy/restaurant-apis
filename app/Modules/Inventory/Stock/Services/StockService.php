@@ -117,8 +117,14 @@ class StockService
                         continue;
                     }
 
+                    $stockRow = $this->stockRowForOrder($recipe, $order);
+
+                    if (! $stockRow) {
+                        continue;
+                    }
+
                     $this->recordMovement(
-                        ingredient: $recipe->ingredient,
+                        ingredient: $stockRow,
                         type: 'sale',
                         quantity: $deductQty,
                         reference: $order,
@@ -212,6 +218,7 @@ class StockService
     public function lowStockIngredients(?int $branchId = null): Collection
     {
         return Ingredient::query()
+            ->with('catalog:id,sku,name_ar,unit')
             ->where('is_active', true)
             ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
             ->whereColumn('current_stock', '<=', 'reorder_level')
@@ -321,5 +328,27 @@ class StockService
         $newAverage = ($currentValue + $incomingValue) / ($currentStock + $incomingQty);
 
         $ingredient->update(['unit_cost' => round($newAverage, 4)]);
+    }
+
+    private function stockRowForOrder(Recipe $recipe, Order $order): ?Ingredient
+    {
+        $ingredient = $recipe->ingredient;
+
+        if (! $ingredient instanceof Ingredient) {
+            return null;
+        }
+
+        if ((int) $ingredient->branch_id === (int) $order->branch_id) {
+            return $ingredient;
+        }
+
+        if (! $ingredient->catalog_id) {
+            return null;
+        }
+
+        return Ingredient::query()
+            ->where('catalog_id', $ingredient->catalog_id)
+            ->where('branch_id', $order->branch_id)
+            ->first();
     }
 }

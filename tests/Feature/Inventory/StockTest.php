@@ -120,3 +120,52 @@ it('receives purchase order and increases stock', function (): void {
     expect((float) $this->ingredient->fresh()->current_stock)->toBe(15.0);
     expect(PurchaseOrder::find($poId)->status)->toBe('received');
 });
+
+it('deducts the destination branch stock row for a shared catalog', function (): void {
+    $otherBranch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+    $otherStock = Ingredient::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'catalog_id' => $this->ingredient->catalog_id,
+        'name_ar' => $this->ingredient->name_ar,
+        'name_en' => $this->ingredient->name_en,
+        'unit' => $this->ingredient->unit,
+        'current_stock' => 10,
+        'unit_cost' => 20,
+    ]);
+
+    $otherOrder = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'status' => 'ready',
+        'total' => 100,
+    ]);
+
+    OrderItem::create([
+        'order_id' => $otherOrder->id,
+        'menu_item_id' => $this->menuItem->id,
+        'item_name_ar' => $this->menuItem->name_ar,
+        'unit_price' => 100,
+        'quantity' => 2,
+        'subtotal' => 200,
+        'status' => 'ready',
+    ]);
+
+    $otherCashier = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $otherBranch->id,
+        'role' => 'cashier',
+        'is_active' => true,
+    ]);
+    startCashierShift($otherCashier);
+
+    $this->withToken($otherCashier->createToken('test')->plainTextToken)
+        ->postJson("/api/v1/orders/{$otherOrder->id}/pay", [
+            'method' => 'cash',
+            'amount' => 100,
+        ])
+        ->assertOk();
+
+    expect((float) $this->ingredient->fresh()->current_stock)->toBe(10.0);
+    expect((float) $otherStock->fresh()->current_stock)->toBe(9.0);
+});

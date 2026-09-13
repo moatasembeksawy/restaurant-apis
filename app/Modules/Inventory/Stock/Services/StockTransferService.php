@@ -17,7 +17,10 @@ use RuntimeException;
 
 class StockTransferService
 {
-    public function __construct(private readonly StockService $stock) {}
+    public function __construct(
+        private readonly StockService $stock,
+        private readonly IngredientCatalogService $catalogs,
+    ) {}
 
     /** @return Collection<int, StockTransfer> */
     public function list(?int $branchId = null, int $limit = 50): Collection
@@ -39,7 +42,7 @@ class StockTransferService
     }
 
     /**
-     * @return array{transfer: StockTransfer, from_ingredient: Ingredient, to_ingredient: Ingredient}
+     * @return array{transfer: StockTransfer, from_ingredient: Ingredient, to_ingredient: Ingredient, created_at_destination: bool}
      */
     public function transfer(
         int $fromBranchId,
@@ -71,19 +74,36 @@ class StockTransferService
             ->where('branch_id', $fromBranchId)
             ->findOrFail($ingredientId);
 
-        $target = Ingredient::query()
-            ->where('branch_id', $toBranchId)
-            ->where('name_ar', $source->name_ar)
-            ->where('unit', $source->unit)
-            ->first();
-
-        if (! $target) {
-            throw new InvalidArgumentException(
-                "No matching ingredient at destination branch for {$source->name_ar} ({$source->unit}).",
+        if (! $source->catalog_id) {
+            $catalog = $this->catalogs->findOrCreate(
+                catalogId: null,
+                nameAr: $source->name_ar,
+                nameEn: $source->name_en,
+                unit: $source->unit,
+                tenantId: $source->tenant_id,
             );
+            $source->update(['catalog_id' => $catalog->id]);
         }
 
-        return DB::transaction(function () use ($source, $target, $fromBranchId, $toBranchId, $quantity, $user, $notes): array {
+        return DB::transaction(function () use ($source, $fromBranchId, $toBranchId, $quantity, $user, $notes): array {
+            $createdAtDestination = false;
+            $target = Ingredient::query()
+                ->where('branch_id', $toBranchId)
+                ->where('catalog_id', $source->catalog_id)
+                ->first();
+
+            if (! $target) {
+                $target = $this->catalogs->openAtBranch([
+                    'catalog_id' => $source->catalog_id,
+                    'branch_id' => $toBranchId,
+                    'current_stock' => 0,
+                    'reorder_level' => $source->reorder_level,
+                    'unit_cost' => $source->unit_cost,
+                    'is_active' => true,
+                ]);
+                $createdAtDestination = true;
+            }
+
             $this->stock->recordMovement(
                 ingredient: $source,
                 type: 'adjustment',
@@ -128,11 +148,12 @@ class StockTransferService
                 'transfer' => $transfer->load([
                     'fromBranch:id,name',
                     'toBranch:id,name',
-                    'fromIngredient:id,name_ar,unit,current_stock',
-                    'toIngredient:id,name_ar,unit,current_stock',
+                    'fromIngredient:id,name_ar,unit,current_stock,catalog_id',
+                    'toIngredient:id,name_ar,unit,current_stock,catalog_id',
                 ]),
-                'from_ingredient' => $source->fresh(),
-                'to_ingredient' => $target->fresh(),
+                'from_ingredient' => $source->fresh('catalog'),
+                'to_ingredient' => $target->fresh('catalog'),
+                'created_at_destination' => $createdAtDestination,
             ];
         });
     }

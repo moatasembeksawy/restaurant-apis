@@ -116,6 +116,7 @@ Failure returns:
 | 402 | `FEATURE_NOT_AVAILABLE` | Plan does not include required feature |
 | 402 | `PLAN_LIMIT_EXCEEDED` | Plan limit reached (branches, users, orders) |
 | 422 | `VALIDATION_ERROR` | Request validation failed (includes field) |
+| 422 | `INGREDIENT_ERROR` | Ingredient catalog missing, already stocked at that branch, or identity update failed |
 | 400 | `ERROR` | Generic client error |
 | 400 | `TENANT_REQUIRED` | X-Tenant-Subdomain header required |
 
@@ -803,6 +804,24 @@ Weekly — reports/ai-summary
 
 ### Inventory
 
+#### `GET` /api/v1/inventory/catalogs
+
+Shared ingredient catalog (SKU identity). Each catalog item can have a stock row per branch. Create stock at a branch with POST /inventory/ingredients and catalog_id.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.view`
+- **Plan features:** `inventory`
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `per_page` | `nullable, integer, min:1, max:100` |
+| `page` | `nullable, integer, min:1` |
+
+---
+
 #### `GET` /api/v1/inventory/ingredients
 
 Index — inventory/ingredients
@@ -817,6 +836,7 @@ Index — inventory/ingredients
 | Parameter | Rules |
 |-----------|-------|
 | `branch_id` | `nullable, integer` |
+| `catalog_id` | `nullable, integer` |
 | `active` | `nullable, boolean` |
 | `per_page` | `nullable, integer, min:1, max:100` |
 | `page` | `nullable, integer, min:1` |
@@ -836,16 +856,18 @@ Store — inventory/ingredients
 
 | Parameter | Rules |
 |-----------|-------|
+| `catalog_id` | `nullable, integer` |
 | `branch_id` | `nullable, integer` |
-| `name_ar` | `required, string, max:100` |
+| `name_ar` | `required_without:catalog_id, nullable, string, max:100` |
 | `name_en` | `nullable, string, max:100` |
-| `unit` | `required, in:kg,g,l,ml,piece` |
+| `unit` | `required_without:catalog_id, nullable, in:kg,g,l,ml,piece` |
 | `current_stock` | `nullable, numeric, min:0` |
 | `reorder_level` | `nullable, numeric, min:0` |
 | `unit_cost` | `nullable, numeric, min:0` |
 
 ```json
 {
+    "catalog_id": 1,
     "branch_id": "{{branch_id}}",
     "name_ar": "كشري",
     "name_en": "Koshary",
@@ -1290,7 +1312,7 @@ Index — inventory/transfers
 
 #### `POST` /api/v1/inventory/transfers
 
-Store — inventory/transfers
+Move stock between branches by catalog. If the destination branch has no stock row for that SKU, one is created automatically.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -2054,22 +2076,22 @@ Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).
 
 | Parameter | Rules |
 |-----------|-------|
-| `method` | `required, in:cash,card,vodafone_cash,instapay,meeza,valu,split` |
+| `method` | `required, in:"cash","card","vodafone_cash","instapay","meeza","valu","split","visa","credit_card","creditcard"` |
 | `amount` | `required, numeric, min:0` |
 | `cash_tendered` | `nullable, numeric, min:0` |
 | `discount_type` | `nullable, in:percentage,fixed` |
-| `discount_value` | `nullable, numeric, min:0` |
+| `discount_value` | `nullable, numeric, min:0, required_with:discount_type` |
 | `discount_reason` | `nullable, string, max:255` |
 | `reference` | `nullable, string, max:100` |
 | `splits` | `required_if:method,split, array, min:2` |
-| `splits.*.method` | `required, in:cash,card,vodafone_cash,instapay,meeza,valu` |
+| `splits.*.method` | `required, in:"cash","card","vodafone_cash","instapay","meeza","valu","visa","credit_card","creditcard"` |
 | `splits.*.amount` | `required, numeric, min:0.01` |
 | `splits.*.reference` | `nullable, string, max:100` |
 | `loyalty_points` | `nullable, integer, min:1` |
 
 ```json
 {
-    "method": "cash",
+    "method": "\"cash\"",
     "amount": 45,
     "cash_tendered": 1,
     "discount_type": "percentage",
@@ -2129,7 +2151,7 @@ Receipt — orders/{order}/print/receipt
 
 #### `POST` /api/v1/orders/{order}/refund
 
-Refund a settled order payment.
+Refund — orders/{order}/refund
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `payments.refund`

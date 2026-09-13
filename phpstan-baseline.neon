@@ -337,12 +337,6 @@ parameters:
 			path: app/Modules/Inventory/Stock/Services/StockService.php
 
 		-
-			message: '#^Parameter \$ingredient of method App\\Modules\\Inventory\\Stock\\Services\\StockService\:\:recordMovement\(\) expects App\\Modules\\Inventory\\Stock\\Models\\Ingredient, Illuminate\\Database\\Eloquent\\Model\|null given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1
