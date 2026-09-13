@@ -106,6 +106,8 @@ class AuthService
 
     private function formatTokenResponse(User $user, NewAccessToken $token, bool $isDevice = false): array
     {
+        $user->loadMissing('tenant', 'branch');
+
         return [
             'token' => $token->plainTextToken,
             'token_type' => 'Bearer',
@@ -123,6 +125,8 @@ class AuthService
                 'name' => $user->tenant->name,
                 'plan' => $user->tenant->plan,
                 'locale' => $user->tenant->locale,
+                'qr_menu_token' => $user->branch?->qr_menu_token,
+                'qr_menu_url' => $user->branch?->qrMenuUrl(),
             ],
         ];
     }

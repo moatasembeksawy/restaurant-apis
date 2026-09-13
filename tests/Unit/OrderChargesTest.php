@@ -86,6 +86,61 @@ it('applies service charge only to configured fulfillment types', function (): v
     ]);
 });
 
+it('calculates tax and service on the order after discount, not per product', function (): void {
+    $order = new Order([
+        'subtotal' => 100,
+        'discount' => 20,
+        'delivery_fee' => 0,
+        'tax_rate' => 14,
+        'tax_rate_applies_to' => ['dine_in', 'takeaway', 'delivery'],
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+        'fulfillment_type' => OrderFulfillment::DINE_IN,
+    ]);
+
+    expect(OrderCharges::compute($order))->toBe([
+        'service_charge' => 9.6,
+        'tax' => 12.54,
+        'total' => 102.14,
+    ]);
+});
+
+it('does not charge tax or service on the amount covered by the discount', function (): void {
+    $beforeDiscount = new Order([
+        'subtotal' => 100,
+        'discount' => 0,
+        'delivery_fee' => 0,
+        'tax_rate' => 14,
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+        'fulfillment_type' => OrderFulfillment::DINE_IN,
+    ]);
+
+    expect(OrderCharges::compute($beforeDiscount))->toBe([
+        'service_charge' => 12.0,
+        'tax' => 15.68,
+        'total' => 127.68,
+    ]);
+});
+
+it('caps discount at the subtotal so charges never go negative', function (): void {
+    $order = new Order([
+        'subtotal' => 50,
+        'discount' => 80,
+        'delivery_fee' => 10,
+        'tax_rate' => 14,
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+        'fulfillment_type' => OrderFulfillment::DINE_IN,
+    ]);
+
+    expect(OrderCharges::compute($order))->toBe([
+        'service_charge' => 0.0,
+        'tax' => 0.0,
+        'total' => 10.0,
+    ]);
+});
+
 it('applies tax only to configured fulfillment types', function (): void {
     $dineIn = new Order([
         'subtotal' => 100,

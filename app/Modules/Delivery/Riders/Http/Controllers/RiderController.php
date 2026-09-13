@@ -6,6 +6,7 @@ namespace App\Modules\Delivery\Riders\Http\Controllers;
 
 use App\Models\User;
 use App\Modules\Delivery\Riders\Http\Requests\AssignRiderRequest;
+use App\Modules\Delivery\Riders\Http\Requests\IndexRiderDeliveryRequest;
 use App\Modules\Delivery\Riders\Http\Requests\IndexRiderRequest;
 use App\Modules\Delivery\Riders\Http\Requests\IndexUnassignedDeliveryRequest;
 use App\Modules\Delivery\Riders\Http\Requests\UpdateDeliveryStatusRequest;
@@ -15,7 +16,6 @@ use App\Modules\POS\Orders\Http\Resources\OrderResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use InvalidArgumentException;
 
@@ -68,16 +68,32 @@ class RiderController extends Controller
         }
     }
 
-    public function myDeliveries(Request $request): JsonResponse
+    /**
+     * Active assigned deliveries. Riders see their own jobs; staff see all
+     * in-progress deliveries (assigned, picked_up, en_route).
+     */
+    public function myDeliveries(IndexRiderDeliveryRequest $request): JsonResponse
     {
-        $orders = Order::query()
-            ->where('rider_id', $request->user()->id)
-            ->whereIn('delivery_status', ['assigned', 'picked_up', 'en_route'])
-            ->with(['items', 'customer'])
-            ->orderBy('created_at')
-            ->get();
+        $validated = $request->validated();
+        $user = $request->user();
 
-        return ApiResponse::success(OrderResource::collection($orders));
+        $orders = Order::query()
+            ->whereIn('delivery_status', ['assigned', 'picked_up', 'en_route'])
+            ->whereNotNull('rider_id')
+            ->whereNotIn('status', ['cancelled', 'completed', 'paid', 'refunded'])
+            ->when(
+                $user->role === 'rider',
+                fn ($q) => $q->where('rider_id', $user->id),
+                function ($q) use ($validated) {
+                    $q->when($validated['rider_id'] ?? null, fn ($query, $id) => $query->where('rider_id', $id))
+                        ->when($validated['branch_id'] ?? null, fn ($query, $id) => $query->where('branch_id', $id));
+                },
+            )
+            ->with(['items', 'customer', 'district', 'customerAddress', 'rider'])
+            ->orderBy('created_at')
+            ->paginate((int) ($validated['per_page'] ?? 25));
+
+        return ApiResponse::paginated($orders, OrderResource::class);
     }
 
     /**

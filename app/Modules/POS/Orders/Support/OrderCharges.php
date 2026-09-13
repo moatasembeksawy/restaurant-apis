@@ -44,11 +44,17 @@ final class OrderCharges
     }
 
     /**
+     * Charges are order-level and always use the amount after discount:
+     * net = subtotal − discount, service % of net, VAT % of (net + service).
+     *
      * @return array{service_charge: float, tax: float, total: float}
      */
     public static function compute(Order $order): array
     {
-        $net = max(0, (float) $order->subtotal - (float) $order->discount);
+        $subtotal = round((float) $order->subtotal, 2);
+        $discount = min(max(0.0, round((float) $order->discount, 2)), $subtotal);
+        $net = round($subtotal - $discount, 2);
+        $deliveryFee = round((float) $order->delivery_fee, 2);
         $serviceAppliesTo = self::appliesTo(
             $order->service_charge_applies_to,
             null,
@@ -73,7 +79,7 @@ final class OrderCharges
         return [
             'service_charge' => $serviceCharge,
             'tax' => $tax,
-            'total' => $net + $serviceCharge + $tax + (float) $order->delivery_fee,
+            'total' => round($net + $serviceCharge + $tax + $deliveryFee, 2),
         ];
     }
 

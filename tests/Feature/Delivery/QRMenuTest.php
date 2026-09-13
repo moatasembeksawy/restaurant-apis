@@ -127,7 +127,8 @@ it('exposes qr_menu_url on branch listing for staff', function (): void {
     $this->actingAs($owner, 'sanctum')
         ->getJson('/api/v1/branches')
         ->assertOk()
-        ->assertJsonStructure(['data' => [['qr_menu_token', 'qr_menu_url']]]);
+        ->assertJsonStructure(['data' => [['qr_menu_token', 'qr_menu_url']]])
+        ->assertJsonPath('data.0.qr_menu_token', $this->branch->qr_menu_token);
 });
 
 it('places an order via qr menu', function (): void {

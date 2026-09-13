@@ -20,6 +20,8 @@ class TenantSettingsService
     /** @return array<string, mixed> */
     public function show(Tenant $tenant): array
     {
+        $qrBranch = $tenant->defaultBranch ?? $tenant->branches()->where('is_active', true)->first();
+
         return [
             'name' => $tenant->name,
             'subdomain' => $tenant->subdomain,
@@ -35,6 +37,8 @@ class TenantSettingsService
             'tax_rate_applies_to' => $tenant->tax_rate_applies_to ?? OrderCharges::DEFAULT_TAX_RATE_APPLIES_TO,
             'service_charge_rate' => (float) $tenant->service_charge_rate,
             'service_charge_applies_to' => $tenant->service_charge_applies_to ?? OrderCharges::DEFAULT_SERVICE_CHARGE_APPLIES_TO,
+            'qr_menu_token' => $qrBranch?->qr_menu_token,
+            'qr_menu_url' => $qrBranch?->qrMenuUrl(),
             'subscription' => $this->subscriptions->currentPlanDetails($tenant),
         ];
     }

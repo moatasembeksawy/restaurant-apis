@@ -119,6 +119,8 @@ class AuthController extends Controller
                 'id' => $user->branch->id,
                 'name' => $user->branch->name,
                 'name_ar' => $user->branch->name_ar,
+                'qr_menu_token' => $user->branch->qr_menu_token,
+                'qr_menu_url' => $user->branch->qrMenuUrl(),
             ] : null,
             'tenant' => [
                 'id' => $user->tenant->id,
@@ -126,6 +128,8 @@ class AuthController extends Controller
                 'plan' => $user->tenant->plan,
                 'status' => $user->tenant->status,
                 'locale' => $user->tenant->locale,
+                'qr_menu_token' => $user->branch?->qr_menu_token,
+                'qr_menu_url' => $user->branch?->qrMenuUrl(),
             ],
         ]));
     }

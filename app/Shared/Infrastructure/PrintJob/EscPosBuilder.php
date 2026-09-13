@@ -131,7 +131,12 @@ class EscPosBuilder
             $this->text($line);
         }
 
-        $this->separator();
+        $this->separator()
+            ->text('Subtotal: '.number_format((float) $order->subtotal, 2).' EGP');
+
+        if ((float) $order->discount > 0) {
+            $this->text('Discount: -'.number_format((float) $order->discount, 2).' EGP');
+        }
 
         if ((float) $order->service_charge > 0) {
             $this->text('Service: '.number_format((float) $order->service_charge, 2).' EGP');
@@ -143,10 +148,6 @@ class EscPosBuilder
 
         if ((float) $order->delivery_fee > 0) {
             $this->text('Delivery: '.number_format((float) $order->delivery_fee, 2).' EGP');
-        }
-
-        if ((float) $order->discount > 0) {
-            $this->text('Discount: '.number_format((float) $order->discount, 2).' EGP');
         }
 
         $this->bold()->text('Total: '.number_format((float) $order->total, 2).' EGP')->bold(false)

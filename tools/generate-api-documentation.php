@@ -70,6 +70,7 @@ const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Tenant\\Http\\Controllers\\OnboardingController@register' => 'Self-service restaurant onboarding. Creates tenant, owner account, and default branch. Subdomain is optional — auto-generated when omitted.',
     'App\\Modules\\Auth\\Http\\Controllers\\AuthController@deviceLogin' => 'Branch-scoped PIN login for waiters and cashiers. Requires tenant resolution via header or subdomain host.',
     'App\\Modules\\Auth\\Http\\Controllers\\AuthController@kitchenLogin' => 'Kitchen display device login using a shared branch secret.',
+    'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@myDeliveries' => 'Active assigned deliveries (assigned, picked_up, en_route). Riders see their own jobs. Staff see all in-progress deliveries; optional rider_id and branch_id filters.',
     'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@unassigned' => 'Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.',
     'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@show' => 'Public QR menu for a table token. No authentication required.',
     'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => 'Place a dine-in or takeaway order from the public QR menu.',

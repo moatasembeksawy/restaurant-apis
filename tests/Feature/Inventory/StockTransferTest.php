@@ -43,6 +43,24 @@ beforeEach(function (): void {
     $this->token = $this->manager->createToken('test')->plainTextToken;
 });
 
+it('lists stock transfers', function (): void {
+    StockTransfer::create([
+        'from_branch_id' => $this->branchA->id,
+        'to_branch_id' => $this->branchB->id,
+        'from_ingredient_id' => $this->source->id,
+        'to_ingredient_id' => $this->target->id,
+        'user_id' => $this->manager->id,
+        'quantity' => 4,
+    ]);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/inventory/transfers')
+        ->assertOk()
+        ->assertJsonPath('data.0.from_branch_id', $this->branchA->id)
+        ->assertJsonPath('data.0.to_branch_id', $this->branchB->id)
+        ->assertJsonPath('data.0.from_branch.name', $this->branchA->name);
+});
+
 it('transfers stock between branches', function (): void {
     $response = $this->withToken($this->token)
         ->postJson('/api/v1/inventory/transfers', [

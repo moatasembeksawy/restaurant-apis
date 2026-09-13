@@ -8518,7 +8518,7 @@
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{base_url}}/riders/deliveries",
+                                    "raw": "{{base_url}}/riders/deliveries?rider_id=%7B%7Brider_id%7D%7D&branch_id=%7B%7Bbranch_id%7D%7D&per_page=25&page=1",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -8526,9 +8526,30 @@
                                         "riders",
                                         "deliveries"
                                     ],
-                                    "query": []
+                                    "query": [
+                                        {
+                                            "key": "rider_id",
+                                            "value": "{{rider_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "nullable, integer, min:1"
+                                        }
+                                    ]
                                 },
-                                "description": "My Deliveries — riders/deliveries\n\nAuth: Bearer token + tenant header"
+                                "description": "Active assigned deliveries (assigned, picked_up, en_route). Riders see their own jobs. Staff see all in-progress deliveries; optional rider_id and branch_id filters.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {

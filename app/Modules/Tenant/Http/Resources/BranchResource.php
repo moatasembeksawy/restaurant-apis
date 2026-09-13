@@ -19,6 +19,7 @@ class BranchResource extends ModelResource
         $charges = OrderCharges::resolve($tenant, $this->resource);
 
         return [
+            'qr_menu_token' => $this->resource->qr_menu_token,
             'qr_menu_url' => $this->resource->qrMenuUrl(),
             'effective_tax_rate' => $charges['tax_rate'],
             'effective_tax_rate_applies_to' => $charges['tax_rate_applies_to'],

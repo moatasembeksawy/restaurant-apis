@@ -595,12 +595,21 @@ Index — riders
 
 #### `GET` /api/v1/riders/deliveries
 
-My Deliveries — riders/deliveries
+Active assigned deliveries (assigned, picked_up, en_route). Riders see their own jobs. Staff see all in-progress deliveries; optional rider_id and branch_id filters.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** _None_
 - **Plan features:** `riders`
 - **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `rider_id` | `nullable, integer` |
+| `branch_id` | `nullable, integer` |
+| `per_page` | `nullable, integer, min:1, max:100` |
+| `page` | `nullable, integer, min:1` |
 
 ---
 

@@ -23,7 +23,7 @@ it('registers a new restaurant with trial and owner token', function (): void {
         ->assertJsonPath('data.user.role', 'owner')
         ->assertJsonPath('data.branch.name', 'Main Branch')
         ->assertJsonStructure([
-            'data' => ['token', 'kitchen_device_secret', 'subscription'],
+            'data' => ['token', 'kitchen_device_secret', 'subscription', 'tenant' => ['qr_menu_token', 'qr_menu_url'], 'branch' => ['qr_menu_token', 'qr_menu_url']],
         ]);
 
     $tenant = Tenant::query()->where('subdomain', 'test-cafe')->first();

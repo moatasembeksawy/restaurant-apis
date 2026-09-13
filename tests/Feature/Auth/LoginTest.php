@@ -6,6 +6,7 @@ use App\Models\User;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Hash;
+use Laravel\Sanctum\PersonalAccessToken;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create([
@@ -43,11 +44,12 @@ it('allows an owner to login with email and password', function (): void {
                 'token_type',
                 'abilities',
                 'user' => ['id', 'name', 'role', 'tenant_id'],
-                'tenant' => ['id', 'name', 'plan'],
+                'tenant' => ['id', 'name', 'plan', 'qr_menu_token', 'qr_menu_url'],
             ],
         ])
         ->assertJsonPath('data.token_type', 'Bearer')
-        ->assertJsonPath('data.user.role', 'owner');
+        ->assertJsonPath('data.user.role', 'owner')
+        ->assertJsonPath('data.tenant.qr_menu_token', $this->branch->fresh()->qr_menu_token);
 });
 
 it('rejects invalid credentials', function (): void {
@@ -68,6 +70,12 @@ it('rejects login for inactive users', function (): void {
     ])->assertUnauthorized();
 });
 
+it('returns json 401 for unauthenticated api gets without an accept json header', function (): void {
+    $this->get('/api/v1/inventory/transfers')
+        ->assertUnauthorized()
+        ->assertJsonPath('errors.0.code', 'UNAUTHENTICATED');
+});
+
 it('returns me endpoint with correct structure when authenticated', function (): void {
     $token = $this->owner->createToken('test')->plainTextToken;
 
@@ -77,8 +85,10 @@ it('returns me endpoint with correct structure when authenticated', function ():
         ->getJson('/api/v1/auth/me')
         ->assertOk()
         ->assertJsonStructure([
-            'data' => ['id', 'name', 'email', 'role', 'abilities', 'tenant'],
-        ]);
+            'data' => ['id', 'name', 'email', 'role', 'abilities', 'tenant' => ['qr_menu_token', 'qr_menu_url'], 'branch' => ['qr_menu_token', 'qr_menu_url']],
+        ])
+        ->assertJsonPath('data.tenant.qr_menu_token', $this->branch->qr_menu_token)
+        ->assertJsonPath('data.branch.qr_menu_token', $this->branch->qr_menu_token);
 });
 
 it('revokes the token on logout', function (): void {
@@ -93,7 +103,7 @@ it('revokes the token on logout', function (): void {
         ->assertOk();
 
     // Token must be deleted from the database
-    expect(\Laravel\Sanctum\PersonalAccessToken::find($tokenId))->toBeNull();
+    expect(PersonalAccessToken::find($tokenId))->toBeNull();
 });
 
 it('validates required fields on login', function (): void {

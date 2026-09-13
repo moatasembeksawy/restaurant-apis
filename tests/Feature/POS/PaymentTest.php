@@ -151,3 +151,65 @@ it('returns kitchen ticket print bytes for active orders', function (): void {
         ->assertJsonPath('data.format', 'escpos')
         ->assertJsonStructure(['data' => ['bytes']]);
 });
+
+it('recalculates vat and service after a payment discount, not on the original product total', function (): void {
+    Queue::fake();
+
+    $this->order->update([
+        'fulfillment_type' => 'dine_in',
+        'tax_rate' => 14,
+        'tax_rate_applies_to' => ['dine_in', 'takeaway', 'delivery'],
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+    ]);
+    $this->order->recalculateTotals();
+
+    expect((float) $this->order->fresh()->total)->toBe(127.68);
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'cash',
+            'amount' => 102.14,
+            'cash_tendered' => 110.00,
+            'discount_type' => 'fixed',
+            'discount_value' => 20,
+            'discount_reason' => 'خصم موظف',
+        ])
+        ->assertOk();
+
+    $paid = $this->order->fresh();
+
+    expect((float) $paid->discount)->toBe(20.0);
+    expect((float) $paid->service_charge)->toBe(9.6);
+    expect((float) $paid->tax)->toBe(12.54);
+    expect((float) $paid->total)->toBe(102.14);
+});
+
+it('applies a percentage discount to the product subtotal before vat and service', function (): void {
+    Queue::fake();
+
+    $this->order->update([
+        'fulfillment_type' => 'dine_in',
+        'tax_rate' => 14,
+        'tax_rate_applies_to' => ['dine_in', 'takeaway', 'delivery'],
+        'service_charge_rate' => 12,
+        'service_charge_applies_to' => ['dine_in'],
+    ]);
+    $this->order->recalculateTotals();
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'cash',
+            'amount' => 114.91,
+            'discount_type' => 'percentage',
+            'discount_value' => 10,
+        ])
+        ->assertOk();
+
+    $paid = $this->order->fresh();
+
+    expect((float) $paid->discount)->toBe(10.0);
+    expect((float) $paid->service_charge)->toBe(10.8);
+    expect((float) $paid->tax)->toBe(14.11);
+    expect((float) $paid->total)->toBe(114.91);
+});

@@ -51,11 +51,12 @@ class PaymentSettlementService
             $tenant = app('tenant');
 
             if (! empty($validated['discount_type']) && isset($validated['discount_value'])) {
+                $subtotal = (float) $order->subtotal;
                 $discount = $validated['discount_type'] === 'percentage'
-                    ? round((float) $order->subtotal * ((float) $validated['discount_value'] / 100), 2)
-                    : (float) $validated['discount_value'];
+                    ? round($subtotal * ((float) $validated['discount_value'] / 100), 2)
+                    : round((float) $validated['discount_value'], 2);
 
-                $order->update(['discount' => $discount]);
+                $order->update(['discount' => min(max(0.0, $discount), $subtotal)]);
                 $order->recalculateTotals();
                 $order->refresh();
             }

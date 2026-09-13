@@ -86,6 +86,75 @@ it('shows rider active deliveries', function (): void {
         ->assertJsonCount(1, 'data');
 });
 
+it('lists active deliveries for staff', function (): void {
+    $this->order->update([
+        'rider_id' => $this->rider->id,
+        'delivery_status' => 'assigned',
+    ]);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/riders/deliveries')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $this->order->id)
+        ->assertJsonPath('data.0.rider_id', $this->rider->id);
+});
+
+it('filters staff deliveries by rider', function (): void {
+    $otherRider = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'role' => 'rider',
+        'is_active' => true,
+    ]);
+
+    $this->order->update([
+        'rider_id' => $this->rider->id,
+        'delivery_status' => 'assigned',
+    ]);
+
+    $otherOrder = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'picked_up',
+        'rider_id' => $otherRider->id,
+        'status' => 'active',
+    ]);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/riders/deliveries?rider_id='.$this->rider->id)
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.id', $this->order->id);
+
+    expect(collect($this->withToken($this->token)
+        ->getJson('/api/v1/riders/deliveries')
+        ->json('data'))->pluck('id'))
+        ->toContain($this->order->id, $otherOrder->id);
+});
+
+it('does not let a rider see another rider deliveries', function (): void {
+    $otherRider = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'role' => 'rider',
+        'is_active' => true,
+    ]);
+
+    $this->order->update([
+        'rider_id' => $otherRider->id,
+        'delivery_status' => 'assigned',
+    ]);
+
+    $this->withToken($this->riderToken)
+        ->getJson('/api/v1/riders/deliveries?rider_id='.$otherRider->id)
+        ->assertOk()
+        ->assertJsonCount(0, 'data');
+});
+
 it('lists unassigned delivery orders', function (): void {
     $assigned = Order::factory()->create([
         'tenant_id' => $this->tenant->id,

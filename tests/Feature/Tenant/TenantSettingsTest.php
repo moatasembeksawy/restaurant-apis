@@ -31,6 +31,8 @@ it('shows tenant settings for owner', function (): void {
     expect($response->json('data.name'))->toBe($this->tenant->name);
     expect($response->json('data.whatsapp_phone_number_id'))->toBe('12345');
     expect($response->json('data.subscription.plan'))->toBe('growth');
+    expect($response->json('data.qr_menu_token'))->toBe($this->branch->fresh()->qr_menu_token);
+    expect($response->json('data.qr_menu_url'))->toEndWith("/api/v1/qr/{$this->branch->qr_menu_token}/menu");
 });
 
 it('updates tenant settings', function (): void {
