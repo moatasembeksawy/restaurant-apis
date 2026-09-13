@@ -222,7 +222,7 @@ $requests = [
 
     // POS — Billing
     ['namespace' => 'App\\Modules\\POS\\Billing\\Http\\Requests', 'class' => 'SettlePaymentRequest', 'rules' => <<<'RULES'
-            'method' => ['required', 'in:cash,card,vodafone_cash,instapay,meeza,valu,split'],
+            'method' => ['required', 'in:cash,card,visa,vodafone_cash,instapay,meeza,valu,split'],
             'amount' => ['required', 'numeric', 'min:0'],
             'cash_tendered' => ['nullable', 'numeric', 'min:0'],
             'discount_type' => ['nullable', 'in:percentage,fixed'],
@@ -230,7 +230,7 @@ $requests = [
             'discount_reason' => ['nullable', 'string', 'max:255'],
             'reference' => ['nullable', 'string', 'max:100'],
             'splits' => ['required_if:method,split', 'array', 'min:2'],
-            'splits.*.method' => ['required', 'in:cash,card,vodafone_cash,instapay,meeza,valu'],
+            'splits.*.method' => ['required', 'in:cash,card,visa,vodafone_cash,instapay,meeza,valu'],
             'splits.*.amount' => ['required', 'numeric', 'min:0.01'],
             'splits.*.reference' => ['nullable', 'string', 'max:100'],
             'loyalty_points' => ['nullable', 'integer', 'min:1'],

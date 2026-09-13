@@ -17,6 +17,24 @@ class Payment extends Model
 {
     use BelongsToTenant;
 
+    public const METHODS = ['cash', 'card', 'vodafone_cash', 'instapay', 'meeza', 'valu', 'split'];
+
+    public const SPLIT_METHODS = ['cash', 'card', 'vodafone_cash', 'instapay', 'meeza', 'valu'];
+
+    /** @var array<string, string> */
+    public const METHOD_ALIASES = [
+        'visa' => 'card',
+        'credit_card' => 'card',
+        'creditcard' => 'card',
+    ];
+
+    public static function canonicalizeMethod(string $method): string
+    {
+        $normalized = strtolower(trim($method));
+
+        return self::METHOD_ALIASES[$normalized] ?? $normalized;
+    }
+
     protected $fillable = [
         'tenant_id',
         'order_id',

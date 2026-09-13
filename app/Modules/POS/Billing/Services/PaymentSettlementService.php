@@ -75,11 +75,12 @@ class PaymentSettlementService
                 $order->refresh();
             }
 
-            $method = $validated['method'];
+            $method = Payment::canonicalizeMethod((string) $validated['method']);
             $amount = (float) $validated['amount'];
 
             if ($method === 'split') {
-                $this->validateSplitPayment($validated['splits'] ?? [], $order);
+                $validated['splits'] = $this->canonicalizeSplits($validated['splits'] ?? []);
+                $this->validateSplitPayment($validated['splits'], $order);
                 $amount = collect($validated['splits'])->sum(fn ($s) => (float) $s['amount']);
             }
 
@@ -183,6 +184,21 @@ class PaymentSettlementService
                 ] : null,
             ];
         });
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $splits
+     * @return list<array<string, mixed>>
+     */
+    private function canonicalizeSplits(array $splits): array
+    {
+        return array_map(static function (array $split): array {
+            if (isset($split['method']) && is_string($split['method'])) {
+                $split['method'] = Payment::canonicalizeMethod($split['method']);
+            }
+
+            return $split;
+        }, $splits);
     }
 
     /**
