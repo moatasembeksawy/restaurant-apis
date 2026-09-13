@@ -39,7 +39,7 @@ class OrderController extends Controller
             ->when($validated['table_id'] ?? null, fn ($q, $id) => $q->where('floor_table_id', $id))
             ->when($validated['channel'] ?? null, fn ($q, $c) => $q->where('channel', $c))
             ->when($validated['fulfillment_type'] ?? null, fn ($q, $type) => $q->where('fulfillment_type', $type))
-            ->with(['items', 'table', 'waiter', 'district'])
+            ->with(['items', 'table', 'waiter', 'district', 'payment.splits'])
             ->orderByDesc('created_at')
             ->paginate((int) ($validated['per_page'] ?? 25));
 
@@ -70,12 +70,12 @@ class OrderController extends Controller
             return ApiResponse::error($e->getMessage(), 'ORDER_VALIDATION_FAILED', 422);
         }
 
-        return ApiResponse::created(new OrderResource($order), 'Order placed.');
+        return ApiResponse::created(new OrderResource($order->load('payment.splits')), 'Order placed.');
     }
 
     public function show(Order $order): JsonResponse
     {
-        return ApiResponse::success(new OrderResource($order->load(['items.menuItem', 'table', 'waiter', 'payment', 'customer', 'rider', 'district', 'customerAddress.district'])));
+        return ApiResponse::success(new OrderResource($order->load(['items.menuItem', 'table', 'waiter', 'payment.splits', 'customer', 'rider', 'district', 'customerAddress.district'])));
     }
 
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse
@@ -115,6 +115,6 @@ class OrderController extends Controller
             AuditLogger::log('order.cancelled', $order);
         }
 
-        return ApiResponse::success(new OrderResource($order), 'Order status updated.');
+        return ApiResponse::success(new OrderResource($order->load(['payment.splits'])), 'Order status updated.');
     }
 }

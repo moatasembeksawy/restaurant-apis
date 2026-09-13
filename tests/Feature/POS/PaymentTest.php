@@ -213,3 +213,54 @@ it('applies a percentage discount to the product subtotal before vat and service
     expect((float) $paid->tax)->toBe(14.11);
     expect((float) $paid->total)->toBe(114.91);
 });
+
+it('includes null payment on unpaid order resources', function (): void {
+    $this->withToken($this->token)
+        ->getJson("/api/v1/orders/{$this->order->id}")
+        ->assertOk()
+        ->assertJsonPath('data.payment', null);
+});
+
+it('includes payment details on the order resource after settlement', function (): void {
+    Queue::fake();
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'cash',
+            'amount' => 100.00,
+            'cash_tendered' => 150.00,
+            'reference' => 'RCPT-1',
+        ])
+        ->assertOk();
+
+    $response = $this->withToken($this->token)
+        ->getJson("/api/v1/orders/{$this->order->id}")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'paid')
+        ->assertJsonPath('data.payment.method', 'cash')
+        ->assertJsonPath('data.payment.reference', 'RCPT-1')
+        ->assertJsonPath('data.payment.splits', []);
+
+    expect((float) $response->json('data.payment.amount'))->toBe(100.0);
+    expect((float) $response->json('data.payment.cash_tendered'))->toBe(150.0);
+    expect((float) $response->json('data.payment.change_due'))->toBe(50.0);
+});
+
+it('includes payment details on the order index', function (): void {
+    Queue::fake();
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'card',
+            'amount' => 100.00,
+            'reference' => 'VISA-99',
+        ])
+        ->assertOk();
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/orders?status=paid')
+        ->assertOk()
+        ->assertJsonPath('data.0.id', $this->order->id)
+        ->assertJsonPath('data.0.payment.method', 'card')
+        ->assertJsonPath('data.0.payment.reference', 'VISA-99');
+});

@@ -89,7 +89,7 @@ class RiderController extends Controller
                         ->when($validated['branch_id'] ?? null, fn ($query, $id) => $query->where('branch_id', $id));
                 },
             )
-            ->with(['items', 'customer', 'district', 'customerAddress', 'rider'])
+            ->with(['items', 'customer', 'district', 'customerAddress', 'rider', 'payment.splits'])
             ->orderBy('created_at')
             ->paginate((int) ($validated['per_page'] ?? 25));
 
@@ -110,7 +110,7 @@ class RiderController extends Controller
             ->where('delivery_status', 'pending')
             ->whereNotIn('status', ['cancelled', 'completed', 'paid', 'refunded'])
             ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
-            ->with(['items', 'customer', 'district', 'customerAddress'])
+            ->with(['items', 'customer', 'district', 'customerAddress', 'payment.splits'])
             ->orderBy('created_at')
             ->paginate((int) ($validated['per_page'] ?? 25));
 

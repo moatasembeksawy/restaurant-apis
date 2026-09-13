@@ -164,7 +164,7 @@ class OrderUpdateService
                 'floor_table_id' => $order->floor_table_id,
             ]);
 
-            return $order->fresh(['items', 'table', 'waiter', 'customer', 'district', 'customerAddress.district']) ?? $order;
+            return $order->fresh(['items', 'table', 'waiter', 'customer', 'district', 'customerAddress.district', 'payment.splits']) ?? $order;
         });
     }
 

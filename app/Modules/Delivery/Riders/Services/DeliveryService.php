@@ -41,7 +41,7 @@ class DeliveryService
             'rider_name' => $rider->name,
         ]);
 
-        return $order->fresh(['rider']);
+        return $order->fresh(['rider', 'payment.splits']);
     }
 
     public function updateDeliveryStatus(Order $order, string $status): Order
@@ -66,6 +66,6 @@ class DeliveryService
 
         AuditLogger::log('delivery.status_updated', $order, ['delivery_status' => $status]);
 
-        return $order->fresh();
+        return $order->fresh(['payment.splits']);
     }
 }

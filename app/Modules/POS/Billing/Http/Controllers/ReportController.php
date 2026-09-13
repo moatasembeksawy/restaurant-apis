@@ -54,20 +54,38 @@ class ReportController extends Controller
         $branchId = $validated['branch_id'] ?? null;
 
         $payments = Payment::query()
+            ->with('splits')
             ->whereHas('order', fn ($q) => $q
                 ->whereDate('created_at', $date)
                 ->when($branchId, fn ($q2, $id) => $q2->where('branch_id', $id))
             )
             ->get();
 
+        /** @var array<string, array{count: int, total: float}> $byMethod */
+        $byMethod = [];
+
+        foreach ($payments as $payment) {
+            if ($payment->method === 'split' && $payment->splits->isNotEmpty()) {
+                foreach ($payment->splits as $split) {
+                    $this->addMethodTotal($byMethod, (string) $split->method, (float) $split->amount);
+                }
+
+                continue;
+            }
+
+            $this->addMethodTotal($byMethod, (string) $payment->method, (float) $payment->amount);
+        }
+
+        foreach ($byMethod as &$row) {
+            $row['total'] = round($row['total'], 2);
+        }
+        unset($row);
+
         return ApiResponse::success(new ReportResource([
             'date' => $date,
-            'by_method' => $payments->groupBy('method')->map(fn ($g) => [
-                'count' => $g->count(),
-                'total' => $g->sum('amount'),
-            ]),
-            'total_cash' => $payments->where('method', 'cash')->sum('amount'),
-            'total_all_methods' => $payments->sum('amount'),
+            'by_method' => $byMethod,
+            'total_cash' => $byMethod['cash']['total'] ?? 0,
+            'total_all_methods' => round((float) $payments->sum('amount'), 2),
             'total_discounts' => $payments->whereNotNull('discount_value')->sum('discount_value'),
         ]));
     }
@@ -105,5 +123,15 @@ class ReportController extends Controller
         return ApiResponse::success(new ReportResource([
             'items' => $items,
         ]));
+    }
+
+    /**
+     * @param  array<string, array{count: int, total: float}>  $byMethod
+     */
+    private function addMethodTotal(array &$byMethod, string $method, float $amount): void
+    {
+        $byMethod[$method] ??= ['count' => 0, 'total' => 0.0];
+        $byMethod[$method]['count']++;
+        $byMethod[$method]['total'] += $amount;
     }
 }

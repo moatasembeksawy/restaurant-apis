@@ -79,7 +79,7 @@ class CustomerController extends Controller
     {
         $orders = Order::query()
             ->where('customer_id', $customer->id)
-            ->with(['items', 'payment'])
+            ->with(['items', 'payment.splits'])
             ->orderByDesc('created_at')
             ->paginate(20);
 

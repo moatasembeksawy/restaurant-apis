@@ -131,3 +131,30 @@ it('rejects split payment with fewer than two methods', function (): void {
         ])
         ->assertUnprocessable();
 });
+
+it('includes split methods on the order resource', function (): void {
+    Queue::fake();
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'split',
+            'amount' => 150.00,
+            'splits' => [
+                ['method' => 'cash', 'amount' => 100.00],
+                ['method' => 'card', 'amount' => 50.00, 'reference' => 'TXN-99'],
+            ],
+        ])
+        ->assertOk();
+
+    $response = $this->withToken($this->token)
+        ->getJson("/api/v1/orders/{$this->order->id}")
+        ->assertOk()
+        ->assertJsonPath('data.payment.method', 'split');
+
+    $splits = $response->json('data.payment.splits');
+
+    expect($splits)->toHaveCount(2);
+    expect(collect($splits)->pluck('method')->sort()->values()->all())->toBe(['card', 'cash']);
+    expect((float) collect($splits)->firstWhere('method', 'card')['amount'])->toBe(50.0);
+    expect(collect($splits)->firstWhere('method', 'card')['reference'])->toBe('TXN-99');
+});

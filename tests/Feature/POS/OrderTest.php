@@ -68,9 +68,10 @@ it('allows a waiter to place an order', function (): void {
         ])
         ->assertCreated()
         ->assertJsonStructure([
-            'data' => ['id', 'status', 'total', 'items'],
+            'data' => ['id', 'status', 'total', 'items', 'payment'],
         ])
-        ->assertJsonPath('data.status', 'active');
+        ->assertJsonPath('data.status', 'active')
+        ->assertJsonPath('data.payment', null);
 
     // Table should now be occupied
     expect($this->table->fresh()->status)->toBe('occupied');
