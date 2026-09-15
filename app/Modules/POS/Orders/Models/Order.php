@@ -8,6 +8,8 @@ use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Delivery\Customers\Models\CustomerAddress;
 use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\POS\Offers\Models\OrderAdjustment;
+use App\Modules\POS\Offers\Services\OfferEngine;
 use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Districts\Models\District;
@@ -45,6 +47,7 @@ class Order extends BaseModel
         'delivery_status',
         'external_ref',
         'notes',
+        'coupon_code',
         'delivery_address',
         'subtotal',
         'discount',
@@ -104,7 +107,15 @@ class Order extends BaseModel
 
     public function recalculateTotals(): void
     {
-        $this->subtotal = $this->items()->sum('subtotal');
+        $this->subtotal = round((float) $this->pricedItems()->sum('subtotal'), 2);
+        $this->saveQuietly();
+
+        app(OfferEngine::class)->sync($this);
+
+        $this->discount = min(
+            max(0.0, round((float) $this->adjustments()->sum('amount'), 2)),
+            (float) $this->subtotal,
+        );
         $charges = OrderCharges::compute($this);
         $this->service_charge = $charges['service_charge'];
         $this->tax = $charges['tax'];
@@ -118,6 +129,18 @@ class Order extends BaseModel
     public function items(): HasMany
     {
         return $this->hasMany(OrderItem::class);
+    }
+
+    /** @return HasMany<OrderItem, $this> */
+    public function pricedItems(): HasMany
+    {
+        return $this->items()->whereNull('parent_id');
+    }
+
+    /** @return HasMany<OrderAdjustment, $this> */
+    public function adjustments(): HasMany
+    {
+        return $this->hasMany(OrderAdjustment::class);
     }
 
     /** @return BelongsTo<FloorTable, $this> */

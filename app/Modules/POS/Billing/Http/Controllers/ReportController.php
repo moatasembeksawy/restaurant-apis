@@ -99,20 +99,22 @@ class ReportController extends Controller
         $branchId = $validated['branch_id'] ?? null;
 
         $items = OrderItem::query()
+            ->whereNull('parent_id')
             ->whereHas('order', fn ($q) => $q
                 ->where('status', 'paid')
                 ->whereBetween('created_at', [$startDate, $endDate])
                 ->when($branchId, fn ($q2, $id) => $q2->where('branch_id', $id))
             )
             ->with('menuItem:id,name_ar,price,cost_price')
-            ->selectRaw('menu_item_id, SUM(quantity) as total_qty, SUM(subtotal) as total_revenue')
-            ->groupBy('menu_item_id')
+            ->selectRaw('menu_item_id, package_id, item_name_ar, SUM(quantity) as total_qty, SUM(subtotal) as total_revenue')
+            ->groupBy('menu_item_id', 'package_id', 'item_name_ar')
             ->orderByDesc('total_qty')
             ->limit($limit)
             ->get()
             ->map(fn ($item) => [
                 'menu_item_id' => $item->menu_item_id,
-                'name_ar' => $item->menuItem?->name_ar,
+                'package_id' => $item->package_id,
+                'name_ar' => $item->item_name_ar ?: $item->menuItem?->name_ar,
                 'total_qty' => (int) $item->total_qty,
                 'total_revenue' => round((float) $item->total_revenue, 2),
                 'profit_margin' => $item->menuItem?->profitMargin(),

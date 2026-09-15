@@ -8,8 +8,10 @@ use App\Modules\POS\Billing\Http\Controllers\ReportController;
 use App\Modules\POS\Kitchen\Http\Controllers\KitchenController;
 use App\Modules\POS\Menu\Http\Controllers\MenuCategoryController;
 use App\Modules\POS\Menu\Http\Controllers\MenuItemController;
+use App\Modules\POS\Offers\Http\Controllers\OfferController;
 use App\Modules\POS\Orders\Http\Controllers\OrderController;
 use App\Modules\POS\Orders\Http\Controllers\OrderItemController;
+use App\Modules\POS\Packages\Http\Controllers\MenuPackageController;
 use App\Modules\POS\Print\Http\Controllers\KitchenStationController;
 use App\Modules\POS\Print\Http\Controllers\PrintController;
 use App\Modules\POS\Print\Http\Controllers\PrinterController;
@@ -43,6 +45,32 @@ Route::delete('menu/items/{item}', [MenuItemController::class, 'destroy'])->midd
 Route::patch('menu/items/{item}/toggle', [MenuItemController::class, 'toggle'])->middleware('permission:menu.update');
 Route::post('menu/items/{item}/photo', [MenuItemController::class, 'uploadPhoto'])->middleware('permission:menu.update');
 Route::delete('menu/items/{item}/photo', [MenuItemController::class, 'deletePhoto'])->middleware('permission:menu.update');
+Route::middleware('feature:menu_packages')->group(function (): void {
+    Route::middleware('permission:menu.view')->group(function (): void {
+        Route::get('menu/packages', [MenuPackageController::class, 'index']);
+        Route::get('menu/packages/{package}', [MenuPackageController::class, 'show']);
+    });
+    Route::post('menu/packages', [MenuPackageController::class, 'store'])->middleware('permission:menu.create');
+    Route::match(['put', 'patch'], 'menu/packages/{package}', [MenuPackageController::class, 'update'])->middleware('permission:menu.update');
+    Route::delete('menu/packages/{package}', [MenuPackageController::class, 'destroy'])->middleware('permission:menu.delete');
+    Route::patch('menu/packages/{package}/toggle', [MenuPackageController::class, 'toggle'])->middleware('permission:menu.update');
+    Route::post('menu/packages/{package}/photo', [MenuPackageController::class, 'uploadPhoto'])->middleware('permission:menu.update');
+    Route::delete('menu/packages/{package}/photo', [MenuPackageController::class, 'deletePhoto'])->middleware('permission:menu.update');
+});
+
+Route::middleware('feature:offers')->group(function (): void {
+    Route::middleware('permission:offers.view')->group(function (): void {
+        Route::get('offers', [OfferController::class, 'index']);
+        Route::get('offers/{offer}', [OfferController::class, 'show']);
+        Route::post('offers/preview', [OfferController::class, 'preview']);
+    });
+    Route::middleware('permission:offers.manage')->group(function (): void {
+        Route::post('offers', [OfferController::class, 'store']);
+        Route::match(['put', 'patch'], 'offers/{offer}', [OfferController::class, 'update']);
+        Route::delete('offers/{offer}', [OfferController::class, 'destroy']);
+        Route::patch('offers/{offer}/toggle', [OfferController::class, 'toggle']);
+    });
+});
 
 // ── Printing & kitchen routing ────────────────────────────────────────────────
 Route::middleware('permission:printing.view')->group(function (): void {

@@ -38,6 +38,9 @@ class RolesAndPermissionsSeeder extends Seeder
             // Reports
             'reports.view', 'reports.export',
 
+            // Offers
+            'offers.view', 'offers.manage',
+
             // Audit
             'audit.view',
 
@@ -81,6 +84,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'payments.process', 'payments.discount', 'payments.refund',
                 'reports.view', 'reports.export',
                 'audit.view',
+                'offers.view', 'offers.manage',
                 'inventory.view', 'inventory.manage',
                 'staff.view', 'staff.manage',
                 'shifts.view', 'shifts.operate',
@@ -98,6 +102,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'orders.view', 'orders.create', 'orders.update',
                 'payments.process', 'payments.discount',
                 'reports.view',
+                'offers.view',
                 'printing.view', 'printing.execute',
                 'shifts.view', 'shifts.operate',
                 'cash_movements.view', 'cash_movements.create',
@@ -110,6 +115,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'menu.view',
                 'orders.view', 'orders.create', 'orders.update',
                 'printing.view', 'printing.execute',
+                'offers.view',
                 'shifts.view', 'shifts.operate',
             ]);
 

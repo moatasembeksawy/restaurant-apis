@@ -21,6 +21,7 @@ class UpdateOrderRequest extends ApiFormRequest
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'customer_address_id' => ['nullable', 'integer', 'exists:customer_addresses,id'],
             'district_id' => ['nullable', 'integer', 'exists:districts,id'],
+            'coupon_code' => ['nullable', 'string', 'max:50'],
         ];
     }
 }

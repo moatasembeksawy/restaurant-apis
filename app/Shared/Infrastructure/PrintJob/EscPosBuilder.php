@@ -98,6 +98,9 @@ class EscPosBuilder
             ->separator();
 
         foreach ($order->items as $item) {
+            if (! $item->isKitchenLine()) {
+                continue;
+            }
             $this->bold()->text("{$item->quantity}x {$item->item_name_ar}")->bold(false);
             if ($item->notes) {
                 $this->text('  Note: '.$item->notes);
@@ -122,6 +125,9 @@ class EscPosBuilder
             ->separator();
 
         foreach ($order->items as $item) {
+            if (! $item->isPricedLine()) {
+                continue;
+            }
             $line = sprintf(
                 '%dx %s %s EGP',
                 $item->quantity,

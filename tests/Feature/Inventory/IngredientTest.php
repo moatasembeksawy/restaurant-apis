@@ -23,6 +23,37 @@ beforeEach(function (): void {
     $this->token = $this->manager->createToken('test')->plainTextToken;
 });
 
+it('accepts arabic kg and piece units and stores canonical values', function (): void {
+    $kg = $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'name_ar' => 'لحم بقري',
+            'name_en' => 'Beef',
+            'unit' => 'كيلو',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.unit', 'kg');
+
+    expect($kg->json('data.sku'))->toEndWith('-KG');
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'name_ar' => 'بيض',
+            'name_en' => 'Egg',
+            'unit' => 'قطعة',
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.unit', 'piece');
+
+    $ingredient = Ingredient::query()->where('name_ar', 'لحم بقري')->firstOrFail();
+
+    $this->withToken($this->token)
+        ->patchJson("/api/v1/inventory/ingredients/{$ingredient->id}", [
+            'unit' => 'قطع',
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.unit', 'piece');
+});
+
 it('creates and lists ingredients', function (): void {
     $this->withToken($this->token)
         ->postJson('/api/v1/inventory/ingredients', [

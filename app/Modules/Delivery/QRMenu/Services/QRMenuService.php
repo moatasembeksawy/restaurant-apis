@@ -10,6 +10,8 @@ use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Services\OrderPlacementService;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
+use App\Modules\POS\Packages\Models\MenuPackage;
+use App\Modules\POS\Packages\Models\MenuPackageSlot;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
@@ -82,23 +84,39 @@ class QRMenuService
                 ->whereNull('branch_id')
                 ->orWhere('branch_id', $branch->id))
             ->orderBy('sort_order')
-            ->with(['availableItems' => fn ($q) => $q->orderBy('sort_order')])
-            ->get()
-            ->map(fn (MenuCategory $cat) => [
-                'id' => $cat->id,
-                'name_ar' => $cat->name_ar,
-                'name_en' => $cat->name_en,
-                'items' => $cat->availableItems->map(fn ($item) => [
-                    'id' => $item->id,
-                    'name_ar' => $item->name_ar,
-                    'name_en' => $item->name_en,
-                    'description_ar' => $item->description_ar,
-                    'price' => $item->price,
-                    'photo_url' => $item->photo_url,
-                    'preparation_time' => $item->preparation_time,
-                ])->values()->all(),
+            ->with([
+                'availableItems' => fn ($q) => $q->orderBy('sort_order'),
+                'availablePackages.slots.options.menuItem',
+                'availablePackages.slots.menuItem',
             ])
-            ->filter(fn (array $cat) => count($cat['items']) > 0)
+            ->get()
+            ->map(function (MenuCategory $cat) use ($tenant): array {
+                $packages = [];
+                if ($tenant->hasFeature('menu_packages')) {
+                    $packages = $cat->availablePackages
+                        ->filter(fn (MenuPackage $package): bool => $package->isSellable())
+                        ->map(fn (MenuPackage $package): array => $this->serializePackage($package))
+                        ->values()
+                        ->all();
+                }
+
+                return [
+                    'id' => $cat->id,
+                    'name_ar' => $cat->name_ar,
+                    'name_en' => $cat->name_en,
+                    'items' => $cat->availableItems->map(fn ($item) => [
+                        'id' => $item->id,
+                        'name_ar' => $item->name_ar,
+                        'name_en' => $item->name_en,
+                        'description_ar' => $item->description_ar,
+                        'price' => $item->price,
+                        'photo_url' => $item->photo_url,
+                        'preparation_time' => $item->preparation_time,
+                    ])->values()->all(),
+                    'packages' => $packages,
+                ];
+            })
+            ->filter(fn (array $cat) => count($cat['items']) > 0 || count($cat['packages']) > 0)
             ->values()
             ->all();
 
@@ -140,7 +158,7 @@ class QRMenuService
     }
 
     /**
-     * @param  array<int, array{menu_item_id: int, quantity: int, notes?: string|null}>  $items
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function placeOrder(
         QRMenuContext $context,
@@ -151,6 +169,7 @@ class QRMenuService
         ?string $tableLabel = null,
         ?string $fulfillmentType = null,
         ?string $deliveryAddress = null,
+        ?string $couponCode = null,
     ): Order {
         $table = $context->table;
 
@@ -192,6 +211,7 @@ class QRMenuService
             notes: $orderNotes,
             deliveryAddress: $deliveryAddress,
             fulfillmentType: $fulfillmentType,
+            couponCode: $couponCode,
         );
     }
 
@@ -211,5 +231,42 @@ class QRMenuService
         if (! $tenant->hasFeature('qr_menu')) {
             throw new RuntimeException('QR menu is not enabled for this restaurant.');
         }
+    }
+
+    /** @return array<string, mixed> */
+    private function serializePackage(MenuPackage $package): array
+    {
+        return [
+            'id' => $package->id,
+            'name_ar' => $package->name_ar,
+            'name_en' => $package->name_en,
+            'description_ar' => $package->description_ar,
+            'price' => $package->price,
+            'photo_url' => $package->photoUrl(),
+            'preparation_time' => $package->preparation_time,
+            'slots' => $package->slots->map(function (MenuPackageSlot $slot): array {
+                return [
+                    'id' => $slot->id,
+                    'type' => $slot->type,
+                    'quantity' => $slot->quantity,
+                    'name_ar' => $slot->name_ar,
+                    'name_en' => $slot->name_en,
+                    'min_select' => $slot->min_select,
+                    'max_select' => $slot->max_select,
+                    'menu_item_id' => $slot->menu_item_id,
+                    'menu_item' => $slot->menuItem ? [
+                        'id' => $slot->menuItem->id,
+                        'name_ar' => $slot->menuItem->name_ar,
+                        'price' => $slot->menuItem->price,
+                    ] : null,
+                    'options' => $slot->options->map(fn ($option) => [
+                        'menu_item_id' => $option->menu_item_id,
+                        'name_ar' => $option->menuItem?->name_ar,
+                        'extra_price' => $option->extra_price,
+                        'is_available' => $option->isSellable(),
+                    ])->values()->all(),
+                ];
+            })->values()->all(),
+        ];
     }
 }

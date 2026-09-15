@@ -64,34 +64,37 @@ class ETAAdapter implements ETAAdapterInterface
         $order = $payment->order->load('items');
         $issuedAt = $payment->created_at->format('Y-m-d\TH:i:s\Z');
 
-        $invoiceLines = $order->items->map(function ($item, $index) {
-            $vatAmount = round($item->unit_price * $item->quantity * 0.14, 5);
+        $invoiceLines = $order->items
+            ->filter(fn ($item): bool => $item->parent_id === null)
+            ->values()
+            ->map(function ($item, $index) {
+                $vatAmount = round($item->unit_price * $item->quantity * 0.14, 5);
 
-            return [
-                'description' => $item->item_name_ar,
-                'itemType' => 'GS1',
-                'itemCode' => 'EG-'.$item->menu_item_id,
-                'unitType' => 'EA',
-                'quantity' => $item->quantity,
-                'internalCode' => (string) ($index + 1),
-                'salesTotal' => (float) $item->subtotal,
-                'total' => round((float) $item->subtotal * 1.14, 5),
-                'valueDifference' => 0,
-                'totalTaxableFees' => 0,
-                'netTotal' => (float) $item->subtotal,
-                'itemsDiscount' => 0,
-                'unitValue' => [
-                    'currencySold' => 'EGP',
-                    'amountEGP' => (float) $item->unit_price,
-                ],
-                'taxableItems' => [[
-                    'taxType' => 'T1',
-                    'amount' => $vatAmount,
-                    'subType' => 'V001',
-                    'rate' => 14,
-                ]],
-            ];
-        })->values()->all();
+                return [
+                    'description' => $item->item_name_ar,
+                    'itemType' => 'GS1',
+                    'itemCode' => 'EG-'.($item->menu_item_id ?? 'PKG-'.$item->package_id),
+                    'unitType' => 'EA',
+                    'quantity' => $item->quantity,
+                    'internalCode' => (string) ($index + 1),
+                    'salesTotal' => (float) $item->subtotal,
+                    'total' => round((float) $item->subtotal * 1.14, 5),
+                    'valueDifference' => 0,
+                    'totalTaxableFees' => 0,
+                    'netTotal' => (float) $item->subtotal,
+                    'itemsDiscount' => 0,
+                    'unitValue' => [
+                        'currencySold' => 'EGP',
+                        'amountEGP' => (float) $item->unit_price,
+                    ],
+                    'taxableItems' => [[
+                        'taxType' => 'T1',
+                        'amount' => $vatAmount,
+                        'subType' => 'V001',
+                        'rate' => 14,
+                    ]],
+                ];
+            })->values()->all();
 
         $netAmount = (float) $payment->amount;
         $vatTotal = round($netAmount * 0.14, 5);

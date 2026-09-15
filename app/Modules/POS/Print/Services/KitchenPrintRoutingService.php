@@ -63,6 +63,9 @@ class KitchenPrintRoutingService
         $groups = [];
 
         foreach ($order->items as $orderItem) {
+            if (! $orderItem->isKitchenLine()) {
+                continue;
+            }
             $itemRoutes = $routes->where('menu_item_id', $orderItem->menu_item_id);
             if ($itemRoutes->isEmpty()) {
                 $itemRoutes = $routes->where('menu_category_id', $orderItem->menuItem?->category_id);

@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Subscription\Services;
 
+use App\Modules\POS\Offers\Models\Offer;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\POS\Packages\Models\MenuPackage;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Exceptions\PlanLimitExceededException;
 
@@ -20,6 +22,8 @@ class PlanLimitService
             'users' => $this->checkUsers($limits['max_users']),
             'branches' => $this->checkBranches($limits['max_branches']),
             'orders' => $this->checkMonthlyOrders($limits['max_orders_per_month']),
+            'packages' => $this->checkPackages($limits['max_packages']),
+            'active_offers' => $this->checkActiveOffers($limits['max_active_offers']),
             default => null,
         };
     }
@@ -74,6 +78,40 @@ class PlanLimitService
             throw new PlanLimitExceededException(
                 "You have reached {$max} orders this month. Upgrade your plan to continue.",
                 'orders',
+                $max,
+            );
+        }
+    }
+
+    private function checkPackages(int $max): void
+    {
+        if ($max === PHP_INT_MAX) {
+            return;
+        }
+
+        $count = MenuPackage::query()->count();
+
+        if ($count >= $max) {
+            throw new PlanLimitExceededException(
+                "You have reached the maximum of {$max} packages on your plan. Upgrade to add more.",
+                'packages',
+                $max,
+            );
+        }
+    }
+
+    private function checkActiveOffers(int $max): void
+    {
+        if ($max === PHP_INT_MAX) {
+            return;
+        }
+
+        $count = Offer::query()->where('is_active', true)->count();
+
+        if ($count >= $max) {
+            throw new PlanLimitExceededException(
+                "You have reached the maximum of {$max} active offers on your plan. Upgrade to add more.",
+                'active_offers',
                 $max,
             );
         }

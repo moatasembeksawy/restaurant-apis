@@ -36,7 +36,7 @@ class KitchenController extends Controller
         $orders = Order::query()
             ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
             ->whereIn('status', ['active', 'cooking'])
-            ->with(['items' => fn ($q) => $q->whereIn('status', ['pending', 'cooking']), 'table'])
+            ->with(['items' => fn ($q) => $q->whereIn('status', ['pending', 'cooking'])->where('line_type', '!=', OrderItem::LINE_PACKAGE), 'table'])
             ->orderBy('created_at')
             ->get();
 
@@ -58,6 +58,7 @@ class KitchenController extends Controller
 
         $order = $item->order()->with('table')->first();
         $allReady = $order->items()
+            ->where('line_type', '!=', OrderItem::LINE_PACKAGE)
             ->whereNotIn('status', ['ready', 'served', 'cancelled'])
             ->doesntExist();
 

@@ -12,10 +12,16 @@ class PlaceQRMenuOrderRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
+            'coupon_code' => ['nullable', 'string', 'max:50'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.menu_item_id' => ['required', 'integer'],
+            'items.*.menu_item_id' => ['required_without:items.*.package_id', 'nullable', 'integer'],
+            'items.*.package_id' => ['required_without:items.*.menu_item_id', 'nullable', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.notes' => ['nullable', 'string', 'max:255'],
+            'items.*.selections' => ['nullable', 'array'],
+            'items.*.selections.*.slot_id' => ['required', 'integer'],
+            'items.*.selections.*.menu_item_ids' => ['required', 'array', 'min:1'],
+            'items.*.selections.*.menu_item_ids.*' => ['integer'],
             'customer_name' => ['nullable', 'string', 'max:100'],
             'customer_phone' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:500'],

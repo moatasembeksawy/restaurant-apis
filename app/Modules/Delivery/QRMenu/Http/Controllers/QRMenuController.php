@@ -61,6 +61,7 @@ class QRMenuController extends Controller
                 tableLabel: $validated['table_label'] ?? null,
                 fulfillmentType: $validated['fulfillment_type'] ?? null,
                 deliveryAddress: $validated['delivery_address'] ?? null,
+                couponCode: $validated['coupon_code'] ?? null,
             );
 
             return ApiResponse::created(new QRMenuOrderResource([

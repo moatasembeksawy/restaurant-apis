@@ -73,21 +73,29 @@ class Tenant extends Model
                 'max_users' => PHP_INT_MAX,
                 'max_branches' => PHP_INT_MAX,
                 'max_orders_per_month' => PHP_INT_MAX,
+                'max_packages' => PHP_INT_MAX,
+                'max_active_offers' => PHP_INT_MAX,
             ],
             'pro' => [
                 'max_users' => 15,
                 'max_branches' => 1,
                 'max_orders_per_month' => 10000,
+                'max_packages' => 100,
+                'max_active_offers' => 20,
             ],
             'growth' => [
                 'max_users' => 5,
                 'max_branches' => 1,
                 'max_orders_per_month' => 2000,
+                'max_packages' => 30,
+                'max_active_offers' => 0,
             ],
             default => [ // starter
                 'max_users' => 2,
                 'max_branches' => 1,
                 'max_orders_per_month' => 500,
+                'max_packages' => 0,
+                'max_active_offers' => 0,
             ],
         };
     }
@@ -105,8 +113,8 @@ class Tenant extends Model
     private function planIncludesFeature(string $feature): bool
     {
         $starterFeatures = ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice'];
-        $growthFeatures = [...$starterFeatures, 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders'];
-        $proFeatures = [...$growthFeatures, 'inventory', 'recipe_costing', 'suppliers', 'staff_shifts', 'audit_log', 'waste_log'];
+        $growthFeatures = [...$starterFeatures, 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders', 'menu_packages'];
+        $proFeatures = [...$growthFeatures, 'inventory', 'recipe_costing', 'suppliers', 'staff_shifts', 'audit_log', 'waste_log', 'offers'];
         $enterpriseFeatures = [...$proFeatures, 'multi_branch', 'ai_reports', 'loyalty', 'whatsapp_marketing', 'aggregator_analytics'];
 
         return match ($this->plan) {

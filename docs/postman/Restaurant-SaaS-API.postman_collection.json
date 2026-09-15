@@ -83,6 +83,14 @@
             "value": "1"
         },
         {
+            "key": "package_id",
+            "value": "1"
+        },
+        {
+            "key": "offer_id",
+            "value": "1"
+        },
+        {
             "key": "shift_id",
             "value": "1"
         },
@@ -567,7 +575,7 @@
                                 "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -785,7 +793,7 @@
                                 "description": "Place a dine-in or takeaway order from the public QR menu.\n\nAuth: None",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
+                                    "raw": "{\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -4798,6 +4806,519 @@
                     "description": "Add dishes with Arabic names, prices, photos."
                 },
                 {
+                    "name": "3.2b Menu Packages",
+                    "item": [
+                        {
+                            "name": "GET · menu/packages",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages?category_id=%7B%7Bcategory_id%7D%7D&available_only=true",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "category_id",
+                                            "value": "{{category_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "available_only",
+                                            "value": "true",
+                                            "description": "nullable, boolean"
+                                        }
+                                    ]
+                                },
+                                "description": "Index — menu/packages\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "GET · menu/packages/{package}",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Show — menu/packages/{package}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · menu/packages",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Store — menu/packages\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"category_id\": \"{{category_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"description_ar\": \"مثال\",\n    \"price\": 45,\n    \"preparation_time\": 15,\n    \"sort_order\": 1,\n    \"is_available\": true,\n    \"slots\": [\n        {\n            \"type\": \"fixed\",\n            \"menu_item_id\": \"{{menu_item_id}}\",\n            \"quantity\": 2,\n            \"name_ar\": \"كشري\",\n            \"name_en\": \"Koshary\",\n            \"min_select\": 1,\n            \"max_select\": 1,\n            \"sort_order\": 1,\n            \"options\": [],\n            \"options.*.menu_item_id\": 1,\n            \"options.*.extra_price\": 1,\n            \"options.*.is_available\": true,\n            \"options.*.sort_order\": 1\n        }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · menu/packages/{package}/photo",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}/photo",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}",
+                                        "photo"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Upload Photo — menu/packages/{package}/photo\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"photo\": \"مثال\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PUT · menu/packages/{package}",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — menu/packages/{package}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"category_id\": \"{{category_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"description_ar\": \"مثال\",\n    \"price\": 45,\n    \"is_available\": true,\n    \"preparation_time\": 15,\n    \"sort_order\": 1,\n    \"slots\": [\n        {\n            \"type\": \"fixed\",\n            \"menu_item_id\": \"{{menu_item_id}}\",\n            \"quantity\": 2,\n            \"name_ar\": \"كشري\",\n            \"name_en\": \"Koshary\",\n            \"min_select\": 1,\n            \"max_select\": 1,\n            \"sort_order\": 1,\n            \"options\": [],\n            \"options.*.menu_item_id\": 1,\n            \"options.*.extra_price\": 1,\n            \"options.*.is_available\": true,\n            \"options.*.sort_order\": 1\n        }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · menu/packages/{package}",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — menu/packages/{package}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"category_id\": \"{{category_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"description_ar\": \"مثال\",\n    \"price\": 45,\n    \"is_available\": true,\n    \"preparation_time\": 15,\n    \"sort_order\": 1,\n    \"slots\": [\n        {\n            \"type\": \"fixed\",\n            \"menu_item_id\": \"{{menu_item_id}}\",\n            \"quantity\": 2,\n            \"name_ar\": \"كشري\",\n            \"name_en\": \"Koshary\",\n            \"min_select\": 1,\n            \"max_select\": 1,\n            \"sort_order\": 1,\n            \"options\": [],\n            \"options.*.menu_item_id\": 1,\n            \"options.*.extra_price\": 1,\n            \"options.*.is_available\": true,\n            \"options.*.sort_order\": 1\n        }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · menu/packages/{package}/toggle",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}/toggle",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}",
+                                        "toggle"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Toggle — menu/packages/{package}/toggle\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · menu/packages/{package}",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Destroy — menu/packages/{package}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · menu/packages/{package}/photo",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/packages/{{package_id}}/photo",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "packages",
+                                        "{package}",
+                                        "photo"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Delete Photo — menu/packages/{package}/photo\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Combo meals: fixed items plus choice slots. Explodes into kitchen lines on order."
+                },
+                {
                     "name": "3.3 Floor Tables",
                     "item": [
                         {
@@ -6097,7 +6618,7 @@
                                 "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -6168,7 +6689,7 @@
                                 "description": "Update — orders/{order}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1\n}",
+                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -6227,7 +6748,7 @@
                                 "description": "Update — orders/{order}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1\n}",
+                                    "raw": "{\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -6353,7 +6874,7 @@
                                 "description": "Store — orders/{order}/items\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"menu_item_id\": \"{{menu_item_id}}\",\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\"\n}",
+                                    "raw": "{\n    \"menu_item_id\": \"{{menu_item_id}}\",\n    \"package_id\": 1,\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\",\n    \"selections\": [\n        {\n            \"slot_id\": 1,\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -7112,6 +7633,458 @@
                         }
                     ],
                     "description": ""
+                },
+                {
+                    "name": "4.7 Offers",
+                    "item": [
+                        {
+                            "name": "GET · offers",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers?active_only=true&code=%D9%85%D8%AB%D8%A7%D9%84",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "active_only",
+                                            "value": "true",
+                                            "description": "nullable, boolean"
+                                        },
+                                        {
+                                            "key": "code",
+                                            "value": "مثال",
+                                            "description": "nullable, string, max:50"
+                                        }
+                                    ]
+                                },
+                                "description": "Index — offers\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "GET · offers/{offer}",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers/{{offer_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers",
+                                        "{offer}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Show — offers/{offer}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · offers",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Store — offers\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"type\": \"percentage\",\n    \"value\": 1,\n    \"target_type\": \"order\",\n    \"target_id\": 1,\n    \"code\": \"مثال\",\n    \"channels\": [],\n    \"fulfillment_types\": [],\n    \"starts_at\": \"مثال\",\n    \"ends_at\": \"مثال\",\n    \"days_of_week\": [],\n    \"start_time\": \"مثال\",\n    \"end_time\": \"مثال\",\n    \"min_subtotal\": 1,\n    \"max_discount\": 1,\n    \"max_redemptions\": 1,\n    \"max_per_customer\": 1,\n    \"is_active\": true,\n    \"stackable\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · offers/preview",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers/preview",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers",
+                                        "preview"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Preview — offers/preview\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"coupon_code\": \"مثال\",\n    \"customer_id\": \"{{customer_id}}\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"unit_price\": 45,\n            \"category_id\": \"{{category_id}}\",\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"unit_price\": 45,\n            \"category_id\": \"{{category_id}}\",\n            \"notes\": \"فول\"\n        }\n    ]\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PUT · offers/{offer}",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers/{{offer_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers",
+                                        "{offer}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — offers/{offer}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"type\": \"percentage\",\n    \"value\": 1,\n    \"target_type\": \"order\",\n    \"target_id\": 1,\n    \"code\": \"مثال\",\n    \"channels\": [],\n    \"fulfillment_types\": [],\n    \"starts_at\": \"مثال\",\n    \"ends_at\": \"مثال\",\n    \"days_of_week\": [],\n    \"start_time\": \"مثال\",\n    \"end_time\": \"مثال\",\n    \"min_subtotal\": 1,\n    \"max_discount\": 1,\n    \"max_redemptions\": 1,\n    \"max_per_customer\": 1,\n    \"is_active\": true,\n    \"stackable\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · offers/{offer}",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers/{{offer_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers",
+                                        "{offer}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — offers/{offer}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"type\": \"percentage\",\n    \"value\": 1,\n    \"target_type\": \"order\",\n    \"target_id\": 1,\n    \"code\": \"مثال\",\n    \"channels\": [],\n    \"fulfillment_types\": [],\n    \"starts_at\": \"مثال\",\n    \"ends_at\": \"مثال\",\n    \"days_of_week\": [],\n    \"start_time\": \"مثال\",\n    \"end_time\": \"مثال\",\n    \"min_subtotal\": 1,\n    \"max_discount\": 1,\n    \"max_redemptions\": 1,\n    \"max_per_customer\": 1,\n    \"is_active\": true,\n    \"stackable\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · offers/{offer}/toggle",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers/{{offer_id}}/toggle",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers",
+                                        "{offer}",
+                                        "toggle"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Toggle — offers/{offer}/toggle\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · offers/{offer}",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/offers/{{offer_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "offers",
+                                        "{offer}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Destroy — offers/{offer}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        }
+                    ],
+                    "description": "Percentage or fixed discounts with optional coupon, schedule, and channel rules."
                 }
             ]
         },
@@ -8820,7 +9793,7 @@
                                 "description": "Place a dine-in or takeaway order from the public QR menu.\n\nAuth: None",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\"\n        },\n        {\n            \"menu_item_id\": 2,\n            \"quantity\": 1,\n            \"notes\": \"فول\"\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
+                                    "raw": "{\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"

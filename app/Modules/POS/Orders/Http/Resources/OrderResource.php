@@ -25,6 +25,14 @@ class OrderResource extends ModelResource
             'payment' => $payment !== null
                 ? (new PaymentResource($payment))->resolve($request)
                 : null,
+            'adjustments' => $this->resource->relationLoaded('adjustments')
+                ? $this->resource->adjustments->map(fn ($adj) => [
+                    'source' => $adj->source,
+                    'offer_id' => $adj->offer_id,
+                    'amount' => (float) $adj->amount,
+                    'label' => $adj->label,
+                ])->values()->all()
+                : null,
         ];
     }
 }

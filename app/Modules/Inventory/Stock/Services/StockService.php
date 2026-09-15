@@ -111,6 +111,9 @@ class StockService
 
         DB::transaction(function () use ($order): void {
             foreach ($order->items as $orderItem) {
+                if (! $orderItem->menu_item_id) {
+                    continue;
+                }
                 $recipes = Recipe::query()
                     ->where('menu_item_id', $orderItem->menu_item_id)
                     ->with('ingredient')

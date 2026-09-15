@@ -6,7 +6,6 @@ namespace App\Modules\POS\Orders\Services;
 
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
-use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Support\OrderCharges;
@@ -18,14 +17,18 @@ use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Broadcasting\SafeBroadcast;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class OrderPlacementService
 {
-    public function __construct(private readonly PlanLimitService $planLimits) {}
+    public function __construct(
+        private readonly PlanLimitService $planLimits,
+        private readonly OrderLineService $lines,
+    ) {}
 
     /**
-     * @param  array<int, array{menu_item_id: int, quantity: int, notes?: string|null}>  $items
+     * @param  array<int, array<string, mixed>>  $items
      */
     public function place(
         int $branchId,
@@ -42,6 +45,7 @@ class OrderPlacementService
         bool $deliveryFeeProvided = false,
         ?int $customerAddressId = null,
         ?int $districtId = null,
+        ?string $couponCode = null,
     ): Order {
         $this->planLimits->check('orders');
 
@@ -103,56 +107,67 @@ class OrderPlacementService
         }
 
         $charges = OrderCharges::resolve($tenant, Branch::query()->find($branchId));
+        $normalizedCoupon = $couponCode !== null && trim($couponCode) !== ''
+            ? strtoupper(trim($couponCode))
+            : null;
 
-        $order = Order::create([
-            'branch_id' => $branchId,
-            'floor_table_id' => $floorTableId,
-            'waiter_id' => $waiterId,
-            'customer_id' => $customerId,
-            'customer_address_id' => $customerAddressId,
-            'district_id' => $districtId,
-            'channel' => $channel,
-            'fulfillment_type' => $fulfillmentType,
-            'notes' => $notes,
-            'delivery_address' => $deliveryAddress,
-            'delivery_fee' => $deliveryFee,
-            'tax_rate' => $charges['tax_rate'],
-            'tax_rate_applies_to' => $charges['tax_rate_applies_to'],
-            'service_charge_rate' => $charges['service_charge_rate'],
-            'service_charge_applies_to' => $charges['service_charge_applies_to'],
-            'delivery_status' => OrderFulfillment::requiresDeliveryTracking($fulfillmentType) ? 'pending' : null,
-            'external_ref' => $externalRef,
-            'status' => 'pending',
-        ]);
+        $order = DB::transaction(function () use (
+            $branchId,
+            $floorTableId,
+            $waiterId,
+            $customerId,
+            $customerAddressId,
+            $districtId,
+            $channel,
+            $fulfillmentType,
+            $notes,
+            $normalizedCoupon,
+            $deliveryAddress,
+            $deliveryFee,
+            $charges,
+            $externalRef,
+            $items,
+        ): Order {
+            $order = Order::create([
+                'branch_id' => $branchId,
+                'floor_table_id' => $floorTableId,
+                'waiter_id' => $waiterId,
+                'customer_id' => $customerId,
+                'customer_address_id' => $customerAddressId,
+                'district_id' => $districtId,
+                'channel' => $channel,
+                'fulfillment_type' => $fulfillmentType,
+                'notes' => $notes,
+                'coupon_code' => $normalizedCoupon,
+                'delivery_address' => $deliveryAddress,
+                'delivery_fee' => $deliveryFee,
+                'tax_rate' => $charges['tax_rate'],
+                'tax_rate_applies_to' => $charges['tax_rate_applies_to'],
+                'service_charge_rate' => $charges['service_charge_rate'],
+                'service_charge_applies_to' => $charges['service_charge_applies_to'],
+                'delivery_status' => OrderFulfillment::requiresDeliveryTracking($fulfillmentType) ? 'pending' : null,
+                'external_ref' => $externalRef,
+                'status' => 'pending',
+            ]);
 
-        foreach ($items as $itemData) {
-            $menuItem = MenuItem::findOrFail($itemData['menu_item_id']);
-
-            if (! $menuItem->is_available) {
-                throw new InvalidArgumentException("Menu item {$menuItem->id} is unavailable.");
+            foreach ($items as $itemData) {
+                $this->lines->add($order, $itemData);
             }
 
-            $quantity = (int) $itemData['quantity'];
-            $subtotal = $menuItem->price * $quantity;
+            $order->recalculateTotals();
 
-            $order->items()->create([
-                'menu_item_id' => $menuItem->id,
-                'item_name_ar' => $menuItem->name_ar,
-                'unit_price' => $menuItem->price,
-                'quantity' => $quantity,
-                'subtotal' => $subtotal,
-                'status' => 'pending',
-                'notes' => $itemData['notes'] ?? null,
-            ]);
-        }
+            if ($normalizedCoupon && $order->adjustments()->where('source', 'coupon')->doesntExist()) {
+                throw new InvalidArgumentException('Coupon code is invalid or not eligible for this order.');
+            }
 
-        $order->recalculateTotals();
+            if ($order->floor_table_id) {
+                FloorTable::find($order->floor_table_id)?->update(['status' => 'occupied']);
+            }
 
-        if ($order->floor_table_id) {
-            FloorTable::find($order->floor_table_id)?->update(['status' => 'occupied']);
-        }
+            $order->update(['status' => 'active']);
 
-        $order->update(['status' => 'active']);
+            return $order->fresh() ?? $order;
+        });
 
         SafeBroadcast::toOthers(new OrderPlaced($order->load('items')));
 

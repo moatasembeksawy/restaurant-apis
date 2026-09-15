@@ -22,10 +22,16 @@ class StoreOrderRequest extends ApiFormRequest
             'customer_id' => ['nullable', 'integer', 'exists:customers,id'],
             'customer_address_id' => ['nullable', 'integer', 'exists:customer_addresses,id'],
             'district_id' => ['nullable', 'integer', 'exists:districts,id'],
+            'coupon_code' => ['nullable', 'string', 'max:50'],
             'items' => ['required', 'array', 'min:1'],
-            'items.*.menu_item_id' => ['required', 'integer'],
+            'items.*.menu_item_id' => ['required_without:items.*.package_id', 'nullable', 'integer'],
+            'items.*.package_id' => ['required_without:items.*.menu_item_id', 'nullable', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.notes' => ['nullable', 'string'],
+            'items.*.selections' => ['nullable', 'array'],
+            'items.*.selections.*.slot_id' => ['required', 'integer'],
+            'items.*.selections.*.menu_item_ids' => ['required', 'array', 'min:1'],
+            'items.*.selections.*.menu_item_ids.*' => ['integer'],
         ];
     }
 }

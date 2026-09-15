@@ -22,9 +22,9 @@ $app->make(Kernel::class)->bootstrap();
 
 const PLAN_FEATURES = [
     'starter' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice'],
-    'growth' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice', 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders'],
-    'pro' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice', 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders', 'inventory', 'recipe_costing', 'suppliers', 'staff_shifts', 'audit_log', 'waste_log'],
-    'enterprise' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice', 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders', 'inventory', 'recipe_costing', 'suppliers', 'staff_shifts', 'audit_log', 'waste_log', 'multi_branch', 'ai_reports', 'loyalty', 'whatsapp_marketing', 'aggregator_analytics'],
+    'growth' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice', 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders', 'menu_packages'],
+    'pro' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice', 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders', 'menu_packages', 'inventory', 'recipe_costing', 'suppliers', 'staff_shifts', 'audit_log', 'waste_log', 'offers'],
+    'enterprise' => ['pos', 'kitchen_display', 'daily_reports', 'eta_invoice', 'qr_menu', 'whatsapp_ordering', 'delivery', 'customers', 'riders', 'menu_packages', 'inventory', 'recipe_costing', 'suppliers', 'staff_shifts', 'audit_log', 'waste_log', 'offers', 'multi_branch', 'ai_reports', 'loyalty', 'whatsapp_marketing', 'aggregator_analytics'],
 ];
 
 const ERROR_CODES = [
@@ -919,6 +919,9 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_starts_with($uri, 'api/v1/menu/categories')) {
         return ['03 · Menu & Floor Setup', '3.1 Menu Categories'];
     }
+    if (str_starts_with($uri, 'api/v1/menu/packages')) {
+        return ['03 · Menu & Floor Setup', '3.2b Menu Packages'];
+    }
     if (str_starts_with($uri, 'api/v1/menu/items') && ! str_contains($uri, '/recipe') && ! str_contains($uri, '/cost')) {
         return ['03 · Menu & Floor Setup', '3.2 Menu Items'];
     }
@@ -943,6 +946,9 @@ function resolvePostmanFolderPath(array $endpoint): array
     }
     if (str_starts_with($uri, 'api/v1/orders')) {
         return ['04 · Daily Operations (POS)', '4.1 Orders'];
+    }
+    if (str_starts_with($uri, 'api/v1/offers')) {
+        return ['04 · Daily Operations (POS)', '4.7 Offers'];
     }
     if (str_starts_with($uri, 'api/v1/kitchen')) {
         return ['04 · Daily Operations (POS)', '4.3 Kitchen Display'];
@@ -1132,6 +1138,8 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Expenses') => 'Submit, approve, void, filter, and summarize expenses. Approved cash expenses automatically reduce the linked shift drawer.',
         str_contains($folderName, 'Menu Categories') => 'Setup menu structure before adding items.',
         str_contains($folderName, 'Ingredients') => 'Ingredients = shared master data (SKU, name, unit). Stock = quantity at one branch. Recipes and transfers use the master ingredient id.',
+        str_contains($folderName, 'Menu Packages') => 'Combo meals: fixed items plus choice slots. Explodes into kitchen lines on order.',
+        str_contains($folderName, 'Offers') => 'Percentage or fixed discounts with optional coupon, schedule, and channel rules.',
         str_contains($folderName, 'Menu Items') => 'Add dishes with Arabic names, prices, photos.',
         str_contains($folderName, 'Floor Tables') => 'Table layout for dine-in orders and table QR codes.',
         str_contains($folderName, 'Printer & Kitchen') => 'Configure logical printers, optional kitchen stations, direct/category/item routes, and branch printing mode.',
@@ -1195,6 +1203,8 @@ DESC,
             ['key' => 'staff_id', 'value' => '1'],
             ['key' => 'table_id', 'value' => '1'],
             ['key' => 'category_id', 'value' => '1'],
+            ['key' => 'package_id', 'value' => '1'],
+            ['key' => 'offer_id', 'value' => '1'],
             ['key' => 'shift_id', 'value' => '1'],
             ['key' => 'cash_movement_id', 'value' => '1'],
             ['key' => 'expense_category_id', 'value' => '1'],
@@ -1223,8 +1233,8 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
     $relativePath = preg_replace('#^api/v1/#', '', $endpoint['uri']) ?? $endpoint['uri'];
     $url = '{{base_url}}/'.$relativePath;
     $url = str_replace(
-        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{stock}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}', '{district}', '{address}'],
-        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{stock_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}', '{{district_id}}', '{{customer_address_id}}'],
+        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{stock}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}', '{district}', '{address}', '{package}', '{offer}'],
+        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{stock_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}', '{{district_id}}', '{{customer_address_id}}', '{{package_id}}', '{{offer_id}}'],
         $url,
     );
 

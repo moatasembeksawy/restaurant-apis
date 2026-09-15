@@ -15,6 +15,8 @@ use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Billing\Models\PaymentRefund;
 use App\Modules\POS\Billing\Models\PaymentSplit;
+use App\Modules\POS\Offers\Models\OfferRedemption;
+use App\Modules\POS\Offers\Models\OrderAdjustment;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Tenant;
@@ -51,12 +53,27 @@ class PaymentSettlementService
             $tenant = app('tenant');
 
             if (! empty($validated['discount_type']) && isset($validated['discount_value'])) {
+                if (! $cashier->hasPermissionTo('payments.discount', 'web')) {
+                    throw new InvalidArgumentException('You do not have permission to apply a payment discount.');
+                }
+
                 $subtotal = (float) $order->subtotal;
-                $discount = $validated['discount_type'] === 'percentage'
+                $existing = (float) $order->adjustments()
+                    ->where('source', '!=', OrderAdjustment::SOURCE_MANUAL)
+                    ->sum('amount');
+                $computed = $validated['discount_type'] === 'percentage'
                     ? round($subtotal * ((float) $validated['discount_value'] / 100), 2)
                     : round((float) $validated['discount_value'], 2);
+                $remaining = max(0.0, round($subtotal - $existing, 2));
+                $discount = min(max(0.0, $computed), $remaining);
 
-                $order->update(['discount' => min(max(0.0, $discount), $subtotal)]);
+                $order->adjustments()->where('source', OrderAdjustment::SOURCE_MANUAL)->delete();
+                $order->adjustments()->create([
+                    'source' => OrderAdjustment::SOURCE_MANUAL,
+                    'offer_id' => null,
+                    'amount' => $discount,
+                    'label' => $validated['discount_reason'] ?? 'Manual discount',
+                ]);
                 $order->recalculateTotals();
                 $order->refresh();
             }
@@ -129,6 +146,8 @@ class PaymentSettlementService
 
             $order->update(['status' => 'paid']);
 
+            $this->recordOfferRedemptions($order);
+
             if ($order->floor_table_id) {
                 FloorTable::find($order->floor_table_id)?->update(['status' => 'free']);
             }
@@ -199,6 +218,27 @@ class PaymentSettlementService
 
             return $split;
         }, $splits);
+    }
+
+    private function recordOfferRedemptions(Order $order): void
+    {
+        $offerAdjustments = $order->adjustments()
+            ->whereIn('source', [OrderAdjustment::SOURCE_OFFER, OrderAdjustment::SOURCE_COUPON])
+            ->whereNotNull('offer_id')
+            ->get();
+
+        foreach ($offerAdjustments as $adjustment) {
+            OfferRedemption::query()->firstOrCreate(
+                [
+                    'offer_id' => $adjustment->offer_id,
+                    'order_id' => $order->id,
+                ],
+                [
+                    'customer_id' => $order->customer_id,
+                    'amount' => $adjustment->amount,
+                ],
+            );
+        }
     }
 
     /**

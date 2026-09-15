@@ -27,7 +27,8 @@ class OrderUpdateService
      *     delivery_fee?: float|int|string|null,
      *     customer_id?: int|null,
      *     customer_address_id?: int|null,
-     *     district_id?: int|null
+     *     district_id?: int|null,
+     *     coupon_code?: string|null
      * }  $data
      */
     public function update(Order $order, array $data): Order
@@ -143,6 +144,11 @@ class OrderUpdateService
                 $attributes['notes'] = $data['notes'];
             }
 
+            if (array_key_exists('coupon_code', $data)) {
+                $code = is_string($data['coupon_code']) ? strtoupper(trim($data['coupon_code'])) : null;
+                $attributes['coupon_code'] = $code === '' ? null : $code;
+            }
+
             $requiresTracking = OrderFulfillment::requiresDeliveryTracking($fulfillmentType);
             if ($requiresTracking && $order->delivery_status === null) {
                 $attributes['delivery_status'] = 'pending';
@@ -155,6 +161,13 @@ class OrderUpdateService
 
             $order->update($attributes);
             $order->recalculateTotals();
+
+            if (array_key_exists('coupon_code', $data)
+                && filled($order->coupon_code)
+                && $order->adjustments()->where('source', 'coupon')->doesntExist()
+            ) {
+                throw new InvalidArgumentException('Coupon code is invalid or not eligible for this order.');
+            }
 
             $this->syncTableOccupancy($previousTableId, $floorTableId);
 

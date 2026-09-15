@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Menu\Models;
 
+use App\Modules\POS\Packages\Models\MenuPackage;
 use App\Shared\Domain\Models\BaseModel;
 use Database\Factories\MenuCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -18,6 +19,7 @@ class MenuCategory extends BaseModel
     {
         return MenuCategoryFactory::new();
     }
+
     protected $fillable = [
         'tenant_id',
         'branch_id',
@@ -41,5 +43,17 @@ class MenuCategory extends BaseModel
     public function availableItems(): HasMany
     {
         return $this->items()->where('is_available', true);
+    }
+
+    /** @return HasMany<MenuPackage, $this> */
+    public function packages(): HasMany
+    {
+        return $this->hasMany(MenuPackage::class, 'category_id');
+    }
+
+    /** @return HasMany<MenuPackage, $this> */
+    public function availablePackages(): HasMany
+    {
+        return $this->packages()->where('is_available', true);
     }
 }

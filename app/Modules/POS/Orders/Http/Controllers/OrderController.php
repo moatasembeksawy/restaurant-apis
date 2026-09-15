@@ -39,7 +39,7 @@ class OrderController extends Controller
             ->when($validated['table_id'] ?? null, fn ($q, $id) => $q->where('floor_table_id', $id))
             ->when($validated['channel'] ?? null, fn ($q, $c) => $q->where('channel', $c))
             ->when($validated['fulfillment_type'] ?? null, fn ($q, $type) => $q->where('fulfillment_type', $type))
-            ->with(['items', 'table', 'waiter', 'district', 'payment.splits'])
+            ->with(['items', 'table', 'waiter', 'district', 'payment.splits', 'adjustments'])
             ->orderByDesc('created_at')
             ->paginate((int) ($validated['per_page'] ?? 25));
 
@@ -65,17 +65,18 @@ class OrderController extends Controller
                 deliveryFeeProvided: array_key_exists('delivery_fee', $validated),
                 customerAddressId: isset($validated['customer_address_id']) ? (int) $validated['customer_address_id'] : null,
                 districtId: isset($validated['district_id']) ? (int) $validated['district_id'] : null,
+                couponCode: $validated['coupon_code'] ?? null,
             );
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'ORDER_VALIDATION_FAILED', 422);
         }
 
-        return ApiResponse::created(new OrderResource($order->load('payment.splits')), 'Order placed.');
+        return ApiResponse::created(new OrderResource($order->load(['items.children', 'payment.splits', 'adjustments'])), 'Order placed.');
     }
 
     public function show(Order $order): JsonResponse
     {
-        return ApiResponse::success(new OrderResource($order->load(['items.menuItem', 'table', 'waiter', 'payment.splits', 'customer', 'rider', 'district', 'customerAddress.district'])));
+        return ApiResponse::success(new OrderResource($order->load(['items.children', 'items.menuItem', 'table', 'waiter', 'payment.splits', 'customer', 'rider', 'district', 'customerAddress.district', 'adjustments'])));
     }
 
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse

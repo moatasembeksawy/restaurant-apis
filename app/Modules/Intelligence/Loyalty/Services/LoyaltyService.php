@@ -6,6 +6,7 @@ namespace App\Modules\Intelligence\Loyalty\Services;
 
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Intelligence\Loyalty\Models\LoyaltyTransaction;
+use App\Modules\POS\Offers\Models\OrderAdjustment;
 use App\Modules\POS\Orders\Models\Order;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -73,8 +74,11 @@ class LoyaltyService
             $order->id,
         );
 
-        $order->update([
-            'discount' => (float) $order->discount + $result['discount_egp'],
+        $order->adjustments()->create([
+            'source' => OrderAdjustment::SOURCE_LOYALTY,
+            'offer_id' => null,
+            'amount' => $result['discount_egp'],
+            'label' => "Loyalty: {$points} points",
         ]);
         $order->recalculateTotals();
 

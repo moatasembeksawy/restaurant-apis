@@ -33,6 +33,8 @@ class IngredientService
             throw new InvalidArgumentException('Name and unit are required when ingredient_id is omitted.');
         }
 
+        $unit = Ingredient::canonicalizeUnit($unit);
+
         $existing = Ingredient::query()
             ->when($tenantId, fn ($q, $id) => $q->where('tenant_id', $id))
             ->where('name_ar', $nameAr)
@@ -134,6 +136,10 @@ class IngredientService
             'default_cost',
             'is_active',
         ]));
+
+        if (isset($identity['unit']) && is_string($identity['unit'])) {
+            $identity['unit'] = Ingredient::canonicalizeUnit($identity['unit']);
+        }
 
         if ($identity !== []) {
             $ingredient->update($identity);

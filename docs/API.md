@@ -136,7 +136,9 @@ Failure returns:
 | `inventory` | — | — | ✓ | ✓ |
 | `kitchen_display` | ✓ | ✓ | ✓ | ✓ |
 | `loyalty` | — | — | — | ✓ |
+| `menu_packages` | — | ✓ | ✓ | ✓ |
 | `multi_branch` | — | — | — | ✓ |
+| `offers` | — | — | ✓ | ✓ |
 | `pos` | ✓ | ✓ | ✓ | ✓ |
 | `qr_menu` | — | ✓ | ✓ | ✓ |
 | `recipe_costing` | — | — | ✓ | ✓ |
@@ -640,10 +642,16 @@ Place a dine-in or takeaway order from the public QR menu.
 
 | Parameter | Rules |
 |-----------|-------|
+| `coupon_code` | `nullable, string, max:50` |
 | `items` | `required, array, min:1` |
-| `items.*.menu_item_id` | `required, integer` |
+| `items.*.menu_item_id` | `required_without:items.*.package_id, nullable, integer` |
+| `items.*.package_id` | `required_without:items.*.menu_item_id, nullable, integer` |
 | `items.*.quantity` | `required, integer, min:1` |
 | `items.*.notes` | `nullable, string, max:255` |
+| `items.*.selections` | `nullable, array` |
+| `items.*.selections.*.slot_id` | `required, integer` |
+| `items.*.selections.*.menu_item_ids` | `required, array, min:1` |
+| `items.*.selections.*.menu_item_ids.*` | `integer` |
 | `customer_name` | `nullable, string, max:100` |
 | `customer_phone` | `nullable, string, max:20` |
 | `notes` | `nullable, string, max:500` |
@@ -653,16 +661,27 @@ Place a dine-in or takeaway order from the public QR menu.
 
 ```json
 {
+    "coupon_code": "مثال",
     "items": [
         {
             "menu_item_id": 1,
+            "package_id": 1,
             "quantity": 2,
-            "notes": "كشري"
+            "notes": "كشري",
+            "selections": [],
+            "selections.*.slot_id": 1,
+            "selections.*.menu_item_ids": [],
+            "selections.*.menu_item_ids.*": 1
         },
         {
             "menu_item_id": 2,
+            "package_id": 1,
             "quantity": 1,
-            "notes": "فول"
+            "notes": "فول",
+            "selections": [],
+            "selections.*.slot_id": 1,
+            "selections.*.menu_item_ids": [],
+            "selections.*.menu_item_ids.*": 1
         }
     ],
     "customer_name": "أحمد محمود",
@@ -1896,6 +1915,607 @@ _None_
 
 ---
 
+#### `GET` /api/v1/menu/packages
+
+Index — menu/packages
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.view`
+- **Plan features:** `menu_packages`
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `category_id` | `nullable, integer` |
+| `available_only` | `nullable, boolean` |
+
+---
+
+#### `POST` /api/v1/menu/packages
+
+Store — menu/packages
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.create`
+- **Plan features:** `menu_packages`
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `category_id` | `required, integer` |
+| `name_ar` | `required, string, max:150` |
+| `name_en` | `nullable, string, max:150` |
+| `description_ar` | `nullable, string` |
+| `price` | `required, numeric, min:0` |
+| `preparation_time` | `integer, min:1, max:180` |
+| `sort_order` | `integer, min:0` |
+| `is_available` | `sometimes, boolean` |
+| `slots` | `required, array, min:1` |
+| `slots.*.type` | `required, in:fixed,choice` |
+| `slots.*.menu_item_id` | `required_if:slots.*.type,fixed, nullable, integer` |
+| `slots.*.quantity` | `nullable, integer, min:1` |
+| `slots.*.name_ar` | `nullable, string, max:150` |
+| `slots.*.name_en` | `nullable, string, max:150` |
+| `slots.*.min_select` | `nullable, integer, min:1` |
+| `slots.*.max_select` | `nullable, integer, min:1` |
+| `slots.*.sort_order` | `nullable, integer, min:0` |
+| `slots.*.options` | `required_if:slots.*.type,choice, nullable, array, min:1` |
+| `slots.*.options.*.menu_item_id` | `required, integer` |
+| `slots.*.options.*.extra_price` | `nullable, numeric, min:0` |
+| `slots.*.options.*.is_available` | `sometimes, boolean` |
+| `slots.*.options.*.sort_order` | `nullable, integer, min:0` |
+
+```json
+{
+    "category_id": "{{category_id}}",
+    "name_ar": "كشري",
+    "name_en": "Koshary",
+    "description_ar": "مثال",
+    "price": 45,
+    "preparation_time": 15,
+    "sort_order": 1,
+    "is_available": true,
+    "slots": [
+        {
+            "type": "fixed",
+            "menu_item_id": "{{menu_item_id}}",
+            "quantity": 2,
+            "name_ar": "كشري",
+            "name_en": "Koshary",
+            "min_select": 1,
+            "max_select": 1,
+            "sort_order": 1,
+            "options": [],
+            "options.*.menu_item_id": 1,
+            "options.*.extra_price": 1,
+            "options.*.is_available": true,
+            "options.*.sort_order": 1
+        }
+    ]
+}
+```
+
+---
+
+#### `DELETE` /api/v1/menu/packages/{package}
+
+Destroy — menu/packages/{package}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.delete`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+---
+
+#### `GET` /api/v1/menu/packages/{package}
+
+Show — menu/packages/{package}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.view`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+---
+
+#### `PATCH` /api/v1/menu/packages/{package}
+
+Update — menu/packages/{package}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `category_id` | `sometimes, integer` |
+| `name_ar` | `sometimes, string, max:150` |
+| `name_en` | `nullable, string, max:150` |
+| `description_ar` | `nullable, string` |
+| `price` | `sometimes, numeric, min:0` |
+| `is_available` | `sometimes, boolean` |
+| `preparation_time` | `sometimes, integer, min:1, max:180` |
+| `sort_order` | `sometimes, integer, min:0` |
+| `slots` | `sometimes, array, min:1` |
+| `slots.*.type` | `required_with:slots, in:fixed,choice` |
+| `slots.*.menu_item_id` | `required_if:slots.*.type,fixed, nullable, integer` |
+| `slots.*.quantity` | `nullable, integer, min:1` |
+| `slots.*.name_ar` | `nullable, string, max:150` |
+| `slots.*.name_en` | `nullable, string, max:150` |
+| `slots.*.min_select` | `nullable, integer, min:1` |
+| `slots.*.max_select` | `nullable, integer, min:1` |
+| `slots.*.sort_order` | `nullable, integer, min:0` |
+| `slots.*.options` | `required_if:slots.*.type,choice, nullable, array, min:1` |
+| `slots.*.options.*.menu_item_id` | `required, integer` |
+| `slots.*.options.*.extra_price` | `nullable, numeric, min:0` |
+| `slots.*.options.*.is_available` | `sometimes, boolean` |
+| `slots.*.options.*.sort_order` | `nullable, integer, min:0` |
+
+```json
+{
+    "category_id": "{{category_id}}",
+    "name_ar": "كشري",
+    "name_en": "Koshary",
+    "description_ar": "مثال",
+    "price": 45,
+    "is_available": true,
+    "preparation_time": 15,
+    "sort_order": 1,
+    "slots": [
+        {
+            "type": "fixed",
+            "menu_item_id": "{{menu_item_id}}",
+            "quantity": 2,
+            "name_ar": "كشري",
+            "name_en": "Koshary",
+            "min_select": 1,
+            "max_select": 1,
+            "sort_order": 1,
+            "options": [],
+            "options.*.menu_item_id": 1,
+            "options.*.extra_price": 1,
+            "options.*.is_available": true,
+            "options.*.sort_order": 1
+        }
+    ]
+}
+```
+
+---
+
+#### `PUT` /api/v1/menu/packages/{package}
+
+Update — menu/packages/{package}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `category_id` | `sometimes, integer` |
+| `name_ar` | `sometimes, string, max:150` |
+| `name_en` | `nullable, string, max:150` |
+| `description_ar` | `nullable, string` |
+| `price` | `sometimes, numeric, min:0` |
+| `is_available` | `sometimes, boolean` |
+| `preparation_time` | `sometimes, integer, min:1, max:180` |
+| `sort_order` | `sometimes, integer, min:0` |
+| `slots` | `sometimes, array, min:1` |
+| `slots.*.type` | `required_with:slots, in:fixed,choice` |
+| `slots.*.menu_item_id` | `required_if:slots.*.type,fixed, nullable, integer` |
+| `slots.*.quantity` | `nullable, integer, min:1` |
+| `slots.*.name_ar` | `nullable, string, max:150` |
+| `slots.*.name_en` | `nullable, string, max:150` |
+| `slots.*.min_select` | `nullable, integer, min:1` |
+| `slots.*.max_select` | `nullable, integer, min:1` |
+| `slots.*.sort_order` | `nullable, integer, min:0` |
+| `slots.*.options` | `required_if:slots.*.type,choice, nullable, array, min:1` |
+| `slots.*.options.*.menu_item_id` | `required, integer` |
+| `slots.*.options.*.extra_price` | `nullable, numeric, min:0` |
+| `slots.*.options.*.is_available` | `sometimes, boolean` |
+| `slots.*.options.*.sort_order` | `nullable, integer, min:0` |
+
+```json
+{
+    "category_id": "{{category_id}}",
+    "name_ar": "كشري",
+    "name_en": "Koshary",
+    "description_ar": "مثال",
+    "price": 45,
+    "is_available": true,
+    "preparation_time": 15,
+    "sort_order": 1,
+    "slots": [
+        {
+            "type": "fixed",
+            "menu_item_id": "{{menu_item_id}}",
+            "quantity": 2,
+            "name_ar": "كشري",
+            "name_en": "Koshary",
+            "min_select": 1,
+            "max_select": 1,
+            "sort_order": 1,
+            "options": [],
+            "options.*.menu_item_id": 1,
+            "options.*.extra_price": 1,
+            "options.*.is_available": true,
+            "options.*.sort_order": 1
+        }
+    ]
+}
+```
+
+---
+
+#### `DELETE` /api/v1/menu/packages/{package}/photo
+
+Delete Photo — menu/packages/{package}/photo
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+---
+
+#### `POST` /api/v1/menu/packages/{package}/photo
+
+Upload Photo — menu/packages/{package}/photo
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `photo` | `required, image, mimes:jpeg,jpg,png,webp, max:5120` |
+
+```json
+{
+    "photo": "مثال"
+}
+```
+
+---
+
+#### `PATCH` /api/v1/menu/packages/{package}/toggle
+
+Toggle — menu/packages/{package}/toggle
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** `menu_packages`
+- **Path params:** `{package}`
+
+**Request body**
+
+_None_
+
+```json
+{}
+```
+
+---
+
+#### `GET` /api/v1/offers
+
+Index — offers
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.view`
+- **Plan features:** `offers`
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `active_only` | `nullable, boolean` |
+| `code` | `nullable, string, max:50` |
+
+---
+
+#### `POST` /api/v1/offers
+
+Store — offers
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.manage`
+- **Plan features:** `offers`
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name_ar` | `required, string, max:150` |
+| `name_en` | `nullable, string, max:150` |
+| `type` | `required, in:percentage,fixed` |
+| `value` | `required, numeric, min:0` |
+| `target_type` | `required, in:order,category,menu_item,package` |
+| `target_id` | `nullable, integer, required_unless:target_type,order` |
+| `code` | `nullable, string, max:50` |
+| `channels` | `nullable, array` |
+| `channels.*` | `in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `fulfillment_types` | `nullable, array` |
+| `fulfillment_types.*` | `in:dine_in,takeaway,delivery` |
+| `starts_at` | `nullable, date` |
+| `ends_at` | `nullable, date, after_or_equal:starts_at` |
+| `days_of_week` | `nullable, array` |
+| `days_of_week.*` | `integer, min:0, max:6` |
+| `start_time` | `nullable, date_format:H:i` |
+| `end_time` | `nullable, date_format:H:i` |
+| `min_subtotal` | `nullable, numeric, min:0` |
+| `max_discount` | `nullable, numeric, min:0` |
+| `max_redemptions` | `nullable, integer, min:1` |
+| `max_per_customer` | `nullable, integer, min:1` |
+| `is_active` | `sometimes, boolean` |
+| `stackable` | `sometimes, boolean` |
+
+```json
+{
+    "name_ar": "كشري",
+    "name_en": "Koshary",
+    "type": "percentage",
+    "value": 1,
+    "target_type": "order",
+    "target_id": 1,
+    "code": "مثال",
+    "channels": [],
+    "fulfillment_types": [],
+    "starts_at": "مثال",
+    "ends_at": "مثال",
+    "days_of_week": [],
+    "start_time": "مثال",
+    "end_time": "مثال",
+    "min_subtotal": 1,
+    "max_discount": 1,
+    "max_redemptions": 1,
+    "max_per_customer": 1,
+    "is_active": true,
+    "stackable": true
+}
+```
+
+---
+
+#### `POST` /api/v1/offers/preview
+
+Preview — offers/preview
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.view`
+- **Plan features:** `offers`
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `channel` | `required, in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `fulfillment_type` | `nullable, in:dine_in,takeaway,delivery` |
+| `coupon_code` | `nullable, string, max:50` |
+| `customer_id` | `nullable, integer` |
+| `items` | `required, array, min:1` |
+| `items.*.menu_item_id` | `nullable, integer` |
+| `items.*.package_id` | `nullable, integer` |
+| `items.*.quantity` | `required, integer, min:1` |
+| `items.*.unit_price` | `required, numeric, min:0` |
+| `items.*.category_id` | `nullable, integer` |
+
+```json
+{
+    "channel": "dine_in",
+    "fulfillment_type": "dine_in",
+    "coupon_code": "مثال",
+    "customer_id": "{{customer_id}}",
+    "items": [
+        {
+            "menu_item_id": 1,
+            "package_id": 1,
+            "quantity": 2,
+            "unit_price": 45,
+            "category_id": "{{category_id}}",
+            "notes": "كشري"
+        },
+        {
+            "menu_item_id": 2,
+            "package_id": 1,
+            "quantity": 1,
+            "unit_price": 45,
+            "category_id": "{{category_id}}",
+            "notes": "فول"
+        }
+    ]
+}
+```
+
+---
+
+#### `DELETE` /api/v1/offers/{offer}
+
+Destroy — offers/{offer}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.manage`
+- **Plan features:** `offers`
+- **Path params:** `{offer}`
+
+---
+
+#### `GET` /api/v1/offers/{offer}
+
+Show — offers/{offer}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.view`
+- **Plan features:** `offers`
+- **Path params:** `{offer}`
+
+---
+
+#### `PATCH` /api/v1/offers/{offer}
+
+Update — offers/{offer}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.manage`
+- **Plan features:** `offers`
+- **Path params:** `{offer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name_ar` | `sometimes, string, max:150` |
+| `name_en` | `nullable, string, max:150` |
+| `type` | `sometimes, in:percentage,fixed` |
+| `value` | `sometimes, numeric, min:0` |
+| `target_type` | `sometimes, in:order,category,menu_item,package` |
+| `target_id` | `nullable, integer` |
+| `code` | `nullable, string, max:50` |
+| `channels` | `nullable, array` |
+| `channels.*` | `in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `fulfillment_types` | `nullable, array` |
+| `fulfillment_types.*` | `in:dine_in,takeaway,delivery` |
+| `starts_at` | `nullable, date` |
+| `ends_at` | `nullable, date` |
+| `days_of_week` | `nullable, array` |
+| `days_of_week.*` | `integer, min:0, max:6` |
+| `start_time` | `nullable, date_format:H:i` |
+| `end_time` | `nullable, date_format:H:i` |
+| `min_subtotal` | `nullable, numeric, min:0` |
+| `max_discount` | `nullable, numeric, min:0` |
+| `max_redemptions` | `nullable, integer, min:1` |
+| `max_per_customer` | `nullable, integer, min:1` |
+| `is_active` | `sometimes, boolean` |
+| `stackable` | `sometimes, boolean` |
+
+```json
+{
+    "name_ar": "كشري",
+    "name_en": "Koshary",
+    "type": "percentage",
+    "value": 1,
+    "target_type": "order",
+    "target_id": 1,
+    "code": "مثال",
+    "channels": [],
+    "fulfillment_types": [],
+    "starts_at": "مثال",
+    "ends_at": "مثال",
+    "days_of_week": [],
+    "start_time": "مثال",
+    "end_time": "مثال",
+    "min_subtotal": 1,
+    "max_discount": 1,
+    "max_redemptions": 1,
+    "max_per_customer": 1,
+    "is_active": true,
+    "stackable": true
+}
+```
+
+---
+
+#### `PUT` /api/v1/offers/{offer}
+
+Update — offers/{offer}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.manage`
+- **Plan features:** `offers`
+- **Path params:** `{offer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name_ar` | `sometimes, string, max:150` |
+| `name_en` | `nullable, string, max:150` |
+| `type` | `sometimes, in:percentage,fixed` |
+| `value` | `sometimes, numeric, min:0` |
+| `target_type` | `sometimes, in:order,category,menu_item,package` |
+| `target_id` | `nullable, integer` |
+| `code` | `nullable, string, max:50` |
+| `channels` | `nullable, array` |
+| `channels.*` | `in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `fulfillment_types` | `nullable, array` |
+| `fulfillment_types.*` | `in:dine_in,takeaway,delivery` |
+| `starts_at` | `nullable, date` |
+| `ends_at` | `nullable, date` |
+| `days_of_week` | `nullable, array` |
+| `days_of_week.*` | `integer, min:0, max:6` |
+| `start_time` | `nullable, date_format:H:i` |
+| `end_time` | `nullable, date_format:H:i` |
+| `min_subtotal` | `nullable, numeric, min:0` |
+| `max_discount` | `nullable, numeric, min:0` |
+| `max_redemptions` | `nullable, integer, min:1` |
+| `max_per_customer` | `nullable, integer, min:1` |
+| `is_active` | `sometimes, boolean` |
+| `stackable` | `sometimes, boolean` |
+
+```json
+{
+    "name_ar": "كشري",
+    "name_en": "Koshary",
+    "type": "percentage",
+    "value": 1,
+    "target_type": "order",
+    "target_id": 1,
+    "code": "مثال",
+    "channels": [],
+    "fulfillment_types": [],
+    "starts_at": "مثال",
+    "ends_at": "مثال",
+    "days_of_week": [],
+    "start_time": "مثال",
+    "end_time": "مثال",
+    "min_subtotal": 1,
+    "max_discount": 1,
+    "max_redemptions": 1,
+    "max_per_customer": 1,
+    "is_active": true,
+    "stackable": true
+}
+```
+
+---
+
+#### `PATCH` /api/v1/offers/{offer}/toggle
+
+Toggle — offers/{offer}/toggle
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `offers.manage`
+- **Plan features:** `offers`
+- **Path params:** `{offer}`
+
+**Request body**
+
+_None_
+
+```json
+{}
+```
+
+---
+
 #### `GET` /api/v1/orders
 
 Index — orders
@@ -1942,10 +2562,16 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
 | `customer_id` | `nullable, integer, exists:customers,id` |
 | `customer_address_id` | `nullable, integer, exists:customer_addresses,id` |
 | `district_id` | `nullable, integer, exists:districts,id` |
+| `coupon_code` | `nullable, string, max:50` |
 | `items` | `required, array, min:1` |
-| `items.*.menu_item_id` | `required, integer` |
+| `items.*.menu_item_id` | `required_without:items.*.package_id, nullable, integer` |
+| `items.*.package_id` | `required_without:items.*.menu_item_id, nullable, integer` |
 | `items.*.quantity` | `required, integer, min:1` |
 | `items.*.notes` | `nullable, string` |
+| `items.*.selections` | `nullable, array` |
+| `items.*.selections.*.slot_id` | `required, integer` |
+| `items.*.selections.*.menu_item_ids` | `required, array, min:1` |
+| `items.*.selections.*.menu_item_ids.*` | `integer` |
 
 ```json
 {
@@ -1959,16 +2585,27 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
     "customer_id": "{{customer_id}}",
     "customer_address_id": 1,
     "district_id": 1,
+    "coupon_code": "مثال",
     "items": [
         {
             "menu_item_id": 1,
+            "package_id": 1,
             "quantity": 2,
-            "notes": "كشري"
+            "notes": "كشري",
+            "selections": [],
+            "selections.*.slot_id": 1,
+            "selections.*.menu_item_ids": [],
+            "selections.*.menu_item_ids.*": 1
         },
         {
             "menu_item_id": 2,
+            "package_id": 1,
             "quantity": 1,
-            "notes": "فول"
+            "notes": "فول",
+            "selections": [],
+            "selections.*.slot_id": 1,
+            "selections.*.menu_item_ids": [],
+            "selections.*.menu_item_ids.*": 1
         }
     ]
 }
@@ -2009,6 +2646,7 @@ Update — orders/{order}
 | `customer_id` | `nullable, integer, exists:customers,id` |
 | `customer_address_id` | `nullable, integer, exists:customer_addresses,id` |
 | `district_id` | `nullable, integer, exists:districts,id` |
+| `coupon_code` | `nullable, string, max:50` |
 
 ```json
 {
@@ -2020,7 +2658,8 @@ Update — orders/{order}
     "delivery_fee": 15.5,
     "customer_id": "{{customer_id}}",
     "customer_address_id": 1,
-    "district_id": 1
+    "district_id": 1,
+    "coupon_code": "مثال"
 }
 ```
 
@@ -2048,6 +2687,7 @@ Update — orders/{order}
 | `customer_id` | `nullable, integer, exists:customers,id` |
 | `customer_address_id` | `nullable, integer, exists:customer_addresses,id` |
 | `district_id` | `nullable, integer, exists:districts,id` |
+| `coupon_code` | `nullable, string, max:50` |
 
 ```json
 {
@@ -2059,7 +2699,8 @@ Update — orders/{order}
     "delivery_fee": 15.5,
     "customer_id": "{{customer_id}}",
     "customer_address_id": 1,
-    "district_id": 1
+    "district_id": 1,
+    "coupon_code": "مثال"
 }
 ```
 
@@ -2078,15 +2719,28 @@ Store — orders/{order}/items
 
 | Parameter | Rules |
 |-----------|-------|
-| `menu_item_id` | `required, integer` |
+| `menu_item_id` | `required_without:package_id, nullable, integer` |
+| `package_id` | `required_without:menu_item_id, nullable, integer` |
 | `quantity` | `required, integer, min:1` |
 | `notes` | `nullable, string` |
+| `selections` | `nullable, array` |
+| `selections.*.slot_id` | `required, integer` |
+| `selections.*.menu_item_ids` | `required, array, min:1` |
+| `selections.*.menu_item_ids.*` | `integer` |
 
 ```json
 {
     "menu_item_id": "{{menu_item_id}}",
+    "package_id": 1,
     "quantity": 2,
-    "notes": "بدون بصل"
+    "notes": "بدون بصل",
+    "selections": [
+        {
+            "slot_id": 1,
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1
+        }
+    ]
 }
 ```
 
