@@ -115,7 +115,13 @@ return new class extends Migration
             return;
         }
 
-        $this->dropForeignIfExists($table, "{$table}_ingredient_id_foreign");
+        if ($uniqueIndex !== null && $uniqueColumns !== null) {
+            foreach ($uniqueColumns as $column) {
+                $this->ensureStandaloneIndex($table, $column, $uniqueIndex);
+            }
+        }
+
+        $this->dropForeignKeysOnColumn($table, 'ingredient_id');
 
         if ($uniqueIndex !== null) {
             $this->dropIndexIfExists($table, $uniqueIndex);
@@ -251,6 +257,52 @@ return new class extends Migration
         );
 
         return $row !== null && $row->REFERENCED_TABLE_NAME === $referencedTable;
+    }
+
+    private function dropForeignKeysOnColumn(string $table, string $column): void
+    {
+        $rows = DB::select(
+            'SELECT DISTINCT CONSTRAINT_NAME
+             FROM information_schema.KEY_COLUMN_USAGE
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+               AND REFERENCED_TABLE_NAME IS NOT NULL',
+            [$table, $column],
+        );
+
+        foreach ($rows as $row) {
+            $this->dropForeignIfExists($table, (string) $row->CONSTRAINT_NAME);
+        }
+    }
+
+    private function ensureStandaloneIndex(string $table, string $column, string $exceptIndex): void
+    {
+        $existing = DB::selectOne(
+            'SELECT INDEX_NAME
+             FROM information_schema.STATISTICS
+             WHERE TABLE_SCHEMA = DATABASE()
+               AND TABLE_NAME = ?
+               AND COLUMN_NAME = ?
+               AND SEQ_IN_INDEX = 1
+               AND INDEX_NAME != ?
+             LIMIT 1',
+            [$table, $column, $exceptIndex],
+        );
+
+        if ($existing) {
+            return;
+        }
+
+        $indexName = $table.'_'.$column.'_idx';
+
+        if ($this->indexExists($table, $indexName)) {
+            return;
+        }
+
+        Schema::table($table, function (Blueprint $blueprint) use ($column, $indexName): void {
+            $blueprint->index($column, $indexName);
+        });
     }
 
     private function dropForeignIfExists(string $table, string $constraint): void
