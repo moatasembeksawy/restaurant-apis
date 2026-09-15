@@ -5,8 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Stock\Services;
 
 use App\Models\User;
-use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockTransfer;
+use App\Modules\Inventory\Stock\Models\StockTransferItem;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Support\Audit\AuditLogger;
@@ -19,7 +20,7 @@ class StockTransferService
 {
     public function __construct(
         private readonly StockService $stock,
-        private readonly IngredientCatalogService $catalogs,
+        private readonly IngredientService $ingredients,
     ) {}
 
     /** @return Collection<int, StockTransfer> */
@@ -29,8 +30,7 @@ class StockTransferService
             ->with([
                 'fromBranch:id,name',
                 'toBranch:id,name',
-                'fromIngredient:id,name_ar,unit',
-                'toIngredient:id,name_ar,unit',
+                'items.ingredient',
                 'user:id,name',
             ])
             ->when($branchId, fn ($q, $id) => $q->where(function ($query) use ($id): void {
@@ -42,13 +42,13 @@ class StockTransferService
     }
 
     /**
-     * @return array{transfer: StockTransfer, from_ingredient: Ingredient, to_ingredient: Ingredient, created_at_destination: bool}
+     * @param  list<array{ingredient_id: int, quantity: float}>  $items
+     * @return array{transfer: StockTransfer, from_ingredient: InventoryStock, to_ingredient: InventoryStock, created_at_destination: bool}
      */
     public function transfer(
         int $fromBranchId,
         int $toBranchId,
-        int $ingredientId,
-        float $quantity,
+        array $items,
         User $user,
         ?string $notes = null,
     ): array {
@@ -63,96 +63,109 @@ class StockTransferService
             throw new InvalidArgumentException('Source and destination branches must differ.');
         }
 
-        if ($quantity <= 0) {
-            throw new InvalidArgumentException('Quantity must be greater than zero.');
+        if ($items === []) {
+            throw new InvalidArgumentException('Add at least one transfer line.');
         }
 
         $this->assertBranch($fromBranchId);
         $this->assertBranch($toBranchId);
 
-        $source = Ingredient::query()
-            ->where('branch_id', $fromBranchId)
-            ->findOrFail($ingredientId);
-
-        if (! $source->catalog_id) {
-            $catalog = $this->catalogs->findOrCreate(
-                catalogId: null,
-                nameAr: $source->name_ar,
-                nameEn: $source->name_en,
-                unit: $source->unit,
-                tenantId: $source->tenant_id,
-            );
-            $source->update(['catalog_id' => $catalog->id]);
-        }
-
-        return DB::transaction(function () use ($source, $fromBranchId, $toBranchId, $quantity, $user, $notes): array {
+        return DB::transaction(function () use ($fromBranchId, $toBranchId, $items, $user, $notes): array {
             $createdAtDestination = false;
-            $target = Ingredient::query()
-                ->where('branch_id', $toBranchId)
-                ->where('catalog_id', $source->catalog_id)
-                ->first();
-
-            if (! $target) {
-                $target = $this->catalogs->openAtBranch([
-                    'catalog_id' => $source->catalog_id,
-                    'branch_id' => $toBranchId,
-                    'current_stock' => 0,
-                    'reorder_level' => $source->reorder_level,
-                    'unit_cost' => $source->unit_cost,
-                    'is_active' => true,
-                ]);
-                $createdAtDestination = true;
-            }
-
-            $this->stock->recordMovement(
-                ingredient: $source,
-                type: 'adjustment',
-                quantity: $quantity,
-                user: $user,
-                notes: $notes ?? "Transfer to branch #{$toBranchId}",
-                branchId: $fromBranchId,
-                adjustmentDirection: 'out',
-            );
-
-            try {
-                $this->stock->recordMovement(
-                    ingredient: $target,
-                    type: 'adjustment',
-                    quantity: $quantity,
-                    user: $user,
-                    notes: $notes ?? "Transfer from branch #{$fromBranchId}",
-                    branchId: $toBranchId,
-                    adjustmentDirection: 'in',
-                );
-            } catch (RuntimeException $e) {
-                throw new InvalidArgumentException($e->getMessage());
-            }
+            $firstSource = null;
+            $firstTarget = null;
 
             $transfer = StockTransfer::create([
                 'from_branch_id' => $fromBranchId,
                 'to_branch_id' => $toBranchId,
-                'from_ingredient_id' => $source->id,
-                'to_ingredient_id' => $target->id,
                 'user_id' => $user->id,
-                'quantity' => $quantity,
+                'status' => 'completed',
                 'notes' => $notes,
             ]);
 
+            foreach ($items as $line) {
+                $quantity = (float) $line['quantity'];
+
+                if ($quantity <= 0) {
+                    throw new InvalidArgumentException('Quantity must be greater than zero.');
+                }
+
+                $source = InventoryStock::query()
+                    ->where('branch_id', $fromBranchId)
+                    ->where('ingredient_id', $line['ingredient_id'])
+                    ->first();
+
+                if (! $source) {
+                    throw new InvalidArgumentException('Ingredient is not stocked at the source branch.');
+                }
+
+                $target = InventoryStock::query()
+                    ->where('branch_id', $toBranchId)
+                    ->where('ingredient_id', $source->ingredient_id)
+                    ->first();
+
+                if (! $target) {
+                    $target = $this->ingredients->openAtBranch([
+                        'ingredient_id' => $source->ingredient_id,
+                        'branch_id' => $toBranchId,
+                        'current_stock' => 0,
+                        'reorder_level' => $source->reorder_level,
+                        'unit_cost' => $source->unit_cost,
+                        'is_active' => true,
+                    ]);
+                    $createdAtDestination = true;
+                }
+
+                $this->stock->recordMovement(
+                    stock: $source,
+                    type: 'transfer_out',
+                    quantity: $quantity,
+                    user: $user,
+                    notes: $notes ?? "Transfer to branch #{$toBranchId}",
+                    reference: $transfer,
+                    branchId: $fromBranchId,
+                );
+
+                try {
+                    $this->stock->recordMovement(
+                        stock: $target,
+                        type: 'transfer_in',
+                        quantity: $quantity,
+                        user: $user,
+                        notes: $notes ?? "Transfer from branch #{$fromBranchId}",
+                        reference: $transfer,
+                        branchId: $toBranchId,
+                    );
+                } catch (RuntimeException $e) {
+                    throw new InvalidArgumentException($e->getMessage());
+                }
+
+                StockTransferItem::create([
+                    'stock_transfer_id' => $transfer->id,
+                    'ingredient_id' => $source->ingredient_id,
+                    'quantity' => $quantity,
+                ]);
+
+                $firstSource ??= $source;
+                $firstTarget ??= $target;
+            }
+
             AuditLogger::log('inventory.transfer', $transfer, [
-                'quantity' => $quantity,
                 'from_branch_id' => $fromBranchId,
                 'to_branch_id' => $toBranchId,
+                'lines' => count($items),
             ]);
 
+            /** @var InventoryStock $firstSource */
+            /** @var InventoryStock $firstTarget */
             return [
                 'transfer' => $transfer->load([
                     'fromBranch:id,name',
                     'toBranch:id,name',
-                    'fromIngredient:id,name_ar,unit,current_stock,catalog_id',
-                    'toIngredient:id,name_ar,unit,current_stock,catalog_id',
+                    'items.ingredient',
                 ]),
-                'from_ingredient' => $source->fresh('catalog'),
-                'to_ingredient' => $target->fresh('catalog'),
+                'from_ingredient' => $firstSource->fresh('ingredient'),
+                'to_ingredient' => $firstTarget->fresh('ingredient'),
                 'created_at_destination' => $createdAtDestination,
             ];
         });

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockTransfer;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
@@ -21,21 +22,24 @@ beforeEach(function (): void {
         'is_active' => true,
     ]);
 
-    $this->source = Ingredient::factory()->create([
+    $ingredient = Ingredient::factory()->create([
         'tenant_id' => $this->tenant->id,
-        'branch_id' => $this->branchA->id,
         'name_ar' => 'طماطم',
         'name_en' => 'Tomato',
         'unit' => 'kg',
+    ]);
+
+    $this->source = InventoryStock::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branchA->id,
+        'ingredient_id' => $ingredient->id,
         'current_stock' => 20,
     ]);
 
-    $this->target = Ingredient::factory()->create([
+    $this->target = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branchB->id,
-        'name_ar' => 'طماطم',
-        'name_en' => 'Tomato',
-        'unit' => 'kg',
+        'ingredient_id' => $ingredient->id,
         'current_stock' => 5,
     ]);
 
@@ -47,10 +51,8 @@ it('lists stock transfers', function (): void {
     StockTransfer::create([
         'from_branch_id' => $this->branchA->id,
         'to_branch_id' => $this->branchB->id,
-        'from_ingredient_id' => $this->source->id,
-        'to_ingredient_id' => $this->target->id,
         'user_id' => $this->manager->id,
-        'quantity' => 4,
+        'status' => 'completed',
     ]);
 
     $this->withToken($this->token)
@@ -66,7 +68,7 @@ it('transfers stock between branches', function (): void {
         ->postJson('/api/v1/inventory/transfers', [
             'from_branch_id' => $this->branchA->id,
             'to_branch_id' => $this->branchB->id,
-            'ingredient_id' => $this->source->id,
+            'ingredient_id' => $this->source->ingredient_id,
             'quantity' => 4,
         ])
         ->assertCreated();
@@ -74,18 +76,19 @@ it('transfers stock between branches', function (): void {
     expect((float) $response->json('data.from_ingredient.current_stock'))->toBe(16.0);
     expect((float) $response->json('data.to_ingredient.current_stock'))->toBe(9.0);
     expect($response->json('data.created_at_destination'))->toBeFalse();
-    expect($this->source->fresh()->catalog_id)->toBe($this->target->fresh()->catalog_id);
+    expect($this->source->fresh()->ingredient_id)->toBe($this->target->fresh()->ingredient_id);
     expect(StockTransfer::query()->count())->toBe(1);
+    expect($response->json('data.transfer.items.0.ingredient_id'))->toBe($this->source->ingredient_id);
 });
 
-it('opens a destination stock row when the catalog is missing there', function (): void {
+it('opens a destination stock row when the ingredient is missing there', function (): void {
     $this->target->delete();
 
     $response = $this->withToken($this->token)
         ->postJson('/api/v1/inventory/transfers', [
             'from_branch_id' => $this->branchA->id,
             'to_branch_id' => $this->branchB->id,
-            'ingredient_id' => $this->source->id,
+            'ingredient_id' => $this->source->ingredient_id,
             'quantity' => 2,
         ])
         ->assertCreated();
@@ -93,8 +96,8 @@ it('opens a destination stock row when the catalog is missing there', function (
     expect($response->json('data.created_at_destination'))->toBeTrue();
     expect((float) $response->json('data.to_ingredient.current_stock'))->toBe(2.0);
     expect($response->json('data.to_ingredient.branch_id'))->toBe($this->branchB->id);
-    expect($response->json('data.to_ingredient.catalog_id'))->toBe($this->source->fresh()->catalog_id);
-    expect(Ingredient::query()->where('branch_id', $this->branchB->id)->count())->toBe(1);
+    expect($response->json('data.to_ingredient.ingredient_id'))->toBe($this->source->fresh()->ingredient_id);
+    expect(InventoryStock::query()->where('branch_id', $this->branchB->id)->count())->toBe(1);
 });
 
 it('blocks transfers on pro plan', function (): void {
@@ -105,7 +108,7 @@ it('blocks transfers on pro plan', function (): void {
         ->postJson('/api/v1/inventory/transfers', [
             'from_branch_id' => $this->branchA->id,
             'to_branch_id' => $this->branchB->id,
-            'ingredient_id' => $this->source->id,
+            'ingredient_id' => $this->source->ingredient_id,
             'quantity' => 1,
         ])
         ->assertPaymentRequired()

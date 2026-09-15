@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Inventory\Recipes\Models\Recipe;
-use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Services\StockService;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
@@ -28,17 +28,20 @@ beforeEach(function (): void {
         'price' => 120.00,
     ]);
 
-    $this->beef = Ingredient::factory()->create([
+    $this->beef = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'unit_cost' => 50.00,
     ]);
 
-    $this->rice = Ingredient::factory()->create([
+    $this->rice = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'unit_cost' => 10.00,
     ]);
+
+    $this->beef->ingredient->update(['default_cost' => 50.00]);
+    $this->rice->ingredient->update(['default_cost' => 10.00]);
 
     app()->instance('tenant', $this->tenant);
     $this->token = $this->manager->createToken('test')->plainTextToken;
@@ -48,8 +51,8 @@ it('syncs recipe and calculates food cost', function (): void {
     $this->withToken($this->token)
         ->putJson("/api/v1/menu/items/{$this->menuItem->id}/recipe", [
             'lines' => [
-                ['ingredient_id' => $this->beef->id, 'quantity' => 0.2],
-                ['ingredient_id' => $this->rice->id, 'quantity' => 0.1],
+                ['ingredient_id' => $this->beef->ingredient_id, 'quantity' => 0.2],
+                ['ingredient_id' => $this->rice->ingredient_id, 'quantity' => 0.1],
             ],
         ])
         ->assertOk()
@@ -64,7 +67,7 @@ it('calculates profit margin from recipe cost', function (): void {
     Recipe::create([
         'tenant_id' => $this->tenant->id,
         'menu_item_id' => $this->menuItem->id,
-        'ingredient_id' => $this->beef->id,
+        'ingredient_id' => $this->beef->ingredient_id,
         'quantity' => 0.5,
     ]);
 
@@ -82,12 +85,12 @@ it('updates menu item cost price when ingredient cost changes', function (): voi
     Recipe::create([
         'tenant_id' => $this->tenant->id,
         'menu_item_id' => $this->menuItem->id,
-        'ingredient_id' => $this->beef->id,
+        'ingredient_id' => $this->beef->ingredient_id,
         'quantity' => 0.2,
     ]);
 
     app(StockService::class)->recordMovement(
-        ingredient: $this->beef,
+        stock: $this->beef,
         type: 'purchase',
         quantity: 10,
         unitCost: 60.00,

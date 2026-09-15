@@ -6,7 +6,7 @@ use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Intelligence\Loyalty\Models\LoyaltyTransaction;
 use App\Modules\Inventory\Recipes\Models\Recipe;
-use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\POS\Billing\Models\PaymentRefund;
 use App\Modules\POS\Menu\Models\MenuCategory;
@@ -48,7 +48,7 @@ beforeEach(function (): void {
         'price' => 100.00,
     ]);
 
-    $this->ingredient = Ingredient::factory()->create([
+    $this->ingredient = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'current_stock' => 10,
@@ -57,7 +57,7 @@ beforeEach(function (): void {
     Recipe::create([
         'tenant_id' => $this->tenant->id,
         'menu_item_id' => $this->menuItem->id,
-        'ingredient_id' => $this->ingredient->id,
+        'ingredient_id' => $this->ingredient->ingredient_id,
         'quantity' => 1,
     ]);
 

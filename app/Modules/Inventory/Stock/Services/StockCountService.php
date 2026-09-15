@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Stock\Services;
 
 use App\Models\User;
 use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockCount;
 use App\Modules\Inventory\Stock\Models\StockCountLine;
 use App\Modules\Tenant\Models\Branch;
@@ -15,7 +16,10 @@ use InvalidArgumentException;
 
 class StockCountService
 {
-    public function __construct(private readonly StockService $stock) {}
+    public function __construct(
+        private readonly StockService $stock,
+        private readonly IngredientService $ingredients,
+    ) {}
 
     public function start(Branch $branch, User $user, ?string $notes = null): StockCount
     {
@@ -39,11 +43,13 @@ class StockCountService
             throw new InvalidArgumentException('Only draft stock counts can be edited.');
         }
 
-        if ($ingredient->branch_id !== $count->branch_id) {
+        $stockRow = $this->ingredients->stockAtBranch($ingredient->id, $count->branch_id);
+
+        if (! $stockRow) {
             throw new InvalidArgumentException('Ingredient does not belong to this branch.');
         }
 
-        $systemQuantity = (float) $ingredient->current_stock;
+        $systemQuantity = (float) $stockRow->current_stock;
         $variance = round($countedQuantity - $systemQuantity, 4);
 
         return StockCountLine::updateOrCreate(
@@ -56,7 +62,7 @@ class StockCountService
                 'counted_quantity' => $countedQuantity,
                 'variance' => $variance,
             ],
-        )->load('ingredient:id,name_ar,unit,current_stock');
+        )->load('ingredient');
     }
 
     public function complete(StockCount $count, User $user): StockCount
@@ -73,14 +79,22 @@ class StockCountService
             $count->load('lines.ingredient');
 
             foreach ($count->lines as $line) {
-                $ingredient = $line->ingredient;
-                $current = (float) $ingredient->current_stock;
+                $stockRow = $this->ingredients->stockAtBranch(
+                    (int) $line->ingredient_id,
+                    $count->branch_id,
+                );
+
+                if (! $stockRow) {
+                    continue;
+                }
+
+                $current = (float) $stockRow->current_stock;
                 $target = (float) $line->counted_quantity;
                 $diff = round($target - $current, 4);
 
                 if ($diff > 0) {
                     $this->stock->recordMovement(
-                        ingredient: $ingredient,
+                        stock: $stockRow,
                         type: 'adjustment',
                         quantity: $diff,
                         user: $user,
@@ -91,7 +105,7 @@ class StockCountService
                     );
                 } elseif ($diff < 0) {
                     $this->stock->recordMovement(
-                        ingredient: $ingredient,
+                        stock: $stockRow,
                         type: 'adjustment',
                         quantity: abs($diff),
                         user: $user,
@@ -113,7 +127,7 @@ class StockCountService
             'lines' => $count->lines()->count(),
         ]);
 
-        return $count->fresh(['branch:id,name,name_ar', 'user:id,name', 'lines.ingredient:id,name_ar,unit,current_stock']);
+        return $count->fresh(['branch:id,name,name_ar', 'user:id,name', 'lines.ingredient']);
     }
 
     public function cancel(StockCount $count): StockCount
@@ -126,13 +140,19 @@ class StockCountService
 
         AuditLogger::log('inventory.stock_count.cancelled', $count);
 
-        return $count->fresh(['branch:id,name,name_ar', 'user:id,name', 'lines.ingredient:id,name_ar,unit,current_stock']);
+        return $count->fresh(['branch:id,name,name_ar', 'user:id,name']);
     }
 
     /** @return array<string, mixed> */
     public function format(StockCount $count): array
     {
-        $count->loadMissing(['branch:id,name,name_ar', 'user:id,name', 'lines.ingredient:id,name_ar,unit,current_stock']);
+        $count->loadMissing(['branch:id,name,name_ar', 'user:id,name', 'lines.ingredient']);
+
+        $stocks = InventoryStock::query()
+            ->where('branch_id', $count->branch_id)
+            ->whereIn('ingredient_id', $count->lines->pluck('ingredient_id'))
+            ->get()
+            ->keyBy('ingredient_id');
 
         return [
             'id' => $count->id,
@@ -149,16 +169,22 @@ class StockCountService
                 'id' => $count->user->id,
                 'name' => $count->user->name,
             ] : null,
-            'lines' => $count->lines->map(fn (StockCountLine $line) => [
-                'id' => $line->id,
-                'ingredient_id' => $line->ingredient_id,
-                'name_ar' => $line->ingredient->name_ar,
-                'unit' => $line->ingredient->unit,
-                'system_quantity' => (float) $line->system_quantity,
-                'counted_quantity' => (float) $line->counted_quantity,
-                'variance' => (float) $line->variance,
-                'current_stock' => (float) $line->ingredient->current_stock,
-            ])->values()->all(),
+            'lines' => $count->lines->map(function (StockCountLine $line) use ($stocks): array {
+                $stockRow = $stocks->get($line->ingredient_id);
+
+                return [
+                    'id' => $line->id,
+                    'ingredient_id' => $line->ingredient_id,
+                    'name_ar' => $line->ingredient->name_ar,
+                    'unit' => $line->ingredient->unit,
+                    'system_quantity' => (float) $line->system_quantity,
+                    'counted_quantity' => (float) $line->counted_quantity,
+                    'variance' => (float) $line->variance,
+                    'current_stock' => (float) ($stockRow instanceof InventoryStock
+                        ? $stockRow->current_stock
+                        : $line->system_quantity),
+                ];
+            })->values()->all(),
             'created_at' => $count->created_at?->toISOString(),
         ];
     }

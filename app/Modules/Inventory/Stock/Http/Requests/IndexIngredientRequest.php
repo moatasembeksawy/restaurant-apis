@@ -15,8 +15,6 @@ class IndexIngredientRequest extends ApiFormRequest
     public function rules(): array
     {
         return array_merge([
-            'branch_id' => ['nullable', 'integer'],
-            'catalog_id' => ['nullable', 'integer'],
             'active' => ['nullable', 'boolean'],
         ], $this->paginationRules());
     }

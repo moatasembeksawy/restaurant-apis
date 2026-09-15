@@ -59,6 +59,10 @@
             "value": "1"
         },
         {
+            "key": "stock_id",
+            "value": "1"
+        },
+        {
             "key": "purchase_order_id",
             "value": "1"
         },
@@ -8441,6 +8445,72 @@
                     "name": "6.2 Riders & Delivery Status",
                     "item": [
                         {
+                            "name": "GET · deliveries/unassigned",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/deliveries/unassigned?branch_id=%7B%7Bbranch_id%7D%7D&per_page=25&page=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "deliveries",
+                                        "unassigned"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "nullable, integer, min:1"
+                                        }
+                                    ]
+                                },
+                                "description": "Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "GET · riders",
                             "request": {
                                 "method": "GET",
@@ -8793,7 +8863,7 @@
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{base_url}}/inventory/ingredients?branch_id=%7B%7Bbranch_id%7D%7D&catalog_id=1&active=true&per_page=25&page=1",
+                                    "raw": "{{base_url}}/inventory/ingredients?active=true&per_page=25&page=1",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -8802,16 +8872,6 @@
                                         "ingredients"
                                     ],
                                     "query": [
-                                        {
-                                            "key": "branch_id",
-                                            "value": "{{branch_id}}",
-                                            "description": "nullable, integer"
-                                        },
-                                        {
-                                            "key": "catalog_id",
-                                            "value": "1",
-                                            "description": "nullable, integer"
-                                        },
                                         {
                                             "key": "active",
                                             "value": "true",
@@ -8829,7 +8889,7 @@
                                         }
                                     ]
                                 },
-                                "description": "Index — inventory/ingredients\n\nAuth: Bearer token + tenant header"
+                                "description": "Master ingredients (one row per SKU). Includes each branch stock row, total_stock, and branch_count.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -8954,6 +9014,133 @@
                             ]
                         },
                         {
+                            "name": "GET · inventory/stock",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/stock?ingredient_id=%7B%7Bingredient_id%7D%7D&branch_id=%7B%7Bbranch_id%7D%7D&active=true&per_page=25&page=1",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "stock"
+                                    ],
+                                    "query": [
+                                        {
+                                            "key": "ingredient_id",
+                                            "value": "{{ingredient_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
+                                            "key": "active",
+                                            "value": "true",
+                                            "description": "nullable, boolean"
+                                        },
+                                        {
+                                            "key": "per_page",
+                                            "value": "25",
+                                            "description": "nullable, integer, min:1, max:100"
+                                        },
+                                        {
+                                            "key": "page",
+                                            "value": "1",
+                                            "description": "nullable, integer, min:1"
+                                        }
+                                    ]
+                                },
+                                "description": "Current quantity per branch. Filter by branch_id or ingredient_id.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "GET · inventory/stock/{stock}",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/stock/{{stock_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "stock",
+                                        "{stock}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Show — inventory/stock/{stock}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "POST · inventory/ingredients",
                             "request": {
                                 "method": "POST",
@@ -8986,10 +9173,69 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Store — inventory/ingredients\n\nAuth: Bearer token + tenant header",
+                                "description": "Create a master ingredient. Pass branch_id to also open stock at that branch.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"catalog_id\": 1,\n    \"branch_id\": \"{{branch_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
+                                    "raw": "{\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"branch_id\": \"{{branch_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"default_cost\": 45,\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · inventory/stock",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/stock",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "stock"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Open existing master ingredient stock at a branch.\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"branch_id\": \"{{branch_id}}\",\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -9049,7 +9295,67 @@
                                 "description": "Update — inventory/ingredients/{ingredient}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"reorder_level\": 10,\n    \"is_active\": true\n}",
+                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"default_cost\": 45,\n    \"is_active\": true\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "PATCH · inventory/stock/{stock}",
+                            "request": {
+                                "method": "PATCH",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/stock/{{stock_id}}",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "stock",
+                                        "{stock}"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update — inventory/stock/{stock}\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reorder_level\": 10,\n    \"unit_cost\": 45,\n    \"is_active\": true\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -9073,7 +9379,7 @@
                             ]
                         }
                     ],
-                    "description": ""
+                    "description": "Ingredients = shared master data (SKU, name, unit). Stock = quantity at one branch. Recipes and transfers use the master ingredient id."
                 },
                 {
                     "name": "7.2 Stock Movements",
@@ -9101,7 +9407,7 @@
                                     }
                                 ],
                                 "url": {
-                                    "raw": "{{base_url}}/inventory/movements?ingredient_id=%7B%7Bingredient_id%7D%7D&type=purchase&per_page=25&page=1",
+                                    "raw": "{{base_url}}/inventory/movements?ingredient_id=%7B%7Bingredient_id%7D%7D&branch_id=%7B%7Bbranch_id%7D%7D&type=purchase&per_page=25&page=1",
                                     "host": [
                                         "{{base_url}}"
                                     ],
@@ -9116,9 +9422,14 @@
                                             "description": "nullable, integer"
                                         },
                                         {
+                                            "key": "branch_id",
+                                            "value": "{{branch_id}}",
+                                            "description": "nullable, integer"
+                                        },
+                                        {
                                             "key": "type",
                                             "value": "purchase",
-                                            "description": "nullable, in:purchase,waste,adjustment"
+                                            "description": "nullable, in:purchase,waste,sale,adjustment,refund,transfer_in,transfer_out"
                                         },
                                         {
                                             "key": "per_page",
@@ -9185,7 +9496,7 @@
                                 "description": "Store — inventory/movements\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"type\": \"purchase\",\n    \"quantity\": 2,\n    \"unit_cost\": 45,\n    \"notes\": \"بدون بصل\",\n    \"direction\": \"in\"\n}",
+                                    "raw": "{\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"branch_id\": \"{{branch_id}}\",\n    \"type\": \"purchase\",\n    \"quantity\": 2,\n    \"unit_cost\": 45,\n    \"notes\": \"بدون بصل\",\n    \"direction\": \"in\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -10281,10 +10592,10 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Move stock between branches by catalog. If the destination branch has no stock row for that SKU, one is created automatically.\n\nAuth: Bearer token + tenant header",
+                                "description": "Move master ingredients between branches. Accepts a single ingredient_id+quantity or items[]. Missing destination stock is created automatically.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"from_branch_id\": 1,\n    \"to_branch_id\": 1,\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\"\n}",
+                                    "raw": "{\n    \"from_branch_id\": 1,\n    \"to_branch_id\": 1,\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"quantity\": 2,\n    \"items\": [\n        {\n            \"ingredient_id\": 1,\n            \"quantity\": 5,\n            \"unit_cost\": 12.5\n        },\n        {\n            \"ingredient_id\": 2,\n            \"quantity\": 2,\n            \"unit_cost\": 8\n        }\n    ],\n    \"notes\": \"بدون بصل\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -11655,150 +11966,6 @@
                                     }
                                 }
                             }
-                        }
-                    ],
-                    "description": ""
-                }
-            ]
-        },
-        {
-            "name": "99 · Other",
-            "item": [
-                {
-                    "name": "deliveries/unassigned",
-                    "item": [
-                        {
-                            "name": "GET · deliveries/unassigned",
-                            "request": {
-                                "method": "GET",
-                                "header": [
-                                    {
-                                        "key": "Accept",
-                                        "value": "application/json"
-                                    },
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    },
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{tenant_token}}"
-                                    },
-                                    {
-                                        "key": "X-Tenant-Subdomain",
-                                        "value": "{{tenant_subdomain}}"
-                                    }
-                                ],
-                                "url": {
-                                    "raw": "{{base_url}}/deliveries/unassigned?branch_id=%7B%7Bbranch_id%7D%7D&per_page=25&page=1",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "deliveries",
-                                        "unassigned"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "branch_id",
-                                            "value": "{{branch_id}}",
-                                            "description": "nullable, integer"
-                                        },
-                                        {
-                                            "key": "per_page",
-                                            "value": "25",
-                                            "description": "nullable, integer, min:1, max:100"
-                                        },
-                                        {
-                                            "key": "page",
-                                            "value": "1",
-                                            "description": "nullable, integer, min:1"
-                                        }
-                                    ]
-                                },
-                                "description": "Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.\n\nAuth: Bearer token + tenant header"
-                            },
-                            "event": [
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "type": "text/javascript",
-                                        "exec": [
-                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
-                                            "    console.warn('Set tenant_subdomain collection variable');",
-                                            "}",
-                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
-                                        ]
-                                    }
-                                }
-                            ]
-                        }
-                    ],
-                    "description": ""
-                },
-                {
-                    "name": "inventory/catalogs",
-                    "item": [
-                        {
-                            "name": "GET · inventory/catalogs",
-                            "request": {
-                                "method": "GET",
-                                "header": [
-                                    {
-                                        "key": "Accept",
-                                        "value": "application/json"
-                                    },
-                                    {
-                                        "key": "Content-Type",
-                                        "value": "application/json"
-                                    },
-                                    {
-                                        "key": "Authorization",
-                                        "value": "Bearer {{tenant_token}}"
-                                    },
-                                    {
-                                        "key": "X-Tenant-Subdomain",
-                                        "value": "{{tenant_subdomain}}"
-                                    }
-                                ],
-                                "url": {
-                                    "raw": "{{base_url}}/inventory/catalogs?per_page=25&page=1",
-                                    "host": [
-                                        "{{base_url}}"
-                                    ],
-                                    "path": [
-                                        "inventory",
-                                        "catalogs"
-                                    ],
-                                    "query": [
-                                        {
-                                            "key": "per_page",
-                                            "value": "25",
-                                            "description": "nullable, integer, min:1, max:100"
-                                        },
-                                        {
-                                            "key": "page",
-                                            "value": "1",
-                                            "description": "nullable, integer, min:1"
-                                        }
-                                    ]
-                                },
-                                "description": "Shared ingredient catalog (SKU identity). Each catalog item can have a stock row per branch. Create stock at a branch with POST /inventory/ingredients and catalog_id.\n\nAuth: Bearer token + tenant header"
-                            },
-                            "event": [
-                                {
-                                    "listen": "prerequest",
-                                    "script": {
-                                        "type": "text/javascript",
-                                        "exec": [
-                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
-                                            "    console.warn('Set tenant_subdomain collection variable');",
-                                            "}",
-                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
-                                        ]
-                                    }
-                                }
-                            ]
                         }
                     ],
                     "description": ""

@@ -77,8 +77,11 @@ const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => 'Place a dine-in or takeaway order from the public QR menu.',
     'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@store' => 'Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.',
     'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@settle' => 'Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientCatalogController@index' => 'Shared ingredient catalog (SKU identity). Each catalog item can have a stock row per branch. Create stock at a branch with POST /inventory/ingredients and catalog_id.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Move stock between branches by catalog. If the destination branch has no stock row for that SKU, one is created automatically.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientController@index' => 'Master ingredients (one row per SKU). Includes each branch stock row, total_stock, and branch_count.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientController@store' => 'Create a master ingredient. Pass branch_id to also open stock at that branch.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\InventoryStockController@index' => 'Current quantity per branch. Filter by branch_id or ingredient_id.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\InventoryStockController@store' => 'Open existing master ingredient stock at a branch.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Move master ingredients between branches. Accepts a single ingredient_id+quantity or items[]. Missing destination stock is created automatically.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@verifyDomain' => 'Verify custom domain DNS configuration for white-label access.',
     'App\\Modules\\Tenant\\Districts\\Http\\Controllers\\DistrictController@index' => 'List delivery districts and their fees for a branch. Pass branch_id (defaults to the authenticated user branch). POS uses this to show the fee when a district is selected.',
     'App\\Modules\\Tenant\\Districts\\Http\\Controllers\\DistrictController@store' => 'Create a delivery district with a fee for a specific branch. Owners and managers only. The same district name can exist on another branch with a different fee.',
@@ -969,7 +972,7 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_starts_with($uri, 'api/v1/customers')) {
         return ['06 · Delivery & QR', '6.1 Customers'];
     }
-    if (str_starts_with($uri, 'api/v1/riders')) {
+    if (str_starts_with($uri, 'api/v1/riders') || str_starts_with($uri, 'api/v1/deliveries')) {
         return ['06 · Delivery & QR', '6.2 Riders & Delivery Status'];
     }
 
@@ -989,7 +992,9 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_starts_with($uri, 'api/v1/inventory/movements')) {
         return ['07 · Inventory', '7.2 Stock Movements'];
     }
-    if (str_starts_with($uri, 'api/v1/inventory/ingredients') || str_starts_with($uri, 'api/v1/inventory/low-stock')) {
+    if (str_starts_with($uri, 'api/v1/inventory/ingredients')
+        || str_starts_with($uri, 'api/v1/inventory/low-stock')
+        || str_starts_with($uri, 'api/v1/inventory/')) {
         return ['07 · Inventory', '7.1 Ingredients'];
     }
 
@@ -1126,6 +1131,7 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Expense Categories') => 'Owner/manager-defined categories used to classify restaurant operating expenses.',
         str_contains($folderName, 'Expenses') => 'Submit, approve, void, filter, and summarize expenses. Approved cash expenses automatically reduce the linked shift drawer.',
         str_contains($folderName, 'Menu Categories') => 'Setup menu structure before adding items.',
+        str_contains($folderName, 'Ingredients') => 'Ingredients = shared master data (SKU, name, unit). Stock = quantity at one branch. Recipes and transfers use the master ingredient id.',
         str_contains($folderName, 'Menu Items') => 'Add dishes with Arabic names, prices, photos.',
         str_contains($folderName, 'Floor Tables') => 'Table layout for dine-in orders and table QR codes.',
         str_contains($folderName, 'Printer & Kitchen') => 'Configure logical printers, optional kitchen stations, direct/category/item routes, and branch printing mode.',
@@ -1183,6 +1189,7 @@ DESC,
             ['key' => 'district_id', 'value' => '1'],
             ['key' => 'supplier_id', 'value' => '1'],
             ['key' => 'ingredient_id', 'value' => '1'],
+            ['key' => 'stock_id', 'value' => '1'],
             ['key' => 'purchase_order_id', 'value' => '1'],
             ['key' => 'qr_token', 'value' => 'table-token-example'],
             ['key' => 'staff_id', 'value' => '1'],
@@ -1216,8 +1223,8 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
     $relativePath = preg_replace('#^api/v1/#', '', $endpoint['uri']) ?? $endpoint['uri'];
     $url = '{{base_url}}/'.$relativePath;
     $url = str_replace(
-        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}', '{district}', '{address}'],
-        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}', '{{district_id}}', '{{customer_address_id}}'],
+        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{stock}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}', '{district}', '{address}'],
+        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{stock_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}', '{{district_id}}', '{{customer_address_id}}'],
         $url,
     );
 
@@ -1491,6 +1498,7 @@ function generatePostmanEnvironment(): array
             ['key' => 'district_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'supplier_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'ingredient_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'stock_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'purchase_order_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'qr_token', 'value' => 'table-token-example', 'type' => 'default', 'enabled' => true],
             ['key' => 'staff_id', 'value' => '1', 'type' => 'default', 'enabled' => true],

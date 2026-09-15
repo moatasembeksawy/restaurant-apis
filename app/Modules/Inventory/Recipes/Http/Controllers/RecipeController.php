@@ -11,6 +11,7 @@ use App\Modules\POS\Menu\Models\MenuItem;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
+use InvalidArgumentException;
 
 /**
  * @group Inventory — Recipes
@@ -35,7 +36,11 @@ class RecipeController extends Controller
             return ApiResponse::error('Recipe costing requires Pro plan.', 'FEATURE_NOT_AVAILABLE', 402);
         }
 
-        $this->stock->syncRecipe($item, $request->validated('lines'));
+        try {
+            $this->stock->syncRecipe($item, $request->validated('lines'));
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'RECIPE_ERROR', 422);
+        }
 
         return ApiResponse::success(
             new RecipeCostResource($this->stock->recipeCost($item->fresh())),

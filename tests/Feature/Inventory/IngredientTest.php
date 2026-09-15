@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Inventory\Stock\Models\Ingredient;
-use App\Modules\Inventory\Stock\Models\IngredientCatalog;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 
@@ -45,7 +45,7 @@ it('creates and lists ingredients', function (): void {
     expect($response->json('data'))->toHaveCount(1);
 });
 
-it('reuses the catalog when the same item is opened at another branch', function (): void {
+it('reuses the master ingredient when the same item is opened at another branch', function (): void {
     $other = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
 
     $first = $this->withToken($this->token)
@@ -58,50 +58,68 @@ it('reuses the catalog when the same item is opened at another branch', function
         ->assertCreated();
 
     $second = $this->withToken($this->token)
-        ->postJson('/api/v1/inventory/ingredients', [
-            'catalog_id' => $first->json('data.catalog_id'),
+        ->postJson('/api/v1/inventory/stock', [
+            'ingredient_id' => $first->json('data.id'),
             'branch_id' => $other->id,
             'current_stock' => 3,
         ])
         ->assertCreated();
 
-    expect($second->json('data.catalog_id'))->toBe($first->json('data.catalog_id'));
+    expect($second->json('data.ingredient_id'))->toBe($first->json('data.id'));
     expect($second->json('data.name_ar'))->toBe('طماطم');
-    expect(IngredientCatalog::query()->count())->toBe(1);
+    expect(Ingredient::query()->count())->toBe(1);
 
     $this->withToken($this->token)
-        ->postJson('/api/v1/inventory/ingredients', [
-            'catalog_id' => $first->json('data.catalog_id'),
+        ->postJson('/api/v1/inventory/stock', [
+            'ingredient_id' => $first->json('data.id'),
             'branch_id' => $this->branch->id,
         ])
         ->assertUnprocessable()
         ->assertJsonPath('errors.0.code', 'INGREDIENT_ERROR');
 });
 
-it('lists ingredient catalogs', function (): void {
-    Ingredient::factory()->create([
-        'tenant_id' => $this->tenant->id,
-        'branch_id' => $this->branch->id,
-        'name_ar' => 'طماطم',
-        'name_en' => 'Tomato',
-        'unit' => 'kg',
-    ]);
+it('lists ingredients with branch stock and a total', function (): void {
+    $other = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+    $first = $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'branch_id' => $this->branch->id,
+            'name_ar' => 'طماطم',
+            'name_en' => 'Tomato',
+            'unit' => 'kg',
+            'current_stock' => 20,
+        ])
+        ->assertCreated();
 
     $this->withToken($this->token)
-        ->getJson('/api/v1/inventory/catalogs')
+        ->postJson('/api/v1/inventory/stock', [
+            'ingredient_id' => $first->json('data.id'),
+            'branch_id' => $other->id,
+            'current_stock' => 3,
+        ])
+        ->assertCreated();
+
+    $response = $this->withToken($this->token)
+        ->getJson('/api/v1/inventory/ingredients')
         ->assertOk()
-        ->assertJsonPath('data.0.name_ar', 'طماطم');
+        ->assertJsonPath('data.0.name_ar', 'طماطم')
+        ->assertJsonPath('data.0.total_stock', 23)
+        ->assertJsonPath('data.0.branch_count', 2);
+
+    $stocks = collect($response->json('data.0.stocks'))->pluck('current_stock');
+    expect($stocks->contains('20.000'))->toBeTrue();
+    expect($stocks->contains('3.000'))->toBeTrue();
 });
 
-it('returns low stock ingredients', function (): void {
-    Ingredient::factory()->create([
+it('returns low stock at a branch', function (): void {
+    InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'current_stock' => 2,
         'reorder_level' => 10,
     ]);
 
-    Ingredient::factory()->create([
+    InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'current_stock' => 50,
@@ -116,7 +134,7 @@ it('returns low stock ingredients', function (): void {
 });
 
 it('records waste movement and reduces stock', function (): void {
-    $ingredient = Ingredient::factory()->create([
+    $stock = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'current_stock' => 10,
@@ -125,14 +143,15 @@ it('records waste movement and reduces stock', function (): void {
 
     $this->withToken($this->token)
         ->postJson('/api/v1/inventory/movements', [
-            'ingredient_id' => $ingredient->id,
+            'ingredient_id' => $stock->ingredient_id,
+            'branch_id' => $this->branch->id,
             'type' => 'waste',
             'quantity' => 3,
             'notes' => 'Spoilage',
         ])
         ->assertCreated();
 
-    expect((float) $ingredient->fresh()->current_stock)->toBe(7.0);
+    expect((float) $stock->fresh()->current_stock)->toBe(7.0);
 });
 
 it('blocks inventory routes on starter plan', function (): void {

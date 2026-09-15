@@ -235,33 +235,9 @@ parameters:
 			path: app/Modules/Intelligence/Reports/Services/LLMNarrativeService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_cost\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Recipes/Models/Recipe.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$counted_quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$current_stock\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
 			identifier: property.notFound
 			count: 2
-			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
-			identifier: property.notFound
-			count: 1
 			path: app/Modules/Inventory/Stock/Services/StockCountService.php
 
 		-
@@ -273,12 +249,6 @@ parameters:
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
 			identifier: property.notFound
-			count: 2
-			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
-			identifier: property.notFound
 			count: 1
 			path: app/Modules/Inventory/Stock/Services/StockCountService.php
 
@@ -287,54 +257,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) expects callable\(Illuminate\\Database\\Eloquent\\Model, int\)\: array\{id\: int, ingredient_id\: int\<0, max\>, name_ar\: mixed, unit\: mixed, system_quantity\: float, counted_quantity\: float, variance\: float, current_stock\: float\}, Closure\(App\\Modules\\Inventory\\Stock\\Models\\StockCountLine\)\: array\{id\: int, ingredient_id\: int\<0, max\>, name_ar\: mixed, unit\: mixed, system_quantity\: float, counted_quantity\: float, variance\: float, current_stock\: float\} given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockCountService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$ingredient\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$quantity\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$unit_cost\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Inventory/Stock/Services/StockService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,App\\Modules\\Inventory\\Recipes\\Models\\Recipe\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
-			count: 1
-			path: app/Modules/Inventory/Stock/Services/StockService.php
 
 		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'

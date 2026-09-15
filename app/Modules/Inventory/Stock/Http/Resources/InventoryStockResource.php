@@ -6,4 +6,4 @@ namespace App\Modules\Inventory\Stock\Http\Resources;
 
 use App\Shared\Support\Http\Resources\ModelResource;
 
-class IngredientCatalogResource extends ModelResource {}
+class InventoryStockResource extends ModelResource {}

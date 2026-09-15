@@ -804,27 +804,9 @@ Weekly — reports/ai-summary
 
 ### Inventory
 
-#### `GET` /api/v1/inventory/catalogs
-
-Shared ingredient catalog (SKU identity). Each catalog item can have a stock row per branch. Create stock at a branch with POST /inventory/ingredients and catalog_id.
-
-- **Auth:** Bearer token + tenant header
-- **Permissions:** `inventory.view`
-- **Plan features:** `inventory`
-- **Path params:** _None_
-
-**Query parameters**
-
-| Parameter | Rules |
-|-----------|-------|
-| `per_page` | `nullable, integer, min:1, max:100` |
-| `page` | `nullable, integer, min:1` |
-
----
-
 #### `GET` /api/v1/inventory/ingredients
 
-Index — inventory/ingredients
+Master ingredients (one row per SKU). Includes each branch stock row, total_stock, and branch_count.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.view`
@@ -835,8 +817,6 @@ Index — inventory/ingredients
 
 | Parameter | Rules |
 |-----------|-------|
-| `branch_id` | `nullable, integer` |
-| `catalog_id` | `nullable, integer` |
 | `active` | `nullable, boolean` |
 | `per_page` | `nullable, integer, min:1, max:100` |
 | `page` | `nullable, integer, min:1` |
@@ -845,7 +825,7 @@ Index — inventory/ingredients
 
 #### `POST` /api/v1/inventory/ingredients
 
-Store — inventory/ingredients
+Create a master ingredient. Pass branch_id to also open stock at that branch.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -856,22 +836,24 @@ Store — inventory/ingredients
 
 | Parameter | Rules |
 |-----------|-------|
-| `catalog_id` | `nullable, integer` |
+| `ingredient_id` | `nullable, integer` |
 | `branch_id` | `nullable, integer` |
-| `name_ar` | `required_without:catalog_id, nullable, string, max:100` |
+| `name_ar` | `required_without:ingredient_id, nullable, string, max:100` |
 | `name_en` | `nullable, string, max:100` |
-| `unit` | `required_without:catalog_id, nullable, in:kg,g,l,ml,piece` |
+| `unit` | `required_without:ingredient_id, nullable, in:kg,g,l,ml,piece` |
+| `default_cost` | `nullable, numeric, min:0` |
 | `current_stock` | `nullable, numeric, min:0` |
 | `reorder_level` | `nullable, numeric, min:0` |
 | `unit_cost` | `nullable, numeric, min:0` |
 
 ```json
 {
-    "catalog_id": 1,
+    "ingredient_id": "{{ingredient_id}}",
     "branch_id": "{{branch_id}}",
     "name_ar": "كشري",
     "name_en": "Koshary",
     "unit": "kg",
+    "default_cost": 45,
     "current_stock": 25,
     "reorder_level": 10,
     "unit_cost": 45
@@ -907,7 +889,7 @@ Update — inventory/ingredients/{ingredient}
 | `name_ar` | `sometimes, string, max:100` |
 | `name_en` | `nullable, string, max:100` |
 | `unit` | `sometimes, in:kg,g,l,ml,piece` |
-| `reorder_level` | `sometimes, numeric, min:0` |
+| `default_cost` | `sometimes, numeric, min:0` |
 | `is_active` | `sometimes, boolean` |
 
 ```json
@@ -915,7 +897,7 @@ Update — inventory/ingredients/{ingredient}
     "name_ar": "كشري",
     "name_en": "Koshary",
     "unit": "kg",
-    "reorder_level": 10,
+    "default_cost": 45,
     "is_active": true
 }
 ```
@@ -953,7 +935,8 @@ Index — inventory/movements
 | Parameter | Rules |
 |-----------|-------|
 | `ingredient_id` | `nullable, integer` |
-| `type` | `nullable, in:purchase,waste,adjustment` |
+| `branch_id` | `nullable, integer` |
+| `type` | `nullable, in:purchase,waste,sale,adjustment,refund,transfer_in,transfer_out` |
 | `per_page` | `nullable, integer, min:1, max:100` |
 | `page` | `nullable, integer, min:1` |
 
@@ -973,6 +956,7 @@ Store — inventory/movements
 | Parameter | Rules |
 |-----------|-------|
 | `ingredient_id` | `required, integer` |
+| `branch_id` | `nullable, integer` |
 | `type` | `required, in:purchase,waste,adjustment` |
 | `quantity` | `required, numeric, min:0.001` |
 | `unit_cost` | `nullable, numeric, min:0` |
@@ -982,6 +966,7 @@ Store — inventory/movements
 ```json
 {
     "ingredient_id": "{{ingredient_id}}",
+    "branch_id": "{{branch_id}}",
     "type": "purchase",
     "quantity": 2,
     "unit_cost": 45,
@@ -1099,6 +1084,58 @@ _None_
 
 ```json
 {}
+```
+
+---
+
+#### `GET` /api/v1/inventory/stock
+
+Current quantity per branch. Filter by branch_id or ingredient_id.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.view`
+- **Plan features:** `inventory`
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `ingredient_id` | `nullable, integer` |
+| `branch_id` | `nullable, integer` |
+| `active` | `nullable, boolean` |
+| `per_page` | `nullable, integer, min:1, max:100` |
+| `page` | `nullable, integer, min:1` |
+
+---
+
+#### `POST` /api/v1/inventory/stock
+
+Open existing master ingredient stock at a branch.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.manage`
+- **Plan features:** `inventory`
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `ingredient_id` | `required, integer` |
+| `branch_id` | `required, integer` |
+| `current_stock` | `nullable, numeric, min:0` |
+| `reorder_level` | `nullable, numeric, min:0` |
+| `unit_cost` | `nullable, numeric, min:0` |
+
+```json
+{
+    "ingredient_id": "{{ingredient_id}}",
+    "branch_id": "{{branch_id}}",
+    "current_stock": 25,
+    "reorder_level": 10,
+    "unit_cost": 45
+}
 ```
 
 ---
@@ -1222,6 +1259,44 @@ Upsert Line — inventory/stock-counts/{stockCount}/lines
 
 ---
 
+#### `GET` /api/v1/inventory/stock/{stock}
+
+Show — inventory/stock/{stock}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.view`
+- **Plan features:** `inventory`
+- **Path params:** `{stock}`
+
+---
+
+#### `PATCH` /api/v1/inventory/stock/{stock}
+
+Update — inventory/stock/{stock}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.manage`
+- **Plan features:** `inventory`
+- **Path params:** `{stock}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `reorder_level` | `sometimes, numeric, min:0` |
+| `unit_cost` | `sometimes, numeric, min:0` |
+| `is_active` | `sometimes, boolean` |
+
+```json
+{
+    "reorder_level": 10,
+    "unit_cost": 45,
+    "is_active": true
+}
+```
+
+---
+
 #### `GET` /api/v1/inventory/suppliers
 
 Index — inventory/suppliers
@@ -1312,7 +1387,7 @@ Index — inventory/transfers
 
 #### `POST` /api/v1/inventory/transfers
 
-Move stock between branches by catalog. If the destination branch has no stock row for that SKU, one is created automatically.
+Move master ingredients between branches. Accepts a single ingredient_id+quantity or items[]. Missing destination stock is created automatically.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -1325,8 +1400,11 @@ Move stock between branches by catalog. If the destination branch has no stock r
 |-----------|-------|
 | `from_branch_id` | `required, integer` |
 | `to_branch_id` | `required, integer, different:from_branch_id` |
-| `ingredient_id` | `required, integer` |
-| `quantity` | `required, numeric, min:0.001` |
+| `ingredient_id` | `required_without:items, integer` |
+| `quantity` | `required_without:items, numeric, min:0.001` |
+| `items` | `required_without:ingredient_id, array, min:1` |
+| `items.*.ingredient_id` | `required, integer` |
+| `items.*.quantity` | `required, numeric, min:0.001` |
 | `notes` | `nullable, string, max:255` |
 
 ```json
@@ -1335,6 +1413,18 @@ Move stock between branches by catalog. If the destination branch has no stock r
     "to_branch_id": 1,
     "ingredient_id": "{{ingredient_id}}",
     "quantity": 2,
+    "items": [
+        {
+            "ingredient_id": 1,
+            "quantity": 5,
+            "unit_cost": 12.5
+        },
+        {
+            "ingredient_id": 2,
+            "quantity": 2,
+            "unit_cost": 8
+        }
+    ],
     "notes": "بدون بصل"
 }
 ```

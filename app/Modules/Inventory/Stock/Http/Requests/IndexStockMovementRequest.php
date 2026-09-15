@@ -16,7 +16,8 @@ class IndexStockMovementRequest extends ApiFormRequest
     {
         return array_merge([
             'ingredient_id' => ['nullable', 'integer'],
-            'type' => ['nullable', 'in:purchase,waste,adjustment'],
+            'branch_id' => ['nullable', 'integer'],
+            'type' => ['nullable', 'in:purchase,waste,sale,adjustment,refund,transfer_in,transfer_out'],
         ], $this->paginationRules());
     }
 }

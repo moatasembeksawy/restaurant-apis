@@ -23,11 +23,13 @@ class Recipe extends BaseModel
         return ['quantity' => 'decimal:4'];
     }
 
+    /** @return BelongsTo<MenuItem, $this> */
     public function menuItem(): BelongsTo
     {
         return $this->belongsTo(MenuItem::class);
     }
 
+    /** @return BelongsTo<Ingredient, $this> */
     public function ingredient(): BelongsTo
     {
         return $this->belongsTo(Ingredient::class);
@@ -35,6 +37,6 @@ class Recipe extends BaseModel
 
     public function lineCost(): float
     {
-        return round((float) $this->quantity * (float) $this->ingredient->unit_cost, 4);
+        return round((float) $this->quantity * (float) $this->ingredient->default_cost, 4);
     }
 }

@@ -14,8 +14,11 @@ class StoreStockTransferRequest extends ApiFormRequest
         return [
             'from_branch_id' => ['required', 'integer'],
             'to_branch_id' => ['required', 'integer', 'different:from_branch_id'],
-            'ingredient_id' => ['required', 'integer'],
-            'quantity' => ['required', 'numeric', 'min:0.001'],
+            'ingredient_id' => ['required_without:items', 'integer'],
+            'quantity' => ['required_without:items', 'numeric', 'min:0.001'],
+            'items' => ['required_without:ingredient_id', 'array', 'min:1'],
+            'items.*.ingredient_id' => ['required', 'integer'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
             'notes' => ['nullable', 'string', 'max:255'],
         ];
     }

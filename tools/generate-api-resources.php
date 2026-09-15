@@ -13,8 +13,8 @@ $resources = [
     // Shared model resources
     ['namespace' => 'App\\Modules\\Inventory\\Suppliers\\Http\\Resources', 'class' => 'SupplierResource', 'model' => 'App\\Modules\\Inventory\\Suppliers\\Models\\Supplier'],
     ['namespace' => 'App\\Modules\\Inventory\\Suppliers\\Http\\Resources', 'class' => 'PurchaseOrderResource', 'model' => 'App\\Modules\\Inventory\\Suppliers\\Models\\PurchaseOrder'],
-    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'IngredientResource', 'model' => 'App\\Modules\\Inventory\\Stock\\Models\\Ingredient', 'extras' => "\$catalog = \$this->resource->relationLoaded('catalog') ? \$this->resource->catalog : null;\n\n        return ['sku' => \$catalog?->sku];"],
-    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'IngredientCatalogResource', 'model' => 'App\\Modules\\Inventory\\Stock\\Models\\IngredientCatalog'],
+    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'IngredientResource', 'model' => 'App\\Modules\\Inventory\\Stock\\Models\\Ingredient'],
+    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'InventoryStockResource', 'model' => 'App\\Modules\\Inventory\\Stock\\Models\\InventoryStock'],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'StockMovementResource', 'model' => 'App\\Modules\\Inventory\\Stock\\Models\\StockMovement'],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'StockTransferResource', 'model' => 'App\\Modules\\Inventory\\Stock\\Models\\StockTransfer'],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Resources', 'class' => 'StockCountResource', 'extends' => 'DataResource'],

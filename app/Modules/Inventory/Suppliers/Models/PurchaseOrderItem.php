@@ -27,11 +27,13 @@ class PurchaseOrderItem extends Model
         ];
     }
 
+    /** @return BelongsTo<PurchaseOrder, $this> */
     public function purchaseOrder(): BelongsTo
     {
         return $this->belongsTo(PurchaseOrder::class);
     }
 
+    /** @return BelongsTo<Ingredient, $this> */
     public function ingredient(): BelongsTo
     {
         return $this->belongsTo(Ingredient::class);

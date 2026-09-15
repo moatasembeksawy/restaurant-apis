@@ -39,11 +39,15 @@ class StockTransferController extends Controller
         $validated = $request->validated();
 
         try {
+            $items = $validated['items'] ?? [[
+                'ingredient_id' => (int) $validated['ingredient_id'],
+                'quantity' => (float) $validated['quantity'],
+            ]];
+
             $result = $this->transfers->transfer(
                 fromBranchId: (int) $validated['from_branch_id'],
                 toBranchId: (int) $validated['to_branch_id'],
-                ingredientId: (int) $validated['ingredient_id'],
-                quantity: (float) $validated['quantity'],
+                items: $items,
                 user: $request->user(),
                 notes: $validated['notes'] ?? null,
             );

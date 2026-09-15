@@ -3,8 +3,8 @@
 declare(strict_types=1);
 
 use App\Modules\Inventory\Recipes\Http\Controllers\RecipeController;
-use App\Modules\Inventory\Stock\Http\Controllers\IngredientCatalogController;
 use App\Modules\Inventory\Stock\Http\Controllers\IngredientController;
+use App\Modules\Inventory\Stock\Http\Controllers\InventoryStockController;
 use App\Modules\Inventory\Stock\Http\Controllers\StockCountController;
 use App\Modules\Inventory\Stock\Http\Controllers\StockMovementController;
 use App\Modules\Inventory\Stock\Http\Controllers\StockTransferController;
@@ -14,10 +14,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('feature:inventory')->group(function (): void {
     Route::middleware('permission:inventory.view')->group(function (): void {
-        Route::get('inventory/catalogs', [IngredientCatalogController::class, 'index']);
         Route::get('inventory/ingredients', [IngredientController::class, 'index']);
         Route::get('inventory/ingredients/{ingredient}', [IngredientController::class, 'show']);
-        Route::get('inventory/low-stock', [IngredientController::class, 'lowStock']);
+        Route::get('inventory/stock', [InventoryStockController::class, 'index']);
+        Route::get('inventory/stock/{stock}', [InventoryStockController::class, 'show']);
+        Route::get('inventory/low-stock', [InventoryStockController::class, 'lowStock']);
         Route::get('inventory/movements', [StockMovementController::class, 'index']);
         Route::get('inventory/stock-counts', [StockCountController::class, 'index']);
         Route::get('inventory/stock-counts/{stockCount}', [StockCountController::class, 'show']);
@@ -28,6 +29,8 @@ Route::middleware('feature:inventory')->group(function (): void {
     Route::middleware('permission:inventory.manage')->group(function (): void {
         Route::post('inventory/ingredients', [IngredientController::class, 'store']);
         Route::patch('inventory/ingredients/{ingredient}', [IngredientController::class, 'update']);
+        Route::post('inventory/stock', [InventoryStockController::class, 'store']);
+        Route::patch('inventory/stock/{stock}', [InventoryStockController::class, 'update']);
         Route::post('inventory/movements', [StockMovementController::class, 'store']);
         Route::post('inventory/stock-counts', [StockCountController::class, 'store']);
         Route::put('inventory/stock-counts/{stockCount}/lines', [StockCountController::class, 'upsertLine']);

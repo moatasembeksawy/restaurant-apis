@@ -7,6 +7,7 @@ namespace App\Modules\Inventory\Stock\Services;
 use App\Models\User;
 use App\Modules\Inventory\Recipes\Models\Recipe;
 use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\POS\Menu\Models\MenuItem;
@@ -27,10 +28,15 @@ class StockService
         'sale' => -1,
         'adjustment' => 1,
         'refund' => 1,
+        'transfer_in' => 1,
+        'transfer_out' => -1,
+        'production' => -1,
     ];
 
+    public function __construct(private readonly IngredientService $ingredients) {}
+
     public function recordMovement(
-        Ingredient $ingredient,
+        InventoryStock $stock,
         string $type,
         float $quantity,
         ?User $user = null,
@@ -48,41 +54,41 @@ class StockService
             throw new InvalidArgumentException("Invalid movement type: {$type}");
         }
 
-        return DB::transaction(function () use ($ingredient, $type, $quantity, $user, $unitCost, $notes, $reference, $branchId, $adjustmentDirection): StockMovement {
-            $ingredient = Ingredient::query()->lockForUpdate()->findOrFail($ingredient->id);
+        return DB::transaction(function () use ($stock, $type, $quantity, $user, $unitCost, $notes, $reference, $branchId, $adjustmentDirection): StockMovement {
+            $stock = InventoryStock::query()->lockForUpdate()->findOrFail($stock->id);
 
             $signedQty = match ($type) {
                 'adjustment' => $adjustmentDirection === 'out' ? -$quantity : $quantity,
                 default => $quantity * self::DIRECTION[$type],
             };
 
-            $newStock = (float) $ingredient->current_stock + $signedQty;
+            $newStock = (float) $stock->current_stock + $signedQty;
 
             if ($newStock < 0) {
-                throw new RuntimeException("Insufficient stock for {$ingredient->name_ar}.");
+                throw new RuntimeException("Insufficient stock for {$stock->name_ar}.");
             }
 
             $movement = StockMovement::create([
-                'ingredient_id' => $ingredient->id,
-                'branch_id' => $branchId ?? $ingredient->branch_id,
+                'ingredient_id' => $stock->ingredient_id,
+                'branch_id' => $branchId ?? $stock->branch_id,
                 'user_id' => $user?->id,
                 'type' => $type,
                 'quantity' => $quantity,
-                'unit_cost' => $unitCost ?? $ingredient->unit_cost,
+                'unit_cost' => $unitCost ?? $stock->unit_cost,
                 'notes' => $notes,
                 'reference_type' => $reference ? $reference::class : null,
                 'reference_id' => $reference?->getKey(),
             ]);
 
-            $ingredient->update(['current_stock' => $newStock]);
+            $stock->update(['current_stock' => $newStock]);
 
             if ($type === 'purchase' && $unitCost !== null) {
-                $this->updateWeightedAverageCost($ingredient, $quantity, $unitCost);
-                $this->refreshMenuItemsCostForIngredient($ingredient->fresh());
+                $this->updateWeightedAverageCost($stock->fresh() ?? $stock, $quantity, $unitCost);
+                $this->refreshMenuItemsCostForIngredient($stock->ingredient_id);
             }
 
             AuditLogger::log("inventory.{$type}", $movement, [
-                'ingredient_id' => $ingredient->id,
+                'ingredient_id' => $stock->ingredient_id,
                 'quantity' => $quantity,
                 'new_stock' => $newStock,
             ]);
@@ -117,14 +123,17 @@ class StockService
                         continue;
                     }
 
-                    $stockRow = $this->stockRowForOrder($recipe, $order);
+                    $stockRow = $this->ingredients->stockAtBranch(
+                        (int) $recipe->ingredient_id,
+                        $order->branch_id,
+                    );
 
                     if (! $stockRow) {
                         continue;
                     }
 
                     $this->recordMovement(
-                        ingredient: $stockRow,
+                        stock: $stockRow,
                         type: 'sale',
                         quantity: $deductQty,
                         reference: $order,
@@ -158,14 +167,17 @@ class StockService
 
         DB::transaction(function () use ($saleMovements, $order, $user): void {
             foreach ($saleMovements as $movement) {
-                $ingredient = Ingredient::query()->find($movement->ingredient_id);
+                $stockRow = $this->ingredients->stockAtBranch(
+                    (int) $movement->ingredient_id,
+                    $movement->branch_id,
+                );
 
-                if (! $ingredient) {
+                if (! $stockRow) {
                     continue;
                 }
 
                 $this->recordMovement(
-                    ingredient: $ingredient,
+                    stock: $stockRow,
                     type: 'refund',
                     quantity: (float) $movement->quantity,
                     user: $user,
@@ -191,8 +203,22 @@ class StockService
             $purchaseOrder->load('items.ingredient');
 
             foreach ($purchaseOrder->items as $line) {
+                $stockRow = $this->ingredients->stockAtBranch(
+                    (int) $line->ingredient_id,
+                    $purchaseOrder->branch_id,
+                );
+
+                if (! $stockRow) {
+                    $stockRow = $this->ingredients->openAtBranch([
+                        'ingredient_id' => $line->ingredient_id,
+                        'branch_id' => $purchaseOrder->branch_id,
+                        'current_stock' => 0,
+                        'unit_cost' => $line->unit_cost,
+                    ]);
+                }
+
                 $this->recordMovement(
-                    ingredient: $line->ingredient,
+                    stock: $stockRow,
                     type: 'purchase',
                     quantity: (float) $line->quantity,
                     user: $user,
@@ -213,17 +239,16 @@ class StockService
     }
 
     /**
-     * @return Collection<int, Ingredient>
+     * @return Collection<int, InventoryStock>
      */
     public function lowStockIngredients(?int $branchId = null): Collection
     {
-        return Ingredient::query()
-            ->with('catalog:id,sku,name_ar,unit')
-            ->where('is_active', true)
-            ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
-            ->whereColumn('current_stock', '<=', 'reorder_level')
-            ->where('reorder_level', '>', 0)
-            ->orderBy('name_ar')
+        return InventoryStock::query()
+            ->where('inventory_stocks.is_active', true)
+            ->when($branchId, fn ($q, $id) => $q->where('inventory_stocks.branch_id', $id))
+            ->whereColumn('inventory_stocks.current_stock', '<=', 'inventory_stocks.reorder_level')
+            ->where('inventory_stocks.reorder_level', '>', 0)
+            ->orderByName()
             ->get();
     }
 
@@ -242,7 +267,7 @@ class StockService
             'name_ar' => $recipe->ingredient->name_ar,
             'quantity' => $recipe->quantity,
             'unit' => $recipe->ingredient->unit,
-            'unit_cost' => $recipe->ingredient->unit_cost,
+            'unit_cost' => $recipe->ingredient->default_cost,
             'line_cost' => $recipe->lineCost(),
         ])->values()->all();
 
@@ -271,6 +296,10 @@ class StockService
         $created = collect();
 
         foreach ($lines as $line) {
+            if (! Ingredient::query()->whereKey($line['ingredient_id'])->exists()) {
+                throw new InvalidArgumentException('Ingredient not found.');
+            }
+
             $created->push(Recipe::create([
                 'menu_item_id' => $menuItem->id,
                 'ingredient_id' => $line['ingredient_id'],
@@ -300,10 +329,10 @@ class StockService
         $menuItem->update(['cost_price' => $totalCost]);
     }
 
-    private function refreshMenuItemsCostForIngredient(Ingredient $ingredient): void
+    private function refreshMenuItemsCostForIngredient(int $ingredientId): void
     {
         $menuItemIds = Recipe::query()
-            ->where('ingredient_id', $ingredient->id)
+            ->where('ingredient_id', $ingredientId)
             ->distinct()
             ->pluck('menu_item_id');
 
@@ -313,42 +342,25 @@ class StockService
             ->each(fn (MenuItem $item) => $this->syncMenuItemCostPrice($item));
     }
 
-    private function updateWeightedAverageCost(Ingredient $ingredient, float $incomingQty, float $incomingCost): void
+    private function updateWeightedAverageCost(InventoryStock $stock, float $incomingQty, float $incomingCost): void
     {
-        $currentStock = (float) $ingredient->current_stock - $incomingQty;
+        $currentStock = (float) $stock->current_stock - $incomingQty;
 
         if ($currentStock <= 0) {
-            $ingredient->update(['unit_cost' => $incomingCost]);
+            $stock->update(['unit_cost' => $incomingCost]);
+        } else {
+            $currentValue = $currentStock * (float) $stock->unit_cost;
+            $incomingValue = $incomingQty * $incomingCost;
+            $newAverage = ($currentValue + $incomingValue) / ($currentStock + $incomingQty);
 
-            return;
+            $stock->update(['unit_cost' => round($newAverage, 4)]);
         }
 
-        $currentValue = $currentStock * (float) $ingredient->unit_cost;
-        $incomingValue = $incomingQty * $incomingCost;
-        $newAverage = ($currentValue + $incomingValue) / ($currentStock + $incomingQty);
+        $stock->refresh();
+        $ingredient = $stock->ingredient;
 
-        $ingredient->update(['unit_cost' => round($newAverage, 4)]);
-    }
-
-    private function stockRowForOrder(Recipe $recipe, Order $order): ?Ingredient
-    {
-        $ingredient = $recipe->ingredient;
-
-        if (! $ingredient instanceof Ingredient) {
-            return null;
+        if ($ingredient instanceof Ingredient) {
+            $ingredient->update(['default_cost' => $stock->unit_cost]);
         }
-
-        if ((int) $ingredient->branch_id === (int) $order->branch_id) {
-            return $ingredient;
-        }
-
-        if (! $ingredient->catalog_id) {
-            return null;
-        }
-
-        return Ingredient::query()
-            ->where('catalog_id', $ingredient->catalog_id)
-            ->where('branch_id', $order->branch_id)
-            ->first();
     }
 }

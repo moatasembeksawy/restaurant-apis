@@ -48,6 +48,7 @@ class PurchaseOrder extends BaseModel
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    /** @return HasMany<PurchaseOrderItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(PurchaseOrderItem::class);

@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
-use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockCount;
 use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\Tenant\Models\Branch;
@@ -20,7 +20,7 @@ beforeEach(function (): void {
         'is_active' => true,
     ]);
 
-    $this->ingredient = Ingredient::factory()->create([
+    $this->ingredient = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'current_stock' => 10,
@@ -52,7 +52,7 @@ it('records counted lines and reconciles stock on completion', function (): void
 
     $this->withToken($this->token)
         ->putJson("/api/v1/inventory/stock-counts/{$count->id}/lines", [
-            'ingredient_id' => $this->ingredient->id,
+            'ingredient_id' => $this->ingredient->ingredient_id,
             'counted_quantity' => 8,
         ])
         ->assertOk()

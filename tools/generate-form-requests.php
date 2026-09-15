@@ -39,18 +39,15 @@ $requests = [
 
     // Inventory — Stock
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'IndexIngredientRequest', 'uses' => ['App\\Shared\\Support\\Http\\Requests\\Concerns\\HasPaginationRules'], 'rules' => <<<'RULES'
-            'catalog_id' => ['nullable', 'integer'],
-            'branch_id' => ['nullable', 'integer'],
             'active' => ['nullable', 'boolean'],
         RULES],
-    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'IndexIngredientCatalogRequest', 'uses' => ['App\\Shared\\Support\\Http\\Requests\\Concerns\\HasPaginationRules'], 'rules' => <<<'RULES'
-        RULES],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'StoreIngredientRequest', 'rules' => <<<'RULES'
-            'catalog_id' => ['nullable', 'integer'],
+            'ingredient_id' => ['nullable', 'integer'],
             'branch_id' => ['nullable', 'integer'],
-            'name_ar' => ['required_without:catalog_id', 'nullable', 'string', 'max:100'],
+            'name_ar' => ['required_without:ingredient_id', 'nullable', 'string', 'max:100'],
             'name_en' => ['nullable', 'string', 'max:100'],
-            'unit' => ['required_without:catalog_id', 'nullable', 'in:kg,g,l,ml,piece'],
+            'unit' => ['required_without:ingredient_id', 'nullable', 'in:kg,g,l,ml,piece'],
+            'default_cost' => ['nullable', 'numeric', 'min:0'],
             'current_stock' => ['nullable', 'numeric', 'min:0'],
             'reorder_level' => ['nullable', 'numeric', 'min:0'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
@@ -59,7 +56,24 @@ $requests = [
             'name_ar' => ['sometimes', 'string', 'max:100'],
             'name_en' => ['nullable', 'string', 'max:100'],
             'unit' => ['sometimes', 'in:kg,g,l,ml,piece'],
+            'default_cost' => ['sometimes', 'numeric', 'min:0'],
+            'is_active' => ['sometimes', 'boolean'],
+        RULES],
+    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'IndexInventoryStockRequest', 'uses' => ['App\\Shared\\Support\\Http\\Requests\\Concerns\\HasPaginationRules'], 'rules' => <<<'RULES'
+            'ingredient_id' => ['nullable', 'integer'],
+            'branch_id' => ['nullable', 'integer'],
+            'active' => ['nullable', 'boolean'],
+        RULES],
+    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'StoreInventoryStockRequest', 'rules' => <<<'RULES'
+            'ingredient_id' => ['required', 'integer'],
+            'branch_id' => ['required', 'integer'],
+            'current_stock' => ['nullable', 'numeric', 'min:0'],
+            'reorder_level' => ['nullable', 'numeric', 'min:0'],
+            'unit_cost' => ['nullable', 'numeric', 'min:0'],
+        RULES],
+    ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'UpdateInventoryStockRequest', 'rules' => <<<'RULES'
             'reorder_level' => ['sometimes', 'numeric', 'min:0'],
+            'unit_cost' => ['sometimes', 'numeric', 'min:0'],
             'is_active' => ['sometimes', 'boolean'],
         RULES],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'LowStockIngredientRequest', 'rules' => <<<'RULES'
@@ -67,10 +81,12 @@ $requests = [
         RULES],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'IndexStockMovementRequest', 'uses' => ['App\\Shared\\Support\\Http\\Requests\\Concerns\\HasPaginationRules'], 'rules' => <<<'RULES'
             'ingredient_id' => ['nullable', 'integer'],
-            'type' => ['nullable', 'in:purchase,waste,adjustment'],
+            'branch_id' => ['nullable', 'integer'],
+            'type' => ['nullable', 'in:purchase,waste,sale,adjustment,refund,transfer_in,transfer_out'],
         RULES],
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'StoreStockMovementRequest', 'rules' => <<<'RULES'
             'ingredient_id' => ['required', 'integer'],
+            'branch_id' => ['nullable', 'integer'],
             'type' => ['required', 'in:purchase,waste,adjustment'],
             'quantity' => ['required', 'numeric', 'min:0.001'],
             'unit_cost' => ['nullable', 'numeric', 'min:0'],
@@ -95,8 +111,11 @@ $requests = [
     ['namespace' => 'App\\Modules\\Inventory\\Stock\\Http\\Requests', 'class' => 'StoreStockTransferRequest', 'rules' => <<<'RULES'
             'from_branch_id' => ['required', 'integer'],
             'to_branch_id' => ['required', 'integer', 'different:from_branch_id'],
-            'ingredient_id' => ['required', 'integer'],
-            'quantity' => ['required', 'numeric', 'min:0.001'],
+            'ingredient_id' => ['required_without:items', 'integer'],
+            'quantity' => ['required_without:items', 'numeric', 'min:0.001'],
+            'items' => ['required_without:ingredient_id', 'array', 'min:1'],
+            'items.*.ingredient_id' => ['required', 'integer'],
+            'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
             'notes' => ['nullable', 'string', 'max:255'],
         RULES],
 

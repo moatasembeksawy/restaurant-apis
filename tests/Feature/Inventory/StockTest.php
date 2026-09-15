@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\Inventory\Recipes\Models\Recipe;
-use App\Modules\Inventory\Stock\Models\Ingredient;
+use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\Inventory\Suppliers\Models\Supplier;
@@ -36,7 +36,7 @@ beforeEach(function (): void {
         'price' => 100.00,
     ]);
 
-    $this->ingredient = Ingredient::factory()->create([
+    $this->ingredient = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
         'current_stock' => 10,
@@ -46,7 +46,7 @@ beforeEach(function (): void {
     Recipe::create([
         'tenant_id' => $this->tenant->id,
         'menu_item_id' => $this->menuItem->id,
-        'ingredient_id' => $this->ingredient->id,
+        'ingredient_id' => $this->ingredient->ingredient_id,
         'quantity' => 0.5,
     ]);
 
@@ -106,7 +106,7 @@ it('receives purchase order and increases stock', function (): void {
             'branch_id' => $this->branch->id,
             'supplier_id' => $supplier->id,
             'items' => [
-                ['ingredient_id' => $this->ingredient->id, 'quantity' => 5, 'unit_cost' => 22],
+                ['ingredient_id' => $this->ingredient->ingredient_id, 'quantity' => 5, 'unit_cost' => 22],
             ],
         ]);
 
@@ -121,15 +121,12 @@ it('receives purchase order and increases stock', function (): void {
     expect(PurchaseOrder::find($poId)->status)->toBe('received');
 });
 
-it('deducts the destination branch stock row for a shared catalog', function (): void {
+it('deducts the destination branch stock row for a shared ingredient', function (): void {
     $otherBranch = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
-    $otherStock = Ingredient::factory()->create([
+    $otherStock = InventoryStock::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $otherBranch->id,
-        'catalog_id' => $this->ingredient->catalog_id,
-        'name_ar' => $this->ingredient->name_ar,
-        'name_en' => $this->ingredient->name_en,
-        'unit' => $this->ingredient->unit,
+        'ingredient_id' => $this->ingredient->ingredient_id,
         'current_stock' => 10,
         'unit_cost' => 20,
     ]);

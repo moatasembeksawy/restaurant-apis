@@ -38,6 +38,7 @@ class StockCount extends BaseModel
         return $this->belongsTo(User::class);
     }
 
+    /** @return HasMany<StockCountLine, $this> */
     public function lines(): HasMany
     {
         return $this->hasMany(StockCountLine::class);
