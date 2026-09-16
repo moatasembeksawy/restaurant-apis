@@ -30,3 +30,9 @@ it('grants offer quota when offers is enabled via feature flags', function (): v
     expect($tenant->hasFeature('offers'))->toBeTrue();
     expect($tenant->planLimits()['max_active_offers'])->toBe(20);
 });
+
+it('does not cap packages on enterprise', function (): void {
+    $tenant = new Tenant(['plan' => 'enterprise', 'feature_flags' => []]);
+
+    expect($tenant->planLimits()['max_packages'])->toBe(PHP_INT_MAX);
+});

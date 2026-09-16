@@ -9,14 +9,13 @@ use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Packages\Models\MenuPackage;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Exceptions\PlanLimitExceededException;
+use RuntimeException;
 
 class PlanLimitService
 {
-    public function __construct(private readonly Tenant $tenant) {}
-
     public function check(string $resource): void
     {
-        $limits = $this->tenant->planLimits();
+        $limits = $this->tenant()->planLimits();
 
         match ($resource) {
             'users' => $this->checkUsers($limits['max_users']),
@@ -28,13 +27,24 @@ class PlanLimitService
         };
     }
 
+    private function tenant(): Tenant
+    {
+        $tenant = app()->bound('tenant') ? app('tenant') : null;
+
+        if (! $tenant instanceof Tenant || blank($tenant->plan)) {
+            throw new RuntimeException('Tenant context is required to check plan limits.');
+        }
+
+        return $tenant;
+    }
+
     private function checkUsers(int $max): void
     {
         if ($max === PHP_INT_MAX) {
             return;
         }
 
-        $count = $this->tenant->users()->count();
+        $count = $this->tenant()->users()->count();
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
@@ -51,7 +61,7 @@ class PlanLimitService
             return;
         }
 
-        $count = $this->tenant->branches()->count();
+        $count = $this->tenant()->branches()->count();
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
@@ -68,8 +78,10 @@ class PlanLimitService
             return;
         }
 
+        $tenant = $this->tenant();
+
         $count = Order::withoutGlobalScopes()
-            ->where('tenant_id', $this->tenant->id)
+            ->where('tenant_id', $tenant->id)
             ->whereMonth('created_at', now()->month)
             ->whereYear('created_at', now()->year)
             ->count();

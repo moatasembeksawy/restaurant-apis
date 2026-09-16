@@ -7,8 +7,10 @@ use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\POS\Packages\Models\MenuPackage;
+use App\Modules\POS\Packages\Services\PackageService;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create(['plan' => 'pro', 'status' => 'active']);
@@ -159,6 +161,46 @@ it('blocks packages on starter plans', function (): void {
         ->getJson('/api/v1/menu/packages')
         ->assertPaymentRequired()
         ->assertJsonPath('errors.0.code', 'FEATURE_NOT_AVAILABLE');
+});
+
+it('allows enterprise to create a package even if PackageService was resolved before tenant middleware', function (): void {
+    app()->forgetInstance(PackageService::class);
+    app()->forgetInstance(PlanLimitService::class);
+    app()->forgetInstance('tenant');
+
+    // Laravel can construct the controller (and this singleton) before tenant middleware binds the tenant.
+    app(PackageService::class);
+
+    $enterprise = Tenant::factory()->create(['plan' => 'enterprise', 'status' => 'active']);
+    $category = MenuCategory::factory()->create(['tenant_id' => $enterprise->id]);
+    $item = MenuItem::factory()->create([
+        'tenant_id' => $enterprise->id,
+        'category_id' => $category->id,
+        'is_available' => true,
+    ]);
+    $user = User::factory()->create([
+        'tenant_id' => $enterprise->id,
+        'role' => 'manager',
+        'is_active' => true,
+    ]);
+
+    app()->instance('tenant', $enterprise);
+
+    $this->withToken($user->createToken('test')->plainTextToken)
+        ->postJson('/api/v1/menu/packages', [
+            'category_id' => $category->id,
+            'name_ar' => 'وجبة مؤسسية',
+            'price' => 80,
+            'slots' => [
+                [
+                    'type' => 'fixed',
+                    'menu_item_id' => $item->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.name_ar', 'وجبة مؤسسية');
 });
 
 it('allows creating a package when starter has the menu_packages feature flag', function (): void {
