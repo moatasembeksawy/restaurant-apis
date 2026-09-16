@@ -13,6 +13,7 @@ use App\Modules\POS\Orders\Http\Resources\OrderItemResource;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Broadcasting\SafeBroadcast;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -34,8 +35,11 @@ class KitchenController extends Controller
         $validated = $request->validated();
 
         $orders = Order::query()
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
-            ->whereIn('status', ['active', 'cooking'])
+            ->whereIn('status', ['active', 'cooking']);
+
+        BranchAccess::constrain($orders, $request->user(), $validated['branch_id'] ?? null);
+
+        $orders = $orders
             ->with(['items' => fn ($q) => $q->whereIn('status', ['pending', 'cooking'])->where('line_type', '!=', OrderItem::LINE_PACKAGE), 'table'])
             ->orderBy('created_at')
             ->get();

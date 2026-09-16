@@ -11,6 +11,7 @@ use App\Modules\POS\Billing\Http\Resources\ReportResource;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -25,11 +26,8 @@ class ReportController extends Controller
     {
         $validated = $request->validated();
         $date = $validated['date'] ?? now()->toDateString();
-        $branchId = $validated['branch_id'] ?? null;
-
-        $query = Order::query()
-            ->whereDate('created_at', $date)
-            ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id));
+        $query = Order::query()->whereDate('created_at', $date);
+        BranchAccess::constrain($query, $request->user(), $validated['branch_id'] ?? null);
 
         $orders = $query->get();
 
@@ -51,7 +49,7 @@ class ReportController extends Controller
     {
         $validated = $request->validated();
         $date = $validated['date'] ?? now()->toDateString();
-        $branchId = $validated['branch_id'] ?? null;
+        $branchId = BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null);
 
         $payments = Payment::query()
             ->with('splits')
@@ -96,7 +94,7 @@ class ReportController extends Controller
         $startDate = Carbon::parse($validated['start_date'] ?? now()->startOfWeek())->startOfDay();
         $endDate = Carbon::parse($validated['end_date'] ?? now())->endOfDay();
         $limit = (int) ($validated['limit'] ?? 10);
-        $branchId = $validated['branch_id'] ?? null;
+        $branchId = BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null);
 
         $items = OrderItem::query()
             ->whereNull('parent_id')

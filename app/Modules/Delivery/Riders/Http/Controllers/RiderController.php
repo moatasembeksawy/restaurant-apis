@@ -14,6 +14,7 @@ use App\Modules\Delivery\Riders\Http\Resources\RiderResource;
 use App\Modules\Delivery\Riders\Services\DeliveryService;
 use App\Modules\POS\Orders\Http\Resources\OrderResource;
 use App\Modules\POS\Orders\Models\Order;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -29,7 +30,7 @@ class RiderController extends Controller
     public function index(IndexRiderRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $branchId = $validated['branch_id'] ?? null;
+        $branchId = BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null);
 
         $riders = User::query()
             ->where('role', 'rider')
@@ -84,9 +85,9 @@ class RiderController extends Controller
             ->when(
                 $user->role === 'rider',
                 fn ($q) => $q->where('rider_id', $user->id),
-                function ($q) use ($validated) {
-                    $q->when($validated['rider_id'] ?? null, fn ($query, $id) => $query->where('rider_id', $id))
-                        ->when($validated['branch_id'] ?? null, fn ($query, $id) => $query->where('branch_id', $id));
+                function ($q) use ($validated, $user) {
+                    $q->when($validated['rider_id'] ?? null, fn ($query, $id) => $query->where('rider_id', $id));
+                    BranchAccess::constrain($q, $user, $validated['branch_id'] ?? null);
                 },
             )
             ->with(['items', 'customer', 'district', 'customerAddress', 'rider', 'payment.splits'])
@@ -102,14 +103,14 @@ class RiderController extends Controller
     public function unassigned(IndexUnassignedDeliveryRequest $request): JsonResponse
     {
         $validated = $request->validated();
-        $branchId = $validated['branch_id'] ?? null;
-
         $orders = Order::query()
             ->where('fulfillment_type', 'delivery')
             ->whereNull('rider_id')
             ->where('delivery_status', 'pending')
-            ->whereNotIn('status', ['cancelled', 'completed', 'paid', 'refunded'])
-            ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
+            ->whereNotIn('status', ['cancelled', 'completed', 'paid', 'refunded']);
+        BranchAccess::constrain($orders, $request->user(), $validated['branch_id'] ?? null);
+
+        $orders = $orders
             ->with(['items', 'customer', 'district', 'customerAddress', 'payment.splits'])
             ->orderBy('created_at')
             ->paginate((int) ($validated['per_page'] ?? 25));

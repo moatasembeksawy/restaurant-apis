@@ -12,6 +12,7 @@ use App\Modules\Inventory\Stock\Http\Resources\InventoryStockResource;
 use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Services\IngredientService;
 use App\Modules\Inventory\Stock\Services\StockService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -32,8 +33,10 @@ class InventoryStockController extends Controller
         $validated = $request->validated();
 
         $rows = InventoryStock::query()
-            ->with('ingredient:id,sku,name_ar,name_en,unit')
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('inventory_stocks.branch_id', $id))
+            ->with('ingredient:id,sku,name_ar,name_en,unit');
+        BranchAccess::constrain($rows, $request->user(), $validated['branch_id'] ?? null, 'inventory_stocks.branch_id');
+
+        $rows = $rows
             ->when($validated['ingredient_id'] ?? null, fn ($q, $id) => $q->where('inventory_stocks.ingredient_id', $id))
             ->when($validated['active'] ?? null, fn ($q) => $q->where('inventory_stocks.is_active', true))
             ->orderByName()
@@ -73,7 +76,7 @@ class InventoryStockController extends Controller
         $validated = $request->validated();
 
         $items = $this->stock->lowStockIngredients(
-            branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+            branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
         );
 
         return ApiResponse::success(InventoryStockResource::collection($items));

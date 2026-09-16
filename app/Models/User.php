@@ -86,11 +86,13 @@ class User extends Authenticatable implements MustVerifyEmail
 
     // ── Relations ──────────────────────────────────────────────────────────────
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /** @return BelongsTo<Tenant, $this> */
     public function tenant(): BelongsTo
     {
         return $this->belongsTo(Tenant::class)->withoutGlobalScope(TenantScope::class);

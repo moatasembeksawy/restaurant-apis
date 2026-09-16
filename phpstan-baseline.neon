@@ -7,70 +7,10 @@ parameters:
 			path: app/Models/User.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$locale\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$status\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
 			message: '#^Cannot call method toISOString\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 2
 			path: app/Modules/Auth/Http/Controllers/AuthController.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Services/AuthService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$locale\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Services/AuthService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Services/AuthService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$plan\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Auth/Services/AuthService.php
 
 		-
 			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
@@ -665,9 +605,3 @@ parameters:
 			identifier: instanceof.alwaysFalse
 			count: 1
 			path: app/Shared/Support/Http/Resources/ApiResponse.php
-
-		-
-			message: '#^Method App\\Shared\\Support\\Tenant\\TenantResolver\:\:resolve\(\) should return App\\Modules\\Tenant\\Models\\Tenant\|null but returns Illuminate\\Database\\Eloquent\\Model\|null\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Shared/Support/Tenant/TenantResolver.php

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Orders\Services;
 
+use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\POS\Orders\Events\OrderPlaced;
@@ -16,6 +17,7 @@ use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Broadcasting\SafeBroadcast;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -48,6 +50,11 @@ class OrderPlacementService
         ?string $couponCode = null,
     ): Order {
         $this->planLimits->check('orders');
+
+        $user = auth()->user();
+        if ($user instanceof User) {
+            BranchAccess::assertCanAccess($user, $branchId);
+        }
 
         $destination = OrderDeliveryDestination::resolve(
             incoming: array_filter([

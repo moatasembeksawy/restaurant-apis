@@ -14,6 +14,7 @@ use App\Modules\POS\Orders\Services\OrderPlacementService;
 use App\Modules\POS\Orders\Services\OrderUpdateService;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -34,8 +35,11 @@ class OrderController extends Controller
         $validated = $request->validated();
 
         $orders = Order::query()
-            ->when($validated['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
+            ->when($validated['status'] ?? null, fn ($q, $s) => $q->where('status', $s));
+
+        BranchAccess::constrain($orders, $request->user(), $validated['branch_id'] ?? null);
+
+        $orders = $orders
             ->when($validated['table_id'] ?? null, fn ($q, $id) => $q->where('floor_table_id', $id))
             ->when($validated['channel'] ?? null, fn ($q, $c) => $q->where('channel', $c))
             ->when($validated['fulfillment_type'] ?? null, fn ($q, $type) => $q->where('fulfillment_type', $type))

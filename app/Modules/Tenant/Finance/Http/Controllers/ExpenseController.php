@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Finance\Http\Controllers;
 
+use App\Models\User;
 use App\Modules\Tenant\Finance\Http\Requests\IndexExpenseRequest;
 use App\Modules\Tenant\Finance\Http\Requests\StoreExpenseRequest;
 use App\Modules\Tenant\Finance\Http\Requests\VoidExpenseRequest;
 use App\Modules\Tenant\Finance\Http\Resources\ExpenseResource;
 use App\Modules\Tenant\Finance\Models\Expense;
 use App\Modules\Tenant\Finance\Services\ExpenseService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +31,7 @@ class ExpenseController extends Controller
     public function index(IndexExpenseRequest $request): JsonResponse
     {
         $filters = $request->validated();
-        $query = $this->filteredQuery($filters)
+        $query = $this->filteredQuery($filters, $request->user())
             ->with(['branch:id,name', 'category:id,name,code', 'creator:id,name', 'approver:id,name'])
             ->latest('expense_date')
             ->latest('id');
@@ -45,7 +47,7 @@ class ExpenseController extends Controller
         $filters = $request->validated();
         unset($filters['status'], $filters['per_page']);
 
-        $expenses = $this->filteredQuery($filters)
+        $expenses = $this->filteredQuery($filters, $request->user())
             ->where('status', 'approved')
             ->with('category:id,name')
             ->get();
@@ -137,11 +139,12 @@ class ExpenseController extends Controller
      * @param  array<string, mixed>  $filters
      * @return Builder<Expense>
      */
-    private function filteredQuery(array $filters): Builder
+    private function filteredQuery(array $filters, User $user): Builder
     {
         $query = Expense::query();
+        BranchAccess::constrain($query, $user, $filters['branch_id'] ?? null);
 
-        foreach (['branch_id', 'expense_category_id', 'status', 'payment_method'] as $filter) {
+        foreach (['expense_category_id', 'status', 'payment_method'] as $filter) {
             if (isset($filters[$filter])) {
                 $query->where($filter, $filters[$filter]);
             }

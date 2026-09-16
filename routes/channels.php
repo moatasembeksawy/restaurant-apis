@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Modules\POS\Orders\Models\Order;
+use App\Shared\Support\Authorization\BranchAccess;
 use Illuminate\Support\Facades\Broadcast;
 
 /*
@@ -29,32 +31,22 @@ Broadcast::channel('branch.{branchId}', function ($user, int $branchId): bool|ar
         return false;
     }
 
-    // Owner / manager can subscribe to any branch in their tenant
-    if (in_array($user->role, ['owner', 'manager'])) {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'role' => $user->role,
-        ];
+    if (! BranchAccess::canAccess($user, $branchId)) {
+        return false;
     }
 
-    // Other staff must belong to this branch
-    if ((int) $user->branch_id === $branchId) {
-        return [
-            'id' => $user->id,
-            'name' => $user->name,
-            'role' => $user->role,
-        ];
-    }
-
-    return false;
+    return [
+        'id' => $user->id,
+        'name' => $user->name,
+        'role' => $user->role,
+    ];
 });
 
 /**
  * Private order channel — used for real-time order status updates to the waiter.
  */
 Broadcast::channel('orders.{orderId}', function ($user, int $orderId): bool {
-    $order = \App\Modules\POS\Orders\Models\Order::find($orderId);
+    $order = Order::find($orderId);
 
     if (! $order) {
         return false;
@@ -65,7 +57,11 @@ Broadcast::channel('orders.{orderId}', function ($user, int $orderId): bool {
         return false;
     }
 
-    // Waiter who placed the order or any manager/owner
+    if (! BranchAccess::canAccess($user, (int) $order->branch_id)) {
+        return false;
+    }
+
+    // Waiter who placed the order or any manager/owner/cashier of this branch
     return $order->waiter_id === $user->id
         || in_array($user->role, ['owner', 'manager', 'cashier']);
 });

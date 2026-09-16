@@ -8,6 +8,7 @@ use App\Modules\Intelligence\Reports\Http\Requests\WeeklyAIReportRequest;
 use App\Modules\Intelligence\Reports\Http\Resources\AIReportResource;
 use App\Modules\Intelligence\Reports\Services\AIReportService;
 use App\Modules\Intelligence\Reports\Services\LLMNarrativeService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -29,7 +30,7 @@ class AIReportController extends Controller
             : null;
 
         $summary = $this->reports->weeklySummary(
-            branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+            branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
             weekStart: $weekStart,
         );
 

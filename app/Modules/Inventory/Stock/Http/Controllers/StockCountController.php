@@ -12,6 +12,7 @@ use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\Inventory\Stock\Models\StockCount;
 use App\Modules\Inventory\Stock\Services\StockCountService;
 use App\Modules\Tenant\Models\Branch;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -30,8 +31,10 @@ class StockCountController extends Controller
         $validated = $request->validated();
 
         $counts = StockCount::query()
-            ->with(['branch:id,name,name_ar', 'user:id,name'])
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
+            ->with(['branch:id,name,name_ar', 'user:id,name']);
+        BranchAccess::constrain($counts, $request->user(), $validated['branch_id'] ?? null);
+
+        $counts = $counts
             ->when($validated['status'] ?? null, fn ($q, $status) => $q->where('status', $status))
             ->latest()
             ->paginate((int) ($validated['per_page'] ?? 20));

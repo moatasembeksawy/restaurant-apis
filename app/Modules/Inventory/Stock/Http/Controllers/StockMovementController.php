@@ -11,6 +11,7 @@ use App\Modules\Inventory\Stock\Http\Resources\StockMovementResource;
 use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\Inventory\Stock\Services\IngredientService;
 use App\Modules\Inventory\Stock\Services\StockService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use App\Shared\Support\Http\Resources\DataResource;
 use Illuminate\Http\JsonResponse;
@@ -33,9 +34,11 @@ class StockMovementController extends Controller
         $validated = $request->validated();
 
         $movements = StockMovement::query()
-            ->with(['ingredient', 'user:id,name'])
+            ->with(['ingredient', 'user:id,name']);
+        BranchAccess::constrain($movements, $request->user(), $validated['branch_id'] ?? null);
+
+        $movements = $movements
             ->when($validated['ingredient_id'] ?? null, fn ($q, $id) => $q->where('ingredient_id', $id))
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
             ->when($validated['type'] ?? null, fn ($q, $type) => $q->where('type', $type))
             ->orderByDesc('created_at')
             ->paginate((int) ($validated['per_page'] ?? 50));
@@ -51,9 +54,10 @@ class StockMovementController extends Controller
             return ApiResponse::error('Waste logging requires Pro plan.', 'FEATURE_NOT_AVAILABLE', 402);
         }
 
-        $branchId = isset($validated['branch_id'])
-            ? (int) $validated['branch_id']
-            : $request->user()?->branch_id;
+        $branchId = BranchAccess::filterBranchId(
+            $request->user(),
+            $validated['branch_id'] ?? $request->user()?->branch_id,
+        );
 
         $stockRow = $this->ingredients->stockAtBranch((int) $validated['ingredient_id'], $branchId);
 

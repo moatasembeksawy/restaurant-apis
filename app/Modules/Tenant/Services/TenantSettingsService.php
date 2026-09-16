@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Services;
 
 use App\Modules\POS\Orders\Support\OrderCharges;
+use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\SubscriptionService;
 use App\Shared\Support\Audit\AuditLogger;
@@ -21,6 +22,7 @@ class TenantSettingsService
     public function show(Tenant $tenant): array
     {
         $qrBranch = $tenant->defaultBranch ?? $tenant->branches()->where('is_active', true)->first();
+        $qrBranch = $qrBranch instanceof Branch ? $qrBranch : null;
 
         return [
             'name' => $tenant->name,

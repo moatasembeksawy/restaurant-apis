@@ -11,6 +11,7 @@ use App\Modules\Inventory\Stock\Models\StockTransferItem;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
@@ -69,6 +70,8 @@ class StockTransferService
 
         $this->assertBranch($fromBranchId);
         $this->assertBranch($toBranchId);
+        BranchAccess::assertCanAccess($user, $fromBranchId);
+        BranchAccess::assertCanAccess($user, $toBranchId);
 
         return DB::transaction(function () use ($fromBranchId, $toBranchId, $items, $user, $notes): array {
             $createdAtDestination = false;

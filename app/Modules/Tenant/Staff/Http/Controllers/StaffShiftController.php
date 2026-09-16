@@ -11,6 +11,7 @@ use App\Modules\Tenant\Staff\Http\Requests\IndexStaffShiftRequest;
 use App\Modules\Tenant\Staff\Http\Resources\StaffShiftResource;
 use App\Modules\Tenant\Staff\Models\StaffShift;
 use App\Modules\Tenant\Staff\Services\StaffShiftService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -31,7 +32,7 @@ class StaffShiftController extends Controller
         return ApiResponse::success(
             StaffShiftResource::collection(
                 $this->shifts->list(
-                    branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+                    branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
                     userId: isset($validated['user_id']) ? (int) $validated['user_id'] : null,
                     date: $validated['date'] ?? null,
                 ),
@@ -46,7 +47,7 @@ class StaffShiftController extends Controller
         return ApiResponse::success(
             StaffShiftResource::collection(
                 $this->shifts->active(
-                    branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+                    branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
                 ),
             ),
         );

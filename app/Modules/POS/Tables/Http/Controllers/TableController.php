@@ -10,6 +10,7 @@ use App\Modules\POS\Tables\Http\Requests\UpdateTableRequest;
 use App\Modules\POS\Tables\Http\Requests\UpdateTableStatusRequest;
 use App\Modules\POS\Tables\Http\Resources\FloorTableResource;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Response;
@@ -25,8 +26,11 @@ class TableController extends Controller
         $validated = $request->validated();
 
         $tables = FloorTable::query()
-            ->when($validated['branch_id'] ?? null, fn ($q, $id) => $q->where('branch_id', $id))
-            ->when($validated['section'] ?? null, fn ($q, $s) => $q->where('section', $s))
+            ->when($validated['section'] ?? null, fn ($q, $s) => $q->where('section', $s));
+
+        BranchAccess::constrain($tables, $request->user(), $validated['branch_id'] ?? null);
+
+        $tables = $tables
             ->with('activeOrder')
             ->orderBy('section')
             ->orderBy('name')

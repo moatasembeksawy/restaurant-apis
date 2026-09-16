@@ -10,6 +10,7 @@ use App\Modules\Inventory\Suppliers\Http\Requests\StorePurchaseOrderRequest;
 use App\Modules\Inventory\Suppliers\Http\Resources\PurchaseOrderResource;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrderItem;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,10 @@ class PurchaseOrderController extends Controller
         $validated = $request->validated();
 
         $orders = PurchaseOrder::query()
-            ->with(['supplier:id,name', 'branch:id,name'])
+            ->with(['supplier:id,name', 'branch:id,name']);
+        BranchAccess::constrain($orders, $request->user());
+
+        $orders = $orders
             ->when($validated['status'] ?? null, fn ($q, $s) => $q->where('status', $s))
             ->orderByDesc('created_at')
             ->paginate((int) ($validated['per_page'] ?? 20));

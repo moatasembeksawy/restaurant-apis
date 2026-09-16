@@ -7,6 +7,7 @@ namespace App\Modules\Intelligence\Analytics\Http\Controllers;
 use App\Modules\Intelligence\Analytics\Http\Requests\CompareAggregatorRequest;
 use App\Modules\Intelligence\Analytics\Http\Resources\AggregatorComparisonResource;
 use App\Modules\Intelligence\Analytics\Services\AggregatorAnalyticsService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Carbon\Carbon;
 use Illuminate\Http\JsonResponse;
@@ -25,7 +26,7 @@ class AggregatorController extends Controller
 
         return ApiResponse::success(new AggregatorComparisonResource(
             $this->analytics->compare(
-                branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+                branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
                 startDate: isset($validated['start_date']) ? Carbon::parse($validated['start_date']) : null,
                 endDate: isset($validated['end_date']) ? Carbon::parse($validated['end_date']) : null,
             ),

@@ -8,8 +8,10 @@ use App\Modules\POS\Menu\Http\Requests\StoreMenuCategoryRequest;
 use App\Modules\POS\Menu\Http\Requests\UpdateMenuCategoryRequest;
 use App\Modules\POS\Menu\Http\Resources\MenuCategoryResource;
 use App\Modules\POS\Menu\Models\MenuCategory;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Routing\Controller;
 
@@ -18,11 +20,14 @@ use Illuminate\Routing\Controller;
  */
 class MenuCategoryController extends Controller
 {
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         $categories = MenuCategory::query()
             ->with('availableItems')
-            ->where('is_visible', true)
+            ->where('is_visible', true);
+        BranchAccess::constrainNullable($categories, $request->user());
+
+        $categories = $categories
             ->orderBy('sort_order')
             ->get();
 

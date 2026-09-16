@@ -7,6 +7,7 @@ namespace App\Modules\Tenant\Staff\Services;
 use App\Models\User;
 use App\Modules\Tenant\Staff\Models\StaffShift;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
 use Illuminate\Support\Collection;
 use InvalidArgumentException;
 
@@ -104,6 +105,8 @@ class StaffShiftService
         if (! $branchId) {
             throw new InvalidArgumentException('branch_id is required.');
         }
+
+        BranchAccess::assertCanAccess($user, (int) $branchId);
 
         $shift = StaffShift::create([
             'branch_id' => $branchId,

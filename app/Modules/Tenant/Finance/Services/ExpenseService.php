@@ -10,6 +10,7 @@ use App\Modules\Tenant\Finance\Models\ExpenseCategory;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Staff\Models\StaffShift;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -23,6 +24,7 @@ class ExpenseService
     public function create(array $data, User $user): Expense
     {
         Branch::query()->findOrFail($data['branch_id']);
+        BranchAccess::assertCanAccess($user, (int) $data['branch_id']);
 
         $category = ExpenseCategory::query()->findOrFail($data['expense_category_id']);
         if (! $category->is_active) {

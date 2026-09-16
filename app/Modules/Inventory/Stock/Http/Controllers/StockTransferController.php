@@ -8,6 +8,7 @@ use App\Modules\Inventory\Stock\Http\Requests\IndexStockTransferRequest;
 use App\Modules\Inventory\Stock\Http\Requests\StoreStockTransferRequest;
 use App\Modules\Inventory\Stock\Http\Resources\StockTransferResource;
 use App\Modules\Inventory\Stock\Services\StockTransferService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use App\Shared\Support\Http\Resources\DataResource;
 use Illuminate\Http\JsonResponse;
@@ -28,7 +29,7 @@ class StockTransferController extends Controller
         return ApiResponse::success(
             StockTransferResource::collection(
                 $this->transfers->list(
-                    branchId: isset($validated['branch_id']) ? (int) $validated['branch_id'] : null,
+                    branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
                 ),
             ),
         );
