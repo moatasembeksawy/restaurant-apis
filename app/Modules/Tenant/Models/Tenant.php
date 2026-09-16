@@ -68,7 +68,7 @@ class Tenant extends Model
 
     public function planLimits(): array
     {
-        return match ($this->plan) {
+        $limits = match ($this->plan) {
             'enterprise' => [
                 'max_users' => PHP_INT_MAX,
                 'max_branches' => PHP_INT_MAX,
@@ -98,6 +98,18 @@ class Tenant extends Model
                 'max_active_offers' => 0,
             ],
         };
+
+        // Feature-flag overrides unlock the feature but not the plan quota.
+        // Use the lowest plan that includes the feature so create is not capped at 0.
+        if ($limits['max_packages'] === 0 && $this->hasFeature('menu_packages')) {
+            $limits['max_packages'] = 30;
+        }
+
+        if ($limits['max_active_offers'] === 0 && $this->hasFeature('offers')) {
+            $limits['max_active_offers'] = 20;
+        }
+
+        return $limits;
     }
 
     public function hasFeature(string $feature): bool

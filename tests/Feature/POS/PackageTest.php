@@ -161,6 +161,43 @@ it('blocks packages on starter plans', function (): void {
         ->assertJsonPath('errors.0.code', 'FEATURE_NOT_AVAILABLE');
 });
 
+it('allows creating a package when starter has the menu_packages feature flag', function (): void {
+    $starter = Tenant::factory()->create([
+        'plan' => 'starter',
+        'status' => 'active',
+        'feature_flags' => ['menu_packages'],
+    ]);
+    $category = MenuCategory::factory()->create(['tenant_id' => $starter->id]);
+    $item = MenuItem::factory()->create([
+        'tenant_id' => $starter->id,
+        'category_id' => $category->id,
+        'is_available' => true,
+    ]);
+    $user = User::factory()->create([
+        'tenant_id' => $starter->id,
+        'role' => 'manager',
+        'is_active' => true,
+    ]);
+
+    app()->instance('tenant', $starter);
+
+    $this->withToken($user->createToken('test')->plainTextToken)
+        ->postJson('/api/v1/menu/packages', [
+            'category_id' => $category->id,
+            'name_ar' => 'وجبة تجريبية',
+            'price' => 80,
+            'slots' => [
+                [
+                    'type' => 'fixed',
+                    'menu_item_id' => $item->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.name_ar', 'وجبة تجريبية');
+});
+
 function createFamilyPackage(object $ctx): MenuPackage
 {
     $response = test()->withToken($ctx->token)
