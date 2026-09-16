@@ -132,8 +132,8 @@ it('marks invoices as skipped when eta credentials are missing', function (): vo
     ]);
 
     config([
-        'services.eta.client_id' => '',
-        'services.eta.client_secret' => '',
+        'services.eta.client_id' => 'global-client',
+        'services.eta.client_secret' => 'global-secret',
     ]);
 
     $this->invoice->update(['eta_status' => 'pending']);

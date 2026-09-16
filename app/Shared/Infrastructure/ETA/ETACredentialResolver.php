@@ -10,8 +10,8 @@ class ETACredentialResolver
 {
     public function forTenant(Tenant $tenant): ETACredentials
     {
-        $clientId = (string) ($tenant->eta_client_id ?: config('services.eta.client_id', ''));
-        $clientSecret = (string) ($tenant->eta_client_secret ?: config('services.eta.client_secret', ''));
+        $clientId = (string) ($tenant->eta_client_id ?? '');
+        $clientSecret = (string) ($tenant->eta_client_secret ?? '');
         $taxpayerId = (string) ($tenant->eta_taxpayer_id ?: $clientId);
         $branchId = (string) ($tenant->eta_branch_id ?: '0');
 
@@ -22,5 +22,10 @@ class ETACredentialResolver
             branchId: $branchId,
             certPath: $tenant->eta_cert_path,
         );
+    }
+
+    public function isConfiguredFor(Tenant $tenant): bool
+    {
+        return $this->forTenant($tenant)->isConfigured();
     }
 }

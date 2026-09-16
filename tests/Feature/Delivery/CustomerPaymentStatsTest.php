@@ -77,7 +77,7 @@ it('updates customer stats when order is paid', function (): void {
     expect((float) $customer->total_spent)->toBe(100.0);
     expect($customer->last_order_at)->not->toBeNull();
 
-    Queue::assertPushed(SubmitETAInvoiceJob::class);
+    Queue::assertNotPushed(SubmitETAInvoiceJob::class);
 });
 
 it('does not update customer stats on unpaid qr order', function (): void {

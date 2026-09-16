@@ -10,7 +10,6 @@ use App\Modules\Delivery\Customers\Services\CustomerService;
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\Intelligence\Loyalty\Services\LoyaltyService;
 use App\Modules\Inventory\Stock\Services\StockService;
-use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Billing\Models\PaymentRefund;
@@ -32,6 +31,7 @@ class PaymentSettlementService
         private readonly LoyaltyService $loyalty,
         private readonly CustomerService $customers,
         private readonly StaffShiftService $shifts,
+        private readonly ETAService $eta,
     ) {}
 
     /**
@@ -48,7 +48,7 @@ class PaymentSettlementService
             throw new InvalidArgumentException('Order must be active or completed before payment.');
         }
 
-        return DB::transaction(function () use ($order, $validated, $cashier): array {
+        $result = DB::transaction(function () use ($order, $validated, $cashier): array {
             /** @var Tenant $tenant */
             $tenant = app('tenant');
 
@@ -157,8 +157,6 @@ class PaymentSettlementService
                 'eta_status' => 'pending',
             ]);
 
-            SubmitETAInvoiceJob::dispatch($invoice);
-
             if ($tenant->hasFeature('inventory')) {
                 $this->stock->deductForOrder($order->load('items'));
             }
@@ -203,6 +201,12 @@ class PaymentSettlementService
                 ] : null,
             ];
         });
+
+        $invoice = $this->eta->queueSubmission($result['invoice'], app('tenant'));
+        $result['invoice'] = $invoice;
+        $result['payment']->setRelation('invoice', $invoice);
+
+        return $result;
     }
 
     /**

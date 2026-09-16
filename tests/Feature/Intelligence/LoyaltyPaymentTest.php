@@ -77,7 +77,7 @@ it('applies loyalty points as discount during payment', function (): void {
     expect((float) $this->order->fresh()->total)->toBe(75.0);
     expect($this->customer->fresh()->loyalty_points)->toBe(107);
 
-    Queue::assertPushed(SubmitETAInvoiceJob::class);
+    Queue::assertNotPushed(SubmitETAInvoiceJob::class);
 });
 
 it('rejects loyalty redemption exceeding customer balance', function (): void {

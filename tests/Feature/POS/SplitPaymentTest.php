@@ -80,7 +80,7 @@ it('settles split payment across multiple methods', function (): void {
     expect(PaymentSplit::query()->count())->toBe(2);
     expect((float) PaymentSplit::query()->sum('amount'))->toBe(150.0);
 
-    Queue::assertPushed(SubmitETAInvoiceJob::class);
+    Queue::assertNotPushed(SubmitETAInvoiceJob::class);
 });
 
 it('accepts visa as a card alias in split payments', function (): void {

@@ -6,6 +6,8 @@ use App\Models\User;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use Spatie\Permission\Models\Permission;
+use Spatie\Permission\PermissionRegistrar;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create(['plan' => 'pro', 'status' => 'active']);
@@ -101,6 +103,29 @@ it('allows cashier to access daily reports', function (): void {
     $this->withToken($cashier->createToken('test')->plainTextToken)
         ->getJson('/api/v1/reports/daily')
         ->assertOk();
+});
+
+it('allows manager to view offers', function (): void {
+    $this->withToken($this->manager->createToken('test')->plainTextToken)
+        ->getJson('/api/v1/offers')
+        ->assertOk();
+});
+
+it('returns forbidden instead of crashing when a permission is missing', function (): void {
+    Permission::query()->where('name', 'menu.view')->delete();
+    app()[PermissionRegistrar::class]->forgetCachedPermissions();
+
+    $waiter = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'role' => 'waiter',
+        'is_active' => true,
+    ]);
+
+    $this->withToken($waiter->createToken('test')->plainTextToken)
+        ->getJson('/api/v1/menu/categories')
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'FORBIDDEN');
 });
 
 it('blocks cashier from inventory ingredient management', function (): void {

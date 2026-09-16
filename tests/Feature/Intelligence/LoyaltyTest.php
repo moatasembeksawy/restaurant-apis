@@ -138,7 +138,7 @@ it('accrues loyalty points when an order is paid', function (): void {
     expect($this->customerForAccrual->fresh()->loyalty_points)->toBe(10);
     expect(LoyaltyTransaction::query()->where('customer_id', $this->customerForAccrual->id)->count())->toBe(1);
 
-    Queue::assertPushed(SubmitETAInvoiceJob::class);
+    Queue::assertNotPushed(SubmitETAInvoiceJob::class);
 });
 
 it('blocks loyalty endpoints on non-enterprise plans', function (): void {

@@ -21,19 +21,22 @@ class ETAAdapter implements ETAAdapterInterface
 
     public function getAccessToken(ETACredentials $credentials): string
     {
-        $response = $this->httpClient($credentials)
+        $response = $this->httpClient()
             ->asForm()
+            ->acceptJson()
+            ->withBasicAuth($credentials->clientId, $credentials->clientSecret)
             ->post($this->tokenUrl, [
                 'grant_type' => 'client_credentials',
-                'client_id' => $credentials->clientId,
-                'client_secret' => $credentials->clientSecret,
+                'scope' => 'InvoicingAPI',
             ]);
 
-        if ($response->failed()) {
+        $token = $response->json('access_token');
+
+        if ($response->failed() || ! is_string($token) || $token === '') {
             throw new RuntimeException('ETA token request failed: '.$response->body());
         }
 
-        return $response->json('access_token');
+        return $token;
     }
 
     public function submitInvoice(array $invoiceDocument, ETACredentials $credentials, string $accessToken): array
@@ -103,7 +106,7 @@ class ETAAdapter implements ETAAdapterInterface
         return [
             'issuer' => [
                 'type' => 'B',
-                'id' => $tenant->eta_taxpayer_id ?: config('services.eta.client_id'),
+                'id' => $tenant->eta_taxpayer_id ?: $tenant->eta_client_id,
                 'name' => $tenant->name,
                 'address' => [
                     'branchID' => $tenant->eta_branch_id ?? '0',
@@ -146,9 +149,14 @@ class ETAAdapter implements ETAAdapterInterface
         ];
     }
 
-    private function httpClient(ETACredentials $credentials): PendingRequest
+    private function httpClient(?ETACredentials $credentials = null): PendingRequest
     {
         $client = Http::timeout(15);
+
+        if ($credentials === null) {
+            return $client;
+        }
+
         $options = $this->tlsOptions($credentials);
 
         if ($options !== []) {

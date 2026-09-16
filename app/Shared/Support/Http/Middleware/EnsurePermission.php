@@ -16,7 +16,7 @@ class EnsurePermission
     {
         $user = $request->user();
 
-        if (! $user instanceof User || ! $user->hasPermissionTo($permission, 'web')) {
+        if (! $user instanceof User || ! $user->checkPermissionTo($permission, 'web')) {
             return ApiResponse::error(
                 'You do not have permission to perform this action.',
                 'FORBIDDEN',

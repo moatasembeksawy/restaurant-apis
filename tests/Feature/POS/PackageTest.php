@@ -46,6 +46,46 @@ beforeEach(function (): void {
     $this->token = $this->manager->createToken('test')->plainTextToken;
 });
 
+it('creates a package with a fixed slot even when options is empty', function (): void {
+    $this->withToken($this->token)
+        ->postJson('/api/v1/menu/packages', [
+            'category_id' => $this->category->id,
+            'name_ar' => 'وجبة ثابتة',
+            'price' => 100,
+            'slots' => [
+                [
+                    'type' => 'fixed',
+                    'menu_item_id' => $this->fries->id,
+                    'quantity' => 1,
+                    'options' => [],
+                ],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.slots.0.type', 'fixed')
+        ->assertJsonPath('data.slots.0.menu_item_id', $this->fries->id);
+
+    expect(MenuPackage::query()->count())->toBe(1);
+});
+
+it('rejects a choice slot without options', function (): void {
+    $this->withToken($this->token)
+        ->postJson('/api/v1/menu/packages', [
+            'category_id' => $this->category->id,
+            'name_ar' => 'وجبة اختيار',
+            'price' => 100,
+            'slots' => [
+                [
+                    'type' => 'choice',
+                    'name_ar' => 'اختار البيتزا',
+                    'options' => [],
+                ],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'VALIDATION_ERROR');
+});
+
 it('creates a package with fixed and choice slots', function (): void {
     $response = $this->withToken($this->token)
         ->postJson('/api/v1/menu/packages', [

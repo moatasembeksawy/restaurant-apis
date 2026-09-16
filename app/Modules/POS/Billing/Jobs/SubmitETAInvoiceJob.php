@@ -7,12 +7,13 @@ namespace App\Modules\POS\Billing\Jobs;
 use App\Modules\POS\Billing\Models\Invoice;
 use App\Modules\POS\Billing\Services\ETAService;
 use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
 use Throwable;
 
-class SubmitETAInvoiceJob implements ShouldQueue
+class SubmitETAInvoiceJob implements ShouldQueue, ShouldQueueAfterCommit
 {
     use InteractsWithQueue, Queueable, SerializesModels;
 

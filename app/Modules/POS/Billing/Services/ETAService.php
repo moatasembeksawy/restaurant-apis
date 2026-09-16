@@ -7,6 +7,7 @@ namespace App\Modules\POS\Billing\Services;
 use App\Modules\POS\Billing\Jobs\NotifyETAInvoiceFailureJob;
 use App\Modules\POS\Billing\Jobs\SubmitETAInvoiceJob;
 use App\Modules\POS\Billing\Models\Invoice;
+use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Infrastructure\ETA\ETAAdapterInterface;
 use App\Shared\Infrastructure\ETA\ETACredentialResolver;
 use Illuminate\Support\Facades\Log;
@@ -21,30 +22,15 @@ class ETAService
 
     public function submit(Invoice $invoice): void
     {
-        $invoice->update(['eta_status' => 'submitting']);
-
         $payment = $invoice->payment()->with('order.items', 'order.tenant')->firstOrFail();
         $tenant = $payment->order->tenant;
 
+        if ($this->skip($invoice, $tenant)) {
+            return;
+        }
+
+        $invoice->update(['eta_status' => 'submitting']);
         $creds = $this->credentials->forTenant($tenant);
-
-        if (! $creds->isConfigured()) {
-            $invoice->update([
-                'eta_status' => 'skipped',
-                'eta_response' => ['reason' => 'ETA credentials not configured for this tenant.'],
-            ]);
-
-            return;
-        }
-
-        if (! $tenant->hasFeature('eta_invoice')) {
-            $invoice->update([
-                'eta_status' => 'skipped',
-                'eta_response' => ['reason' => 'ETA invoicing is not enabled on this plan.'],
-            ]);
-
-            return;
-        }
 
         try {
             $document = $this->eta->buildInvoiceDocument($payment, $tenant);
@@ -67,6 +53,21 @@ class ETAService
         } catch (Throwable $e) {
             throw $e;
         }
+    }
+
+    public function queueSubmission(Invoice $invoice, Tenant $tenant): Invoice
+    {
+        if ($this->skip($invoice, $tenant)) {
+            return $invoice->fresh();
+        }
+
+        try {
+            SubmitETAInvoiceJob::dispatch($invoice);
+        } catch (Throwable) {
+            // Sync queues rethrow after Job::failed(); POS payment must still succeed.
+        }
+
+        return $invoice->fresh();
     }
 
     public function resubmit(Invoice $invoice): Invoice
@@ -96,5 +97,34 @@ class ETAService
         ]);
 
         NotifyETAInvoiceFailureJob::dispatch($invoice->fresh());
+    }
+
+    private function skip(Invoice $invoice, Tenant $tenant): bool
+    {
+        $reason = $this->skipReason($tenant);
+
+        if ($reason === null) {
+            return false;
+        }
+
+        $invoice->update([
+            'eta_status' => 'skipped',
+            'eta_response' => ['reason' => $reason],
+        ]);
+
+        return true;
+    }
+
+    private function skipReason(Tenant $tenant): ?string
+    {
+        if (! $tenant->hasFeature('eta_invoice')) {
+            return 'ETA invoicing is not enabled on this plan.';
+        }
+
+        if (! $this->credentials->isConfiguredFor($tenant)) {
+            return 'ETA credentials not configured for this tenant.';
+        }
+
+        return null;
     }
 }

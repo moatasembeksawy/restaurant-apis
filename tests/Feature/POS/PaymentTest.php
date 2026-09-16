@@ -11,6 +11,7 @@ use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Queue;
 use Spatie\Activitylog\Models\Activity;
 
@@ -73,8 +74,12 @@ beforeEach(function (): void {
     $this->token = $this->cashier->createToken('test', ['billing:*', 'orders:*'])->plainTextToken;
 });
 
-it('settles payment and dispatches ETA invoice job', function (): void {
+it('settles payment without sending to eta when tenant credentials are missing', function (): void {
     Queue::fake();
+    config([
+        'services.eta.client_id' => 'global-client',
+        'services.eta.client_secret' => 'global-secret',
+    ]);
 
     $response = $this->withToken($this->token)
         ->postJson("/api/v1/orders/{$this->order->id}/pay", [
@@ -85,13 +90,60 @@ it('settles payment and dispatches ETA invoice job', function (): void {
 
     $response->assertOk()
         ->assertJsonPath('data.payment.method', 'cash')
-        ->assertJsonPath('data.invoice.eta_status', 'pending')
+        ->assertJsonPath('data.invoice.eta_status', 'skipped')
         ->assertJsonPath('data.change_due', 50);
 
     expect($this->order->fresh()->status)->toBe('paid');
     expect($this->table->fresh()->status)->toBe('free');
 
+    Queue::assertNotPushed(SubmitETAInvoiceJob::class);
+});
+
+it('dispatches the eta invoice job only when the tenant has credentials', function (): void {
+    Queue::fake();
+
+    $this->tenant->update([
+        'eta_client_id' => 'cid',
+        'eta_client_secret' => 'csecret',
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'cash',
+            'amount' => 100.00,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.invoice.eta_status', 'pending');
+
     Queue::assertPushed(SubmitETAInvoiceJob::class);
+});
+
+it('settles payment even when the eta token request fails', function (): void {
+    $this->tenant->update([
+        'eta_client_id' => 'cid',
+        'eta_client_secret' => 'csecret',
+    ]);
+
+    Http::fake(function ($request) {
+        if (str_contains($request->url(), 'connect/token')) {
+            return Http::response(['supportID' => '48183559393108303419'], 400);
+        }
+
+        return Http::response(['ok' => true], 200);
+    });
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'cash',
+            'amount' => 100.00,
+            'cash_tendered' => 150.00,
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.payment.method', 'cash')
+        ->assertJsonPath('data.change_due', 50);
+
+    expect($this->order->fresh()->status)->toBe('paid');
+    expect($this->order->fresh()->payment->invoice->eta_status)->toBe('failed');
 });
 
 it('rejects payment for already paid orders', function (): void {

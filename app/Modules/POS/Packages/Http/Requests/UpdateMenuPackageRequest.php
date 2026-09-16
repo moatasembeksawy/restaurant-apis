@@ -29,7 +29,7 @@ class UpdateMenuPackageRequest extends ApiFormRequest
             'slots.*.min_select' => ['nullable', 'integer', 'min:1'],
             'slots.*.max_select' => ['nullable', 'integer', 'min:1'],
             'slots.*.sort_order' => ['nullable', 'integer', 'min:0'],
-            'slots.*.options' => ['required_if:slots.*.type,choice', 'nullable', 'array', 'min:1'],
+            'slots.*.options' => ['exclude_unless:slots.*.type,choice', 'required', 'array', 'min:1'],
             'slots.*.options.*.menu_item_id' => ['required', 'integer'],
             'slots.*.options.*.extra_price' => ['nullable', 'numeric', 'min:0'],
             'slots.*.options.*.is_available' => ['sometimes', 'boolean'],
