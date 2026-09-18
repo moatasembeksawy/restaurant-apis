@@ -16,10 +16,20 @@ class StoreOrderItemRequest extends ApiFormRequest
             'package_id' => ['required_without:menu_item_id', 'nullable', 'integer'],
             'quantity' => ['required', 'integer', 'min:1'],
             'notes' => ['nullable', 'string'],
+            'menu_item_ids' => ['nullable', 'array'],
+            'menu_item_ids.*' => ['integer'],
+            'slots' => ['nullable', 'array'],
             'selections' => ['nullable', 'array'],
-            'selections.*.slot_id' => ['required', 'integer'],
-            'selections.*.menu_item_ids' => ['required', 'array', 'min:1'],
+            'selections.*.slot_id' => ['nullable', 'integer'],
+            'selections.*.id' => ['nullable', 'integer'],
+            'selections.*.menu_item_id' => ['nullable', 'integer'],
+            'selections.*.menu_item_ids' => ['nullable', 'array'],
             'selections.*.menu_item_ids.*' => ['integer'],
+            'slots.*.slot_id' => ['nullable', 'integer'],
+            'slots.*.id' => ['nullable', 'integer'],
+            'slots.*.menu_item_id' => ['nullable', 'integer'],
+            'slots.*.menu_item_ids' => ['nullable', 'array'],
+            'slots.*.menu_item_ids.*' => ['integer'],
         ];
     }
 }

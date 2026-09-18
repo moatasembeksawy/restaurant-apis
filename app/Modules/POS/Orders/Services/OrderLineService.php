@@ -20,12 +20,7 @@ class OrderLineService
     public function add(Order $order, array $line): OrderItem
     {
         if (! empty($line['package_id'])) {
-            return $this->packages->addToOrder($order, [
-                'package_id' => (int) $line['package_id'],
-                'quantity' => (int) ($line['quantity'] ?? 1),
-                'notes' => $line['notes'] ?? null,
-                'selections' => $line['selections'] ?? [],
-            ]);
+            return $this->packages->addToOrder($order, $line);
         }
 
         $menuItemId = (int) ($line['menu_item_id'] ?? 0);

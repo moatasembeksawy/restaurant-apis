@@ -28,10 +28,20 @@ class StoreOrderRequest extends ApiFormRequest
             'items.*.package_id' => ['required_without:items.*.menu_item_id', 'nullable', 'integer'],
             'items.*.quantity' => ['required', 'integer', 'min:1'],
             'items.*.notes' => ['nullable', 'string'],
+            'items.*.menu_item_ids' => ['nullable', 'array'],
+            'items.*.menu_item_ids.*' => ['integer'],
+            'items.*.slots' => ['nullable', 'array'],
             'items.*.selections' => ['nullable', 'array'],
-            'items.*.selections.*.slot_id' => ['required', 'integer'],
-            'items.*.selections.*.menu_item_ids' => ['required', 'array', 'min:1'],
+            'items.*.selections.*.slot_id' => ['nullable', 'integer'],
+            'items.*.selections.*.id' => ['nullable', 'integer'],
+            'items.*.selections.*.menu_item_id' => ['nullable', 'integer'],
+            'items.*.selections.*.menu_item_ids' => ['nullable', 'array'],
             'items.*.selections.*.menu_item_ids.*' => ['integer'],
+            'items.*.slots.*.slot_id' => ['nullable', 'integer'],
+            'items.*.slots.*.id' => ['nullable', 'integer'],
+            'items.*.slots.*.menu_item_id' => ['nullable', 'integer'],
+            'items.*.slots.*.menu_item_ids' => ['nullable', 'array'],
+            'items.*.slots.*.menu_item_ids.*' => ['integer'],
         ];
     }
 }

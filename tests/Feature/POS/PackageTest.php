@@ -148,6 +148,104 @@ it('explodes a package into priced parent and kitchen components', function (): 
     expect(OrderItem::query()->where('line_type', OrderItem::LINE_PACKAGE)->count())->toBe(1);
 });
 
+it('places a choice package using the chosen menu_item_id without a selections array', function (): void {
+    $package = createFamilyPackage($this);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'items' => [
+                [
+                    'package_id' => $package->id,
+                    'menu_item_id' => $this->pizza->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.items.0.package_id', $package->id);
+});
+
+it('places a choice package when selections use slot id and a single menu_item_id', function (): void {
+    $package = createFamilyPackage($this);
+    $choiceSlot = $package->slots->firstWhere('type', 'choice');
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'items' => [
+                [
+                    'package_id' => $package->id,
+                    'quantity' => 1,
+                    'selections' => [
+                        ['id' => $choiceSlot->id, 'menu_item_id' => $this->pizza->id],
+                    ],
+                ],
+            ],
+        ])
+        ->assertCreated();
+});
+
+it('auto-fills a choice slot that has exactly one available option', function (): void {
+    $package = createFamilyPackage($this);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'items' => [
+                [
+                    'package_id' => $package->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ])
+        ->assertCreated()
+        ->assertJsonPath('data.items.0.package_id', $package->id);
+});
+
+it('places a multi-option choice package when the selected item is sent without a slot_id', function (): void {
+    $package = createChoicePackage($this, [$this->pizza->id, $this->cola->id]);
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'items' => [
+                [
+                    'package_id' => $package->id,
+                    'quantity' => 1,
+                    'menu_item_ids' => [$this->cola->id],
+                ],
+            ],
+        ])
+        ->assertCreated();
+
+    $components = collect($response->json('data.items'))->whereNotNull('parent_id');
+
+    expect($components->pluck('menu_item_id')->all())->toContain($this->cola->id);
+});
+
+it('rejects a multi-option choice package when no selection is provided', function (): void {
+    $package = createChoicePackage($this, [$this->pizza->id, $this->cola->id]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'items' => [
+                [
+                    'package_id' => $package->id,
+                    'quantity' => 1,
+                ],
+            ],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
+});
+
 it('blocks packages on starter plans', function (): void {
     $starter = Tenant::factory()->create(['plan' => 'starter', 'status' => 'active']);
     app()->instance('tenant', $starter);
@@ -261,6 +359,34 @@ function createFamilyPackage(object $ctx): MenuPackage
                     'type' => 'fixed',
                     'menu_item_id' => $ctx->fries->id,
                     'quantity' => 1,
+                ],
+            ],
+        ])
+        ->assertCreated();
+
+    return MenuPackage::query()->with('slots')->findOrFail($response->json('data.id'));
+}
+
+/**
+ * @param  list<int>  $menuItemIds
+ */
+function createChoicePackage(object $ctx, array $menuItemIds): MenuPackage
+{
+    $response = test()->withToken($ctx->token)
+        ->postJson('/api/v1/menu/packages', [
+            'category_id' => $ctx->category->id,
+            'name_ar' => 'وجبة اختيار',
+            'price' => 120,
+            'slots' => [
+                [
+                    'type' => 'choice',
+                    'name_ar' => 'اختار الصنف',
+                    'min_select' => 1,
+                    'max_select' => 1,
+                    'options' => array_map(
+                        fn (int $id): array => ['menu_item_id' => $id],
+                        $menuItemIds,
+                    ),
                 ],
             ],
         ])
