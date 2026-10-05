@@ -7,6 +7,7 @@ namespace App\Modules\Tenant\Staff\Services;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Billing\Models\PaymentRefund;
 use App\Modules\POS\Billing\Models\PaymentSplit;
+use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\Tenant\Finance\Models\CashMovement;
 use App\Modules\Tenant\Finance\Services\CashMovementService;
 use App\Modules\Tenant\Staff\Models\StaffShift;
@@ -61,6 +62,36 @@ class StaffShiftSalesService
     public function expectedCashInDrawer(StaffShift $shift): float
     {
         return (float) $this->summarize($shift)['expected_cash_in_drawer'];
+    }
+
+    /**
+     * Priced lines from payments that are still paid. Refunded orders are omitted.
+     *
+     * @return list<array{menu_item_id: int|null, package_id: int|null, name_ar: string, quantity: int, total: float}>
+     */
+    public function paidItems(StaffShift $shift): array
+    {
+        return OrderItem::query()
+            ->join('payments', function ($join) use ($shift): void {
+                $join->on('payments.order_id', '=', 'order_items.order_id')
+                    ->where('payments.staff_shift_id', $shift->id)
+                    ->where('payments.tenant_id', $shift->tenant_id)
+                    ->whereNull('payments.refunded_at');
+            })
+            ->whereNull('order_items.parent_id')
+            ->groupBy('order_items.menu_item_id', 'order_items.package_id', 'order_items.item_name_ar')
+            ->orderByDesc('quantity')
+            ->orderBy('order_items.item_name_ar')
+            ->selectRaw('order_items.menu_item_id, order_items.package_id, order_items.item_name_ar, SUM(order_items.quantity) as quantity, SUM(order_items.subtotal) as total')
+            ->get()
+            ->map(fn (OrderItem $row): array => [
+                'menu_item_id' => $row->menu_item_id,
+                'package_id' => $row->package_id,
+                'name_ar' => $row->item_name_ar,
+                'quantity' => (int) $row->quantity,
+                'total' => round((float) $row->total, 2),
+            ])
+            ->all();
     }
 
     /** @param  Collection<int, Payment>  $payments */

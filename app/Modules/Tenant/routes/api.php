@@ -41,6 +41,7 @@ Route::middleware('feature:staff_shifts')->group(function (): void {
         Route::get('staff/shifts/active', [StaffShiftController::class, 'active']);
         Route::get('staff/shifts/current', [StaffShiftController::class, 'current']);
         Route::get('staff/shifts/{shift}', [StaffShiftController::class, 'show']);
+        Route::get('staff/shifts/{shift}/items', [StaffShiftController::class, 'items']);
     });
     Route::middleware('permission:shifts.operate')->group(function (): void {
         Route::post('staff/shifts/clock-in', [StaffShiftController::class, 'clockIn']);

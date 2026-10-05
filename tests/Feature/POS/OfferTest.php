@@ -10,6 +10,7 @@ use App\Modules\POS\Orders\Models\Order;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Queue;
+use Laravel\Sanctum\Sanctum;
 
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create(['plan' => 'pro', 'status' => 'active']);
@@ -123,9 +124,9 @@ it('stacks a cashier discount on top of an offer', function (): void {
 
     $orderId = $orderResponse->json('data.id');
     startCashierShift($this->cashier);
+    Sanctum::actingAs($this->cashier, ['*'], 'sanctum');
 
-    $this->withToken($this->cashier->createToken('test')->plainTextToken)
-        ->postJson("/api/v1/orders/{$orderId}/pay", [
+    $this->postJson("/api/v1/orders/{$orderId}/pay", [
             'method' => 'cash',
             'amount' => 80.00,
             'discount_type' => 'fixed',

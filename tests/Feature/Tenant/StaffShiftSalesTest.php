@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\User;
 use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\POS\Billing\Models\PaymentRefund;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\Order;
@@ -119,6 +120,101 @@ it('links payments to the active cashier shift and reports shift sales', functio
         ->assertJsonPath('data.sales.expected_cash_in_drawer', 300);
 });
 
+it('reports how many times each item was paid and the money for each item', function (): void {
+    $categoryId = MenuItem::query()->value('category_id');
+    $firstItem = MenuItem::query()->first();
+
+    $secondItem = MenuItem::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'category_id' => $categoryId,
+        'name_ar' => 'سلطة',
+        'price' => 40.00,
+        'is_available' => true,
+    ]);
+
+    $secondOrder = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'status' => 'ready',
+        'subtotal' => 240.00,
+        'total' => 240.00,
+    ]);
+
+    OrderItem::create([
+        'order_id' => $secondOrder->id,
+        'menu_item_id' => $firstItem->id,
+        'item_name_ar' => $firstItem->name_ar,
+        'unit_price' => 100.00,
+        'quantity' => 2,
+        'subtotal' => 200.00,
+        'status' => 'ready',
+    ]);
+
+    OrderItem::create([
+        'order_id' => $secondOrder->id,
+        'menu_item_id' => $secondItem->id,
+        'item_name_ar' => $secondItem->name_ar,
+        'unit_price' => 40.00,
+        'quantity' => 1,
+        'subtotal' => 40.00,
+        'status' => 'ready',
+    ]);
+
+    Sanctum::actingAs($this->cashier, ['*'], 'sanctum');
+    $this->postJson('/api/v1/staff/shifts/clock-in')->assertCreated();
+
+    payOrderAs($this->cashier, $this->order)->assertOk();
+    payOrderAs($this->cashier, $secondOrder)->assertOk();
+
+    $shiftId = StaffShift::query()->where('user_id', $this->cashier->id)->value('id');
+
+    $this->getJson('/api/v1/staff/shifts/current')
+        ->assertOk()
+        ->assertJsonMissingPath('data.sales.items');
+
+    $report = $this->getJson("/api/v1/staff/shifts/{$shiftId}/items")->assertOk();
+
+    $items = collect($report->json('data.items'));
+
+    $first = $items->firstWhere('menu_item_id', $firstItem->id);
+    $second = $items->firstWhere('menu_item_id', $secondItem->id);
+
+    expect($first)->toMatchArray([
+        'menu_item_id' => $firstItem->id,
+        'name_ar' => $firstItem->name_ar,
+        'quantity' => 3,
+        'total' => 300,
+    ])->and($second)->toMatchArray([
+        'menu_item_id' => $secondItem->id,
+        'name_ar' => 'سلطة',
+        'quantity' => 1,
+        'total' => 40,
+    ])->and($report->json('data.totals'))->toMatchArray([
+        'quantity' => 4,
+        'total' => 340,
+    ]);
+
+    Sanctum::actingAs($this->manager, ['*'], 'sanctum');
+
+    $this->postJson("/api/v1/orders/{$secondOrder->id}/refund", ['reason' => 'Wrong order'])
+        ->assertOk();
+
+    Sanctum::actingAs($this->cashier, ['*'], 'sanctum');
+
+    $afterRefund = $this->getJson("/api/v1/staff/shifts/{$shiftId}/items")->assertOk();
+
+    expect(collect($afterRefund->json('data.items')))->toHaveCount(1)
+        ->and($afterRefund->json('data.items.0'))->toMatchArray([
+            'menu_item_id' => $firstItem->id,
+            'quantity' => 1,
+            'total' => 100,
+        ])
+        ->and($afterRefund->json('data.totals'))->toMatchArray([
+            'quantity' => 1,
+            'total' => 100,
+        ]);
+});
+
 it('records cash variance when a shift is closed', function (): void {
     Sanctum::actingAs($this->cashier, ['*'], 'sanctum');
 
@@ -134,12 +230,32 @@ it('records cash variance when a shift is closed', function (): void {
         ->assertJsonPath('data.sales.net_sales', 100);
 });
 
-it('allows managers to settle payments without an active shift', function (): void {
+it('requires managers and owners to clock in before taking payments on pro plans', function (string $role): void {
+    $user = $role === 'manager'
+        ? $this->manager
+        : User::factory()->create([
+            'tenant_id' => $this->tenant->id,
+            'branch_id' => $this->branch->id,
+            'role' => 'owner',
+            'is_active' => true,
+        ]);
+
+    payOrderAs($user, $this->order)
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'NO_ACTIVE_SHIFT');
+})->with(['manager', 'owner']);
+
+it('links a manager payment to their open shift', function (): void {
+    Sanctum::actingAs($this->manager, ['*'], 'sanctum');
+    $this->postJson('/api/v1/staff/shifts/clock-in')->assertCreated();
+
     payOrderAs($this->manager, $this->order)
         ->assertOk()
         ->assertJsonPath('data.payment.method', 'cash');
 
-    expect(Payment::query()->value('staff_shift_id'))->toBeNull();
+    $shiftId = StaffShift::query()->where('user_id', $this->manager->id)->value('id');
+
+    expect(Payment::query()->value('staff_shift_id'))->toBe($shiftId);
 });
 
 it('does not subtract cash refunds twice from expected cash in drawer', function (): void {
@@ -161,10 +277,14 @@ it('does not subtract cash refunds twice from expected cash in drawer', function
         ->assertJsonPath('data.sales.expected_cash_in_drawer', 500);
 });
 
-it('attributes refunds to the manager active shift when present', function (): void {
+it('attributes refunds to the shift that recorded the payment', function (): void {
     Sanctum::actingAs($this->cashier, ['*'], 'sanctum');
     $this->postJson('/api/v1/staff/shifts/clock-in')->assertCreated();
     payOrderAs($this->cashier, $this->order)->assertOk();
+
+    $cashierShiftId = StaffShift::query()
+        ->where('user_id', $this->cashier->id)
+        ->value('id');
 
     Sanctum::actingAs($this->manager, ['*'], 'sanctum');
     $this->postJson('/api/v1/staff/shifts/clock-in')->assertCreated();
@@ -178,12 +298,20 @@ it('attributes refunds to the manager active shift when present', function (): v
         ->where('user_id', $this->manager->id)
         ->value('id');
 
-    expect($managerShiftId)->not->toBeNull();
+    expect($cashierShiftId)->not->toBeNull()
+        ->and($managerShiftId)->not->toBeNull()
+        ->and(PaymentRefund::query()->value('staff_shift_id'))->toBe($cashierShiftId);
+
+    $this->getJson("/api/v1/staff/shifts/{$cashierShiftId}")
+        ->assertOk()
+        ->assertJsonPath('data.sales.refunds_count', 1)
+        ->assertJsonPath('data.sales.refunds_total', 100)
+        ->assertJsonPath('data.sales.net_sales', 0);
 
     $this->getJson("/api/v1/staff/shifts/{$managerShiftId}")
         ->assertOk()
-        ->assertJsonPath('data.sales.refunds_count', 1)
-        ->assertJsonPath('data.sales.refunds_total', 100);
+        ->assertJsonPath('data.sales.refunds_count', 0)
+        ->assertJsonPath('data.sales.refunds_total', 0);
 });
 
 it('does not require shifts on starter plans without staff_shifts feature', function (): void {

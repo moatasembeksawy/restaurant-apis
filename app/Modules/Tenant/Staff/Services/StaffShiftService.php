@@ -59,6 +59,21 @@ class StaffShiftService
         return $this->format($shift->load(['user:id,name,role', 'branch:id,name']), includeSales: true);
     }
 
+    /** @return array{shift_id: int, items: list<array<string, mixed>>, totals: array{quantity: int, total: float}} */
+    public function paidItems(StaffShift $shift): array
+    {
+        $items = $this->sales->paidItems($shift);
+
+        return [
+            'shift_id' => $shift->id,
+            'items' => $items,
+            'totals' => [
+                'quantity' => (int) array_sum(array_column($items, 'quantity')),
+                'total' => round((float) array_sum(array_column($items, 'total')), 2),
+            ],
+        ];
+    }
+
     public function currentFor(User $user): ?array
     {
         $shift = $this->resolveActiveShift($user);
@@ -74,7 +89,7 @@ class StaffShiftService
             ->first();
     }
 
-    public function requireActiveShiftForCashier(User $user): StaffShift
+    public function resolveShiftForPayment(User $user): StaffShift
     {
         $shift = $this->resolveActiveShift($user);
 
@@ -83,15 +98,6 @@ class StaffShiftService
         }
 
         return $shift;
-    }
-
-    public function resolveShiftForPayment(User $cashier): ?StaffShift
-    {
-        if ($cashier->role === 'cashier') {
-            return $this->requireActiveShiftForCashier($cashier);
-        }
-
-        return $this->resolveActiveShift($cashier);
     }
 
     public function clockIn(User $user, ?int $branchId = null, ?string $notes = null, ?float $openingFloat = null): array

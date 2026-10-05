@@ -69,6 +69,11 @@ class StaffShiftController extends Controller
         return ApiResponse::success(new StaffShiftResource($this->shifts->show($shift)));
     }
 
+    public function items(StaffShift $shift): JsonResponse
+    {
+        return ApiResponse::success(new StaffShiftResource($this->shifts->paidItems($shift)));
+    }
+
     public function clockIn(ClockInStaffShiftRequest $request): JsonResponse
     {
         $validated = $request->validated();

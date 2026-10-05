@@ -115,8 +115,7 @@ class PaymentSettlementService
             $staffShiftId = null;
 
             if ($tenant->hasFeature('staff_shifts')) {
-                $shift = $this->shifts->resolveShiftForPayment($cashier);
-                $staffShiftId = $shift?->id;
+                $staffShiftId = $this->shifts->resolveShiftForPayment($cashier)->id;
             }
 
             $payment = Payment::create([
@@ -298,7 +297,7 @@ class PaymentSettlementService
             $tenant = app('tenant');
 
             $refundShiftId = $tenant->hasFeature('staff_shifts')
-                ? $this->shifts->resolveActiveShift($refundedBy)?->id
+                ? $payment->staff_shift_id
                 : null;
 
             $refund = PaymentRefund::create([
