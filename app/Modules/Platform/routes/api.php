@@ -23,4 +23,5 @@ Route::middleware(['auth:sanctum', 'platform.admin'])->group(function (): void {
     Route::patch('tenants/{tenant}/status', [AdminTenantController::class, 'updateStatus']);
     Route::patch('tenants/{tenant}/features', [AdminTenantController::class, 'updateFeatures']);
     Route::post('tenants/{tenant}/impersonate', [AdminTenantController::class, 'impersonate']);
+    Route::post('tenants/{tenant}/financial-data', [AdminTenantController::class, 'purgeFinancialData']);
 });

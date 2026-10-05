@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Platform\Http\Controllers;
 
 use App\Modules\Platform\Http\Requests\IndexAdminTenantRequest;
+use App\Modules\Platform\Http\Requests\PurgeTenantFinancialDataRequest;
 use App\Modules\Platform\Http\Requests\StoreAdminTenantRequest;
 use App\Modules\Platform\Http\Requests\UpdateAdminTenantFeaturesRequest;
 use App\Modules\Platform\Http\Requests\UpdateAdminTenantPlanRequest;
@@ -13,6 +14,7 @@ use App\Modules\Platform\Http\Requests\UpdateAdminTenantStatusRequest;
 use App\Modules\Platform\Http\Resources\AdminTenantResource;
 use App\Modules\Platform\Http\Resources\ImpersonationResource;
 use App\Modules\Platform\Models\PlatformAdmin;
+use App\Modules\Platform\Services\TenantFinancialPurgeService;
 use App\Modules\Platform\Services\TenantManagementService;
 use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Support\Http\Resources\ApiResponse;
@@ -26,7 +28,10 @@ use InvalidArgumentException;
  */
 class AdminTenantController extends Controller
 {
-    public function __construct(private readonly TenantManagementService $tenants) {}
+    public function __construct(
+        private readonly TenantManagementService $tenants,
+        private readonly TenantFinancialPurgeService $financialPurge,
+    ) {}
 
     public function index(IndexAdminTenantRequest $request): JsonResponse
     {
@@ -128,5 +133,32 @@ class AdminTenantController extends Controller
         }
 
         return ApiResponse::success(new ImpersonationResource($result), 'Impersonation token issued.');
+    }
+
+    /**
+     * Delete a tenant's financial activity.
+     *
+     * Removes orders, payments, invoices, refunds, shifts, cash movements, expenses,
+     * purchase orders, and loyalty transactions. Menu items, tables, staff, customers,
+     * and other setup data stay. Send the tenant subdomain in `confirm`.
+     */
+    public function purgeFinancialData(PurgeTenantFinancialDataRequest $request, Tenant $tenant): JsonResponse
+    {
+        try {
+            /** @var PlatformAdmin $admin */
+            $admin = $request->user();
+            $result = $this->financialPurge->purge(
+                $tenant,
+                $admin,
+                $request->string('confirm')->toString(),
+            );
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'FINANCIAL_PURGE_FAILED', 422);
+        }
+
+        return ApiResponse::success(
+            $result,
+            'Tenant financial data deleted. Menu, tables, and setup data were kept.',
+        );
     }
 }
