@@ -648,10 +648,20 @@ Place a dine-in or takeaway order from the public QR menu.
 | `items.*.package_id` | `required_without:items.*.menu_item_id, nullable, integer` |
 | `items.*.quantity` | `required, integer, min:1` |
 | `items.*.notes` | `nullable, string, max:255` |
+| `items.*.menu_item_ids` | `nullable, array` |
+| `items.*.menu_item_ids.*` | `integer` |
+| `items.*.slots` | `nullable, array` |
 | `items.*.selections` | `nullable, array` |
-| `items.*.selections.*.slot_id` | `required, integer` |
-| `items.*.selections.*.menu_item_ids` | `required, array, min:1` |
+| `items.*.selections.*.slot_id` | `nullable, integer` |
+| `items.*.selections.*.id` | `nullable, integer` |
+| `items.*.selections.*.menu_item_id` | `nullable, integer` |
+| `items.*.selections.*.menu_item_ids` | `nullable, array` |
 | `items.*.selections.*.menu_item_ids.*` | `integer` |
+| `items.*.slots.*.slot_id` | `nullable, integer` |
+| `items.*.slots.*.id` | `nullable, integer` |
+| `items.*.slots.*.menu_item_id` | `nullable, integer` |
+| `items.*.slots.*.menu_item_ids` | `nullable, array` |
+| `items.*.slots.*.menu_item_ids.*` | `integer` |
 | `customer_name` | `nullable, string, max:100` |
 | `customer_phone` | `nullable, string, max:20` |
 | `notes` | `nullable, string, max:500` |
@@ -668,20 +678,40 @@ Place a dine-in or takeaway order from the public QR menu.
             "package_id": 1,
             "quantity": 2,
             "notes": "كشري",
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1,
+            "slots": [],
             "selections": [],
             "selections.*.slot_id": 1,
+            "selections.*.id": 1,
+            "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1
+            "selections.*.menu_item_ids.*": 1,
+            "slots.*.slot_id": 1,
+            "slots.*.id": 1,
+            "slots.*.menu_item_id": 1,
+            "slots.*.menu_item_ids": [],
+            "slots.*.menu_item_ids.*": 1
         },
         {
             "menu_item_id": 2,
             "package_id": 1,
             "quantity": 1,
             "notes": "فول",
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1,
+            "slots": [],
             "selections": [],
             "selections.*.slot_id": 1,
+            "selections.*.id": 1,
+            "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1
+            "selections.*.menu_item_ids.*": 1,
+            "slots.*.slot_id": 1,
+            "slots.*.id": 1,
+            "slots.*.menu_item_id": 1,
+            "slots.*.menu_item_ids": [],
+            "slots.*.menu_item_ids.*": 1
         }
     ],
     "customer_name": "أحمد محمود",
@@ -859,7 +889,7 @@ Create a master ingredient. Pass branch_id to also open stock at that branch.
 | `branch_id` | `nullable, integer` |
 | `name_ar` | `required_without:ingredient_id, nullable, string, max:100` |
 | `name_en` | `nullable, string, max:100` |
-| `unit` | `required_without:ingredient_id, nullable, in:kg,g,l,ml,piece` |
+| `unit` | `required_without:ingredient_id, nullable, in:"kg","g","l","ml","piece"` |
 | `default_cost` | `nullable, numeric, min:0` |
 | `current_stock` | `nullable, numeric, min:0` |
 | `reorder_level` | `nullable, numeric, min:0` |
@@ -871,7 +901,7 @@ Create a master ingredient. Pass branch_id to also open stock at that branch.
     "branch_id": "{{branch_id}}",
     "name_ar": "كشري",
     "name_en": "Koshary",
-    "unit": "kg",
+    "unit": "\"kg\"",
     "default_cost": 45,
     "current_stock": 25,
     "reorder_level": 10,
@@ -907,7 +937,7 @@ Update — inventory/ingredients/{ingredient}
 |-----------|-------|
 | `name_ar` | `sometimes, string, max:100` |
 | `name_en` | `nullable, string, max:100` |
-| `unit` | `sometimes, in:kg,g,l,ml,piece` |
+| `unit` | `sometimes, in:"kg","g","l","ml","piece"` |
 | `default_cost` | `sometimes, numeric, min:0` |
 | `is_active` | `sometimes, boolean` |
 
@@ -915,7 +945,7 @@ Update — inventory/ingredients/{ingredient}
 {
     "name_ar": "كشري",
     "name_en": "Koshary",
-    "unit": "kg",
+    "unit": "\"kg\"",
     "default_cost": 45,
     "is_active": true
 }
@@ -1963,7 +1993,7 @@ Store — menu/packages
 | `slots.*.min_select` | `nullable, integer, min:1` |
 | `slots.*.max_select` | `nullable, integer, min:1` |
 | `slots.*.sort_order` | `nullable, integer, min:0` |
-| `slots.*.options` | `required_if:slots.*.type,choice, nullable, array, min:1` |
+| `slots.*.options` | `exclude_unless:slots.*.type,choice, required, array, min:1` |
 | `slots.*.options.*.menu_item_id` | `required, integer` |
 | `slots.*.options.*.extra_price` | `nullable, numeric, min:0` |
 | `slots.*.options.*.is_available` | `sometimes, boolean` |
@@ -2053,7 +2083,7 @@ Update — menu/packages/{package}
 | `slots.*.min_select` | `nullable, integer, min:1` |
 | `slots.*.max_select` | `nullable, integer, min:1` |
 | `slots.*.sort_order` | `nullable, integer, min:0` |
-| `slots.*.options` | `required_if:slots.*.type,choice, nullable, array, min:1` |
+| `slots.*.options` | `exclude_unless:slots.*.type,choice, required, array, min:1` |
 | `slots.*.options.*.menu_item_id` | `required, integer` |
 | `slots.*.options.*.extra_price` | `nullable, numeric, min:0` |
 | `slots.*.options.*.is_available` | `sometimes, boolean` |
@@ -2121,7 +2151,7 @@ Update — menu/packages/{package}
 | `slots.*.min_select` | `nullable, integer, min:1` |
 | `slots.*.max_select` | `nullable, integer, min:1` |
 | `slots.*.sort_order` | `nullable, integer, min:0` |
-| `slots.*.options` | `required_if:slots.*.type,choice, nullable, array, min:1` |
+| `slots.*.options` | `exclude_unless:slots.*.type,choice, required, array, min:1` |
 | `slots.*.options.*.menu_item_id` | `required, integer` |
 | `slots.*.options.*.extra_price` | `nullable, numeric, min:0` |
 | `slots.*.options.*.is_available` | `sometimes, boolean` |
@@ -2568,10 +2598,20 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
 | `items.*.package_id` | `required_without:items.*.menu_item_id, nullable, integer` |
 | `items.*.quantity` | `required, integer, min:1` |
 | `items.*.notes` | `nullable, string` |
+| `items.*.menu_item_ids` | `nullable, array` |
+| `items.*.menu_item_ids.*` | `integer` |
+| `items.*.slots` | `nullable, array` |
 | `items.*.selections` | `nullable, array` |
-| `items.*.selections.*.slot_id` | `required, integer` |
-| `items.*.selections.*.menu_item_ids` | `required, array, min:1` |
+| `items.*.selections.*.slot_id` | `nullable, integer` |
+| `items.*.selections.*.id` | `nullable, integer` |
+| `items.*.selections.*.menu_item_id` | `nullable, integer` |
+| `items.*.selections.*.menu_item_ids` | `nullable, array` |
 | `items.*.selections.*.menu_item_ids.*` | `integer` |
+| `items.*.slots.*.slot_id` | `nullable, integer` |
+| `items.*.slots.*.id` | `nullable, integer` |
+| `items.*.slots.*.menu_item_id` | `nullable, integer` |
+| `items.*.slots.*.menu_item_ids` | `nullable, array` |
+| `items.*.slots.*.menu_item_ids.*` | `integer` |
 
 ```json
 {
@@ -2592,20 +2632,40 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
             "package_id": 1,
             "quantity": 2,
             "notes": "كشري",
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1,
+            "slots": [],
             "selections": [],
             "selections.*.slot_id": 1,
+            "selections.*.id": 1,
+            "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1
+            "selections.*.menu_item_ids.*": 1,
+            "slots.*.slot_id": 1,
+            "slots.*.id": 1,
+            "slots.*.menu_item_id": 1,
+            "slots.*.menu_item_ids": [],
+            "slots.*.menu_item_ids.*": 1
         },
         {
             "menu_item_id": 2,
             "package_id": 1,
             "quantity": 1,
             "notes": "فول",
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1,
+            "slots": [],
             "selections": [],
             "selections.*.slot_id": 1,
+            "selections.*.id": 1,
+            "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1
+            "selections.*.menu_item_ids.*": 1,
+            "slots.*.slot_id": 1,
+            "slots.*.id": 1,
+            "slots.*.menu_item_id": 1,
+            "slots.*.menu_item_ids": [],
+            "slots.*.menu_item_ids.*": 1
         }
     ]
 }
@@ -2723,10 +2783,20 @@ Store — orders/{order}/items
 | `package_id` | `required_without:menu_item_id, nullable, integer` |
 | `quantity` | `required, integer, min:1` |
 | `notes` | `nullable, string` |
+| `menu_item_ids` | `nullable, array` |
+| `menu_item_ids.*` | `integer` |
+| `slots` | `nullable, array` |
 | `selections` | `nullable, array` |
-| `selections.*.slot_id` | `required, integer` |
-| `selections.*.menu_item_ids` | `required, array, min:1` |
+| `selections.*.slot_id` | `nullable, integer` |
+| `selections.*.id` | `nullable, integer` |
+| `selections.*.menu_item_id` | `nullable, integer` |
+| `selections.*.menu_item_ids` | `nullable, array` |
 | `selections.*.menu_item_ids.*` | `integer` |
+| `slots.*.slot_id` | `nullable, integer` |
+| `slots.*.id` | `nullable, integer` |
+| `slots.*.menu_item_id` | `nullable, integer` |
+| `slots.*.menu_item_ids` | `nullable, array` |
+| `slots.*.menu_item_ids.*` | `integer` |
 
 ```json
 {
@@ -2734,9 +2804,21 @@ Store — orders/{order}/items
     "package_id": 1,
     "quantity": 2,
     "notes": "بدون بصل",
+    "menu_item_ids": [],
+    "slots": [
+        {
+            "slot_id": 1,
+            "id": 1,
+            "menu_item_id": "{{menu_item_id}}",
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1
+        }
+    ],
     "selections": [
         {
             "slot_id": 1,
+            "id": 1,
+            "menu_item_id": "{{menu_item_id}}",
             "menu_item_ids": [],
             "menu_item_ids.*": 1
         }
@@ -4319,6 +4401,40 @@ Upload Certificate — settings/eta/certificate
 ```json
 {
     "certificate": "مثال"
+}
+```
+
+---
+
+#### `DELETE` /api/v1/settings/logo
+
+Remove the restaurant logo.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `POST` /api/v1/settings/logo
+
+Upload the restaurant logo shown in tenant settings and on the public QR menu.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `logo` | `required, image, mimes:jpeg,jpg,png,webp, max:5120` |
+
+```json
+{
+    "logo": "مثال"
 }
 ```
 

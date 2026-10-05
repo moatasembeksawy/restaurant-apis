@@ -128,6 +128,7 @@ class QRMenuService
             'restaurant' => [
                 'name' => $tenant->name,
                 'locale' => $tenant->locale,
+                'logo_url' => $tenant->logoUrl(),
             ],
             'branch' => [
                 'id' => $branch->id,

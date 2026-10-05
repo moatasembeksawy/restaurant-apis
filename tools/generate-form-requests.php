@@ -429,6 +429,9 @@ $requests = [
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'IndexStaffRequest', 'rules' => <<<'RULES'
             'branch_id' => ['nullable', 'integer'],
         RULES],
+    ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UploadTenantLogoRequest', 'rules' => <<<'RULES'
+            'logo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+        RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateTenantSettingsRequest', 'rules' => <<<'RULES'
             'name' => ['sometimes', 'string', 'max:150'],
             'locale' => ['sometimes', 'in:ar,en'],

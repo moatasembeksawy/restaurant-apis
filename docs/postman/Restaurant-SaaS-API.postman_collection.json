@@ -575,7 +575,7 @@
                                 "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -793,7 +793,7 @@
                                 "description": "Place a dine-in or takeaway order from the public QR menu.\n\nAuth: None",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
+                                    "raw": "{\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2154,6 +2154,65 @@
                             ]
                         },
                         {
+                            "name": "POST · settings/logo",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/settings/logo",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "settings",
+                                        "logo"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Upload the restaurant logo shown in tenant settings and on the public QR menu.\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"logo\": \"مثال\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "PATCH · settings",
                             "request": {
                                 "method": "PATCH",
@@ -2306,6 +2365,56 @@
                                     "query": []
                                 },
                                 "description": "Destroy — settings/districts/{district}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · settings/logo",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/settings/logo",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "settings",
+                                        "logo"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Remove the restaurant logo.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -6618,7 +6727,7 @@
                                 "description": "Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ]\n}",
+                                    "raw": "{\n    \"branch_id\": \"{{branch_id}}\",\n    \"floor_table_id\": \"{{table_id}}\",\n    \"channel\": \"dine_in\",\n    \"fulfillment_type\": \"dine_in\",\n    \"notes\": \"بدون بصل\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\",\n    \"delivery_fee\": 15.5,\n    \"customer_id\": \"{{customer_id}}\",\n    \"customer_address_id\": 1,\n    \"district_id\": 1,\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -6874,7 +6983,7 @@
                                 "description": "Store — orders/{order}/items\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"menu_item_id\": \"{{menu_item_id}}\",\n    \"package_id\": 1,\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\",\n    \"selections\": [\n        {\n            \"slot_id\": 1,\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1\n        }\n    ]\n}",
+                                    "raw": "{\n    \"menu_item_id\": \"{{menu_item_id}}\",\n    \"package_id\": 1,\n    \"quantity\": 2,\n    \"notes\": \"بدون بصل\",\n    \"menu_item_ids\": [],\n    \"slots\": [\n        {\n            \"slot_id\": 1,\n            \"id\": 1,\n            \"menu_item_id\": \"{{menu_item_id}}\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1\n        }\n    ],\n    \"selections\": [\n        {\n            \"slot_id\": 1,\n            \"id\": 1,\n            \"menu_item_id\": \"{{menu_item_id}}\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1\n        }\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -9793,7 +9902,7 @@
                                 "description": "Place a dine-in or takeaway order from the public QR menu.\n\nAuth: None",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
+                                    "raw": "{\n    \"coupon_code\": \"مثال\",\n    \"items\": [\n        {\n            \"menu_item_id\": 1,\n            \"package_id\": 1,\n            \"quantity\": 2,\n            \"notes\": \"كشري\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        },\n        {\n            \"menu_item_id\": 2,\n            \"package_id\": 1,\n            \"quantity\": 1,\n            \"notes\": \"فول\",\n            \"menu_item_ids\": [],\n            \"menu_item_ids.*\": 1,\n            \"slots\": [],\n            \"selections\": [],\n            \"selections.*.slot_id\": 1,\n            \"selections.*.id\": 1,\n            \"selections.*.menu_item_id\": 1,\n            \"selections.*.menu_item_ids\": [],\n            \"selections.*.menu_item_ids.*\": 1,\n            \"slots.*.slot_id\": 1,\n            \"slots.*.id\": 1,\n            \"slots.*.menu_item_id\": 1,\n            \"slots.*.menu_item_ids\": [],\n            \"slots.*.menu_item_ids.*\": 1\n        }\n    ],\n    \"customer_name\": \"أحمد محمود\",\n    \"customer_phone\": \"+201012345678\",\n    \"notes\": \"بدون بصل\",\n    \"table_label\": \"طاولة ٥\",\n    \"fulfillment_type\": \"takeaway\",\n    \"delivery_address\": \"١٢ شارع التحرير، الدقي، الجيزة\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -10149,7 +10258,7 @@
                                 "description": "Create a master ingredient. Pass branch_id to also open stock at that branch.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"branch_id\": \"{{branch_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"default_cost\": 45,\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
+                                    "raw": "{\n    \"ingredient_id\": \"{{ingredient_id}}\",\n    \"branch_id\": \"{{branch_id}}\",\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"\\\"kg\\\"\",\n    \"default_cost\": 45,\n    \"current_stock\": 25,\n    \"reorder_level\": 10,\n    \"unit_cost\": 45\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -10268,7 +10377,7 @@
                                 "description": "Update — inventory/ingredients/{ingredient}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"kg\",\n    \"default_cost\": 45,\n    \"is_active\": true\n}",
+                                    "raw": "{\n    \"name_ar\": \"كشري\",\n    \"name_en\": \"Koshary\",\n    \"unit\": \"\\\"kg\\\"\",\n    \"default_cost\": 45,\n    \"is_active\": true\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"

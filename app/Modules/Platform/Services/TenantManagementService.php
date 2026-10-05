@@ -337,6 +337,7 @@ class TenantManagementService
         return [
             'id' => $tenant->id,
             'name' => $tenant->name,
+            'logo_url' => $tenant->logoUrl(),
             'subdomain' => $tenant->subdomain,
             'custom_domain' => $tenant->custom_domain,
             'locale' => $tenant->locale,

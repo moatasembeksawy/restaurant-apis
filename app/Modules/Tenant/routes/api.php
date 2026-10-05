@@ -80,6 +80,8 @@ Route::middleware('permission:staff.manage')->group(function (): void {
 
 Route::get('settings', [TenantSettingsController::class, 'show']);
 Route::patch('settings', [TenantSettingsController::class, 'update']);
+Route::post('settings/logo', [TenantSettingsController::class, 'uploadLogo']);
+Route::delete('settings/logo', [TenantSettingsController::class, 'deleteLogo']);
 Route::get('settings/domain', [TenantSettingsController::class, 'domainStatus']);
 Route::post('settings/domain/verify', [TenantSettingsController::class, 'verifyDomain']);
 

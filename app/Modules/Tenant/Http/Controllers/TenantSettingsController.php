@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Http\Controllers;
 
 use App\Modules\Tenant\Http\Requests\UpdateTenantSettingsRequest;
+use App\Modules\Tenant\Http\Requests\UploadTenantLogoRequest;
 use App\Modules\Tenant\Http\Resources\DomainStatusResource;
 use App\Modules\Tenant\Http\Resources\TenantSettingsResource;
 use App\Modules\Tenant\Services\CustomDomainService;
@@ -13,6 +14,7 @@ use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\Exceptions\HttpResponseException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Routing\Controller;
 
 /**
@@ -47,6 +49,34 @@ class TenantSettingsController extends Controller
         }
 
         return ApiResponse::success(new TenantSettingsResource($result), 'Settings updated.');
+    }
+
+    public function uploadLogo(UploadTenantLogoRequest $request): JsonResponse
+    {
+        $this->authorizeOwner($request);
+
+        $logo = $request->file('logo');
+
+        if (! $logo instanceof UploadedFile) {
+            return ApiResponse::error('A logo image is required.', 'LOGO_INVALID', 422);
+        }
+
+        $result = $this->settings->uploadLogo(
+            tenant: app('tenant'),
+            logo: $logo,
+            updatedByUserId: $request->user()->id,
+        );
+
+        return ApiResponse::success(new TenantSettingsResource($result), 'Logo uploaded.');
+    }
+
+    public function deleteLogo(Request $request): JsonResponse
+    {
+        $this->authorizeOwner($request);
+
+        $result = $this->settings->deleteLogo(app('tenant'), $request->user()->id);
+
+        return ApiResponse::success(new TenantSettingsResource($result), 'Logo removed.');
     }
 
     public function domainStatus(Request $request): JsonResponse

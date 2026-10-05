@@ -6,7 +6,7 @@ Full API reference and Postman collection for the Restaurant SaaS backend.
 
 | File | Description |
 |------|-------------|
-| [API.md](./API.md) | Complete API reference (173 endpoints) with Arabic JSON examples |
+| [API.md](./API.md) | Complete API reference (207 endpoints) with Arabic JSON examples |
 | [postman/Restaurant-SaaS-API.postman_collection.json](./postman/Restaurant-SaaS-API.postman_collection.json) | Postman Collection v2.1 |
 | [postman/Restaurant-SaaS-Environment.postman_environment.json](./postman/Restaurant-SaaS-Environment.postman_environment.json) | Environment variables |
 

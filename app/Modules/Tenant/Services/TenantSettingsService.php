@@ -9,6 +9,7 @@ use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use App\Modules\Tenant\Subscription\Services\SubscriptionService;
 use App\Shared\Support\Audit\AuditLogger;
+use Illuminate\Http\UploadedFile;
 use InvalidArgumentException;
 
 class TenantSettingsService
@@ -26,6 +27,7 @@ class TenantSettingsService
 
         return [
             'name' => $tenant->name,
+            'logo_url' => $tenant->logoUrl(),
             'subdomain' => $tenant->subdomain,
             'custom_domain' => $tenant->custom_domain,
             'domain' => $this->domains->status($tenant),
@@ -114,6 +116,33 @@ class TenantSettingsService
                 'fields' => $auditFields,
             ]);
         }
+
+        return $this->show($tenant->fresh());
+    }
+
+    /** @return array<string, mixed> */
+    public function uploadLogo(Tenant $tenant, UploadedFile $logo, int $updatedByUserId): array
+    {
+        $tenant->clearMediaCollection('logo');
+        $media = $tenant->addMedia($logo)->toMediaCollection('logo');
+        $tenant->update(['logo_url' => $media->getUrl()]);
+
+        AuditLogger::log('tenant.logo_uploaded', $tenant->fresh(), [
+            'updated_by' => $updatedByUserId,
+        ]);
+
+        return $this->show($tenant->fresh());
+    }
+
+    /** @return array<string, mixed> */
+    public function deleteLogo(Tenant $tenant, int $updatedByUserId): array
+    {
+        $tenant->clearMediaCollection('logo');
+        $tenant->update(['logo_url' => null]);
+
+        AuditLogger::log('tenant.logo_deleted', $tenant->fresh(), [
+            'updated_by' => $updatedByUserId,
+        ]);
 
         return $this->show($tenant->fresh());
     }

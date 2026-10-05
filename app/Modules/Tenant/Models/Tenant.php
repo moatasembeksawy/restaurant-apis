@@ -12,10 +12,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class Tenant extends Model
+class Tenant extends Model implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     protected static function newFactory(): Factory
     {
@@ -24,6 +26,7 @@ class Tenant extends Model
 
     protected $fillable = [
         'name',
+        'logo_url',
         'subdomain',
         'custom_domain',
         'custom_domain_verification_token',
@@ -62,6 +65,22 @@ class Tenant extends Model
             'service_charge_rate' => 'decimal:2',
             'service_charge_applies_to' => 'array',
         ];
+    }
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('logo')->singleFile();
+    }
+
+    public function logoUrl(): ?string
+    {
+        $url = $this->getFirstMediaUrl('logo');
+
+        if ($url !== '') {
+            return $url;
+        }
+
+        return $this->logo_url;
     }
 
     // ── Plan limits ────────────────────────────────────────────────────────────
