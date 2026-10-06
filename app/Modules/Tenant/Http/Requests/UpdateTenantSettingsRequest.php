@@ -13,6 +13,7 @@ class UpdateTenantSettingsRequest extends ApiFormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'locale' => ['sometimes', 'in:ar,en'],
             'custom_domain' => ['nullable', 'string', 'max:255'],
             'whatsapp_phone_number_id' => ['nullable', 'string', 'max:50'],

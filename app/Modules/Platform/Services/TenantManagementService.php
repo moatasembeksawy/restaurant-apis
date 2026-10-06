@@ -60,7 +60,7 @@ class TenantManagementService
         $defaultBranch = Branch::query()
             ->where('tenant_id', $tenant->id)
             ->where('is_default', true)
-            ->first(['id', 'name', 'name_ar']);
+            ->first(['id', 'name', 'name_ar', 'description']);
 
         $ordersThisMonth = Order::query()
             ->where('tenant_id', $tenant->id)
@@ -87,6 +87,7 @@ class TenantManagementService
                 'id' => $defaultBranch->id,
                 'name' => $defaultBranch->name,
                 'name_ar' => $defaultBranch->name_ar,
+                'description' => $defaultBranch->description,
             ] : null,
             'subscription' => $tenant->subscription ? [
                 'id' => $tenant->subscription->id,
@@ -113,8 +114,10 @@ class TenantManagementService
             'owner_email' => $data['owner_email'],
             'owner_password' => $data['owner_password'],
             'owner_phone' => $data['owner_phone'] ?? null,
+            'description' => $data['description'] ?? null,
             'branch_name' => $data['branch_name'] ?? null,
             'branch_name_ar' => $data['branch_name_ar'] ?? null,
+            'branch_description' => $data['branch_description'] ?? null,
             'branch_address' => $data['branch_address'] ?? null,
             'branch_phone' => $data['branch_phone'] ?? null,
             'timezone' => $data['timezone'] ?? 'Africa/Cairo',
@@ -146,6 +149,10 @@ class TenantManagementService
             'locale' => $data['locale'] ?? null,
             'custom_domain' => array_key_exists('custom_domain', $data) ? $data['custom_domain'] : null,
         ], fn ($value) => $value !== null);
+
+        if (array_key_exists('description', $data)) {
+            $updates['description'] = $data['description'];
+        }
 
         if (isset($data['subdomain']) && $data['subdomain'] !== $tenant->subdomain) {
             $subdomain = strtolower($data['subdomain']);
@@ -337,6 +344,7 @@ class TenantManagementService
         return [
             'id' => $tenant->id,
             'name' => $tenant->name,
+            'description' => $tenant->description,
             'logo_url' => $tenant->logoUrl(),
             'subdomain' => $tenant->subdomain,
             'custom_domain' => $tenant->custom_domain,

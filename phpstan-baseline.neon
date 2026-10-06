@@ -259,36 +259,6 @@ parameters:
 			path: app/Modules/POS/Billing/Services/ETAService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$amount\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:invoice\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
-
-		-
-			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:isRefunded\(\)\.$#'
-			identifier: method.notFound
-			count: 1
-			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
-
-		-
-			message: '#^Method App\\Modules\\POS\\Billing\\Services\\PaymentSettlementService\:\:refund\(\) should return array\{refund\: App\\Modules\\POS\\Billing\\Models\\PaymentRefund, payment\: App\\Modules\\POS\\Billing\\Models\\Payment, order\: App\\Modules\\POS\\Orders\\Models\\Order\} but returns array\{refund\: App\\Modules\\POS\\Billing\\Models\\PaymentRefund, payment\: Illuminate\\Database\\Eloquent\\Model\|null, order\: App\\Modules\\POS\\Orders\\Models\\Order\|null\}\.$#'
-			identifier: return.type
-			count: 1
-			path: app/Modules/POS/Billing/Services/PaymentSettlementService.php
-
-		-
 			message: '#^Strict comparison using \=\=\= between ''active''\|''cancelled''\|''completed''\|''cooking''\|''paid''\|''pending''\|''ready'' and ''refunded'' will always evaluate to false\.$#'
 			identifier: identical.alwaysFalse
 			count: 1
@@ -299,18 +269,6 @@ parameters:
 			identifier: method.nonObject
 			count: 1
 			path: app/Modules/POS/Orders/Events/OrderItemReady.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/POS/Print/Http/Controllers/PrintController.php
-
-		-
-			message: '#^Parameter \#2 \$payment of method App\\Shared\\Infrastructure\\PrintJob\\EscPosBuilder\:\:buildReceipt\(\) expects App\\Modules\\POS\\Billing\\Models\\Payment, Illuminate\\Database\\Eloquent\\Model given\.$#'
-			identifier: argument.type
-			count: 1
-			path: app/Modules/POS/Print/Http/Controllers/PrintController.php
 
 		-
 			message: '#^Parameter \#1 \$paginator of static method App\\Shared\\Support\\Http\\Resources\\ApiResponse\:\:paginated\(\) expects Illuminate\\Pagination\\LengthAwarePaginator, Illuminate\\Contracts\\Pagination\\LengthAwarePaginator\<int, array\<string, mixed\>\> given\.$#'

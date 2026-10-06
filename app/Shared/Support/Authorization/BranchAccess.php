@@ -46,11 +46,11 @@ final class BranchAccess
         if ($model instanceof OrderItem) {
             $order = $model->order;
 
-            if ($order === null || $order->branch_id === null) {
+            if ($order === null) {
                 throw new BranchAccessDeniedException;
             }
 
-            self::assertCanAccess($user, (int) $order->branch_id);
+            self::assertCanAccess($user, $order->branch_id);
 
             return;
         }

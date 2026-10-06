@@ -186,6 +186,7 @@ class Order extends BaseModel
         return $this->belongsTo(User::class, 'rider_id');
     }
 
+    /** @return HasOne<Payment, $this> */
     public function payment(): HasOne
     {
         return $this->hasOne(Payment::class);

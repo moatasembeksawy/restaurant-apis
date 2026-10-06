@@ -40,6 +40,7 @@ class TenantOnboardingService
 
             $tenant = Tenant::create([
                 'name' => $data['restaurant_name'],
+                'description' => $data['description'] ?? null,
                 'subdomain' => $subdomain,
                 'locale' => $data['locale'] ?? 'ar',
                 'plan' => 'starter',
@@ -53,6 +54,7 @@ class TenantOnboardingService
                 'tenant_id' => $tenant->id,
                 'name' => $data['branch_name'] ?? 'Main Branch',
                 'name_ar' => $data['branch_name_ar'] ?? ($data['branch_name'] ?? 'الفرع الرئيسي'),
+                'description' => $data['branch_description'] ?? null,
                 'address' => $data['branch_address'] ?? null,
                 'phone' => $data['branch_phone'] ?? null,
                 'timezone' => $data['timezone'] ?? 'Africa/Cairo',

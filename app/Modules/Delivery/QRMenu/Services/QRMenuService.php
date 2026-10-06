@@ -127,6 +127,7 @@ class QRMenuService
             'menu_url' => $this->publicMenuUrl($table?->qr_token ?? $branch->qr_menu_token),
             'restaurant' => [
                 'name' => $tenant->name,
+                'description' => $tenant->description,
                 'locale' => $tenant->locale,
                 'logo_url' => $tenant->logoUrl(),
             ],
@@ -134,6 +135,7 @@ class QRMenuService
                 'id' => $branch->id,
                 'name' => $branch->name,
                 'name_ar' => $branch->name_ar,
+                'description' => $branch->description,
                 'address' => $branch->address,
                 'phone' => $branch->phone,
             ],

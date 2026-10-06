@@ -24,6 +24,7 @@ class TenantSeeder extends Seeder
             ['subdomain' => 'nile'],
             [
                 'name' => 'مطعم النيل',
+                'description' => 'مأكولات مصرية على ضفاف النيل.',
                 'locale' => 'ar',
                 'plan' => 'pro',
                 'status' => 'active',
@@ -38,6 +39,7 @@ class TenantSeeder extends Seeder
             [
                 'name' => 'Cairo Branch',
                 'name_ar' => 'فرع القاهرة',
+                'description' => 'الفرع الرئيسي في وسط القاهرة.',
                 'address' => '5 Tahrir Square, Cairo',
                 'phone' => '+20222345678',
                 'timezone' => 'Africa/Cairo',

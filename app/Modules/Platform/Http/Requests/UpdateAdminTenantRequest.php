@@ -13,6 +13,7 @@ class UpdateAdminTenantRequest extends ApiFormRequest
     {
         return [
             'name' => ['sometimes', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'subdomain' => ['sometimes', 'string', 'max:50', 'alpha_dash'],
             'locale' => ['sometimes', 'in:ar,en'],
             'custom_domain' => ['nullable', 'string', 'max:255'],

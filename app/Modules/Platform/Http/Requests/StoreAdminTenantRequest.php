@@ -13,6 +13,7 @@ class StoreAdminTenantRequest extends ApiFormRequest
     {
         return [
             'restaurant_name' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'subdomain' => ['nullable', 'string', 'max:50', 'alpha_dash'],
             'locale' => ['nullable', 'in:ar,en'],
             'owner_name' => ['required', 'string', 'max:100'],
@@ -21,6 +22,7 @@ class StoreAdminTenantRequest extends ApiFormRequest
             'owner_phone' => ['nullable', 'string', 'max:20'],
             'branch_name' => ['nullable', 'string', 'max:100'],
             'branch_name_ar' => ['nullable', 'string', 'max:100'],
+            'branch_description' => ['nullable', 'string', 'max:1000'],
             'branch_address' => ['nullable', 'string', 'max:255'],
             'branch_phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],

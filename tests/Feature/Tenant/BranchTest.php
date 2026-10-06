@@ -49,9 +49,11 @@ it('allows multiple branches on enterprise plan', function (): void {
         ->postJson('/api/v1/branches', [
             'name' => 'Alex Branch',
             'name_ar' => 'فرع الإسكندرية',
+            'description' => 'Seaside branch.',
         ])
         ->assertCreated()
-        ->assertJsonPath('data.name', 'Alex Branch');
+        ->assertJsonPath('data.name', 'Alex Branch')
+        ->assertJsonPath('data.description', 'Seaside branch.');
 
     expect(Branch::query()->count())->toBe(2);
 });
@@ -61,12 +63,14 @@ it('allows a branch to override tenant tax settings', function (): void {
 
     $this->withToken($this->token)
         ->patchJson("/api/v1/branches/{$this->branch->id}", [
+            'description' => 'Updated branch description.',
             'tax_rate' => 0,
             'tax_rate_applies_to' => ['dine_in'],
             'service_charge_rate' => 10,
             'service_charge_applies_to' => ['dine_in', 'takeaway'],
         ])
         ->assertOk()
+        ->assertJsonPath('data.description', 'Updated branch description.')
         ->assertJsonPath('data.tax_rate', '0.00')
         ->assertJsonPath('data.effective_tax_rate', 0)
         ->assertJsonPath('data.effective_tax_rate_applies_to', ['dine_in'])

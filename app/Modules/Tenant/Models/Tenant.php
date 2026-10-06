@@ -26,6 +26,7 @@ class Tenant extends Model implements HasMedia
 
     protected $fillable = [
         'name',
+        'description',
         'logo_url',
         'subdomain',
         'custom_domain',

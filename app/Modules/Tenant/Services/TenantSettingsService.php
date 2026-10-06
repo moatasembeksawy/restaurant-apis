@@ -27,6 +27,7 @@ class TenantSettingsService
 
         return [
             'name' => $tenant->name,
+            'description' => $tenant->description,
             'logo_url' => $tenant->logoUrl(),
             'subdomain' => $tenant->subdomain,
             'custom_domain' => $tenant->custom_domain,
@@ -59,6 +60,11 @@ class TenantSettingsService
         if (isset($data['name'])) {
             $updates['name'] = $data['name'];
             $auditFields[] = 'name';
+        }
+
+        if (array_key_exists('description', $data)) {
+            $updates['description'] = $data['description'];
+            $auditFields[] = 'description';
         }
 
         if (isset($data['locale'])) {

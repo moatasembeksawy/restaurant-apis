@@ -347,6 +347,7 @@ $requests = [
         RULES],
     ['namespace' => 'App\\Modules\\Platform\\Http\\Requests', 'class' => 'StoreAdminTenantRequest', 'rules' => <<<'RULES'
             'restaurant_name' => ['required', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'subdomain' => ['required', 'string', 'max:50', 'alpha_dash'],
             'locale' => ['nullable', 'in:ar,en'],
             'owner_name' => ['required', 'string', 'max:100'],
@@ -355,6 +356,7 @@ $requests = [
             'owner_phone' => ['nullable', 'string', 'max:20'],
             'branch_name' => ['nullable', 'string', 'max:100'],
             'branch_name_ar' => ['nullable', 'string', 'max:100'],
+            'branch_description' => ['nullable', 'string', 'max:1000'],
             'branch_address' => ['nullable', 'string', 'max:255'],
             'branch_phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],
@@ -363,6 +365,7 @@ $requests = [
         RULES],
     ['namespace' => 'App\\Modules\\Platform\\Http\\Requests', 'class' => 'UpdateAdminTenantRequest', 'rules' => <<<'RULES'
             'name' => ['sometimes', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'subdomain' => ['sometimes', 'string', 'max:50', 'alpha_dash'],
             'locale' => ['sometimes', 'in:ar,en'],
             'custom_domain' => ['nullable', 'string', 'max:255'],
@@ -383,6 +386,7 @@ $requests = [
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'StoreBranchRequest', 'rules' => <<<'RULES'
             'name' => ['required', 'string', 'max:100'],
             'name_ar' => ['required', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],
@@ -396,6 +400,7 @@ $requests = [
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateBranchRequest', 'rules' => <<<'RULES'
             'name' => ['sometimes', 'string', 'max:100'],
             'name_ar' => ['sometimes', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],
@@ -434,6 +439,7 @@ $requests = [
         RULES],
     ['namespace' => 'App\\Modules\\Tenant\\Http\\Requests', 'class' => 'UpdateTenantSettingsRequest', 'rules' => <<<'RULES'
             'name' => ['sometimes', 'string', 'max:150'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'locale' => ['sometimes', 'in:ar,en'],
             'custom_domain' => ['nullable', 'string', 'max:255'],
             'whatsapp_phone_number_id' => ['nullable', 'string', 'max:50'],

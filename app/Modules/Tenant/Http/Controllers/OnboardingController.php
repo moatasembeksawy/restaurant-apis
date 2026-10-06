@@ -48,6 +48,7 @@ class OnboardingController extends Controller
                 'tenant' => [
                     'id' => $tenant->id,
                     'name' => $tenant->name,
+                    'description' => $tenant->description,
                     'subdomain' => $tenant->subdomain,
                     'plan' => $tenant->plan,
                     'status' => $tenant->status,
@@ -60,6 +61,7 @@ class OnboardingController extends Controller
                     'id' => $result['branch']->id,
                     'name' => $result['branch']->name,
                     'name_ar' => $result['branch']->name_ar,
+                    'description' => $result['branch']->description,
                     'qr_menu_token' => $result['branch']->qr_menu_token,
                     'qr_menu_url' => $result['branch']->qrMenuUrl(),
                 ],

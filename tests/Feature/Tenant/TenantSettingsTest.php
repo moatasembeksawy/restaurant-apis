@@ -39,16 +39,19 @@ it('updates tenant settings', function (): void {
     $response = $this->withToken($this->token)
         ->patchJson('/api/v1/settings', [
             'name' => 'Updated Restaurant',
+            'description' => 'A riverside kitchen.',
             'locale' => 'en',
             'whatsapp_phone_number_id' => '999888',
             'talabat_webhook_secret' => 'secret-talabat',
         ])
         ->assertOk()
         ->assertJsonPath('data.name', 'Updated Restaurant')
+        ->assertJsonPath('data.description', 'A riverside kitchen.')
         ->assertJsonPath('data.locale', 'en')
         ->assertJsonPath('data.has_talabat_webhook_secret', true);
 
     expect($this->tenant->fresh()->name)->toBe('Updated Restaurant');
+    expect($this->tenant->fresh()->description)->toBe('A riverside kitchen.');
 });
 
 it('rejects duplicate custom domains', function (): void {

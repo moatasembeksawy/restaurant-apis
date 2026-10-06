@@ -18,11 +18,13 @@ beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create([
         'plan' => 'growth',
         'status' => 'active',
+        'description' => 'Nile kitchen.',
     ]);
 
     $this->branch = Branch::factory()->create([
         'tenant_id' => $this->tenant->id,
         'is_default' => true,
+        'description' => 'Downtown branch.',
     ]);
 
     $this->category = MenuCategory::factory()->create([
@@ -49,6 +51,8 @@ it('returns menu for a valid qr token', function (): void {
         ->assertOk()
         ->assertJsonPath('data.source', 'table')
         ->assertJsonPath('data.restaurant.name', $this->tenant->name)
+        ->assertJsonPath('data.restaurant.description', 'Nile kitchen.')
+        ->assertJsonPath('data.branch.description', 'Downtown branch.')
         ->assertJsonPath('data.table.name', $this->table->name)
         ->assertJsonStructure([
             'data' => ['source', 'menu_url', 'restaurant', 'branch', 'table', 'categories'],

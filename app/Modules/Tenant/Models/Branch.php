@@ -25,6 +25,7 @@ class Branch extends Model
         'tenant_id',
         'name',
         'name_ar',
+        'description',
         'address',
         'phone',
         'is_default',

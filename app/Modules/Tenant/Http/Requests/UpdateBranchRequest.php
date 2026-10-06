@@ -14,6 +14,7 @@ class UpdateBranchRequest extends ApiFormRequest
         return [
             'name' => ['sometimes', 'string', 'max:100'],
             'name_ar' => ['sometimes', 'string', 'max:100'],
+            'description' => ['nullable', 'string', 'max:1000'],
             'address' => ['nullable', 'string', 'max:255'],
             'phone' => ['nullable', 'string', 'max:20'],
             'timezone' => ['nullable', 'timezone'],

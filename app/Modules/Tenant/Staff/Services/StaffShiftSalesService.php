@@ -89,7 +89,7 @@ class StaffShiftSalesService
                 'package_id' => $row->package_id,
                 'name_ar' => $row->item_name_ar,
                 'quantity' => (int) $row->quantity,
-                'total' => round((float) $row->total, 2),
+                'total' => round((float) $row->getAttribute('total'), 2),
             ])
             ->all();
     }
