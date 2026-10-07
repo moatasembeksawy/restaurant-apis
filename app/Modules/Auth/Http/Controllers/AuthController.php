@@ -9,6 +9,7 @@ use App\Modules\Auth\Http\Requests\ForgotPasswordRequest;
 use App\Modules\Auth\Http\Requests\KitchenDeviceRequest;
 use App\Modules\Auth\Http\Requests\LoginRequest;
 use App\Modules\Auth\Http\Requests\ResetPasswordRequest;
+use App\Modules\Auth\Http\Requests\UpdatePasswordRequest;
 use App\Modules\Auth\Http\Resources\AuthenticatedUserResource;
 use App\Modules\Auth\Http\Resources\AuthTokenResource;
 use App\Modules\Auth\Services\AuthService;
@@ -171,6 +172,27 @@ class AuthController extends Controller
         }
 
         return ApiResponse::success(null, 'Password has been reset.');
+    }
+
+    /**
+     * Update password
+     *
+     * Change the authenticated user's password. Requires the current password.
+     * Other sessions are revoked; the current token stays valid.
+     */
+    public function updatePassword(UpdatePasswordRequest $request): JsonResponse
+    {
+        try {
+            $this->authService->updatePassword(
+                user: $request->user(),
+                currentPassword: $request->string('current_password')->toString(),
+                password: $request->string('password')->toString(),
+            );
+        } catch (\InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_CURRENT_PASSWORD', 422);
+        }
+
+        return ApiResponse::success(null, 'Password updated.');
     }
 
     public function verifyEmail(Request $request, EmailVerificationService $verification): JsonResponse

@@ -19,6 +19,7 @@ Route::post('auth/device/kitchen', [AuthController::class, 'kitchenLogin'])
 // ── Authenticated auth routes ──────────────────────────────────────────────────
 Route::middleware(['auth:sanctum', 'tenant'])->group(function (): void {
     Route::get('auth/me', [AuthController::class, 'me']);
+    Route::put('auth/password', [AuthController::class, 'updatePassword']);
     Route::delete('auth/token', [AuthController::class, 'logout']);
     Route::post('auth/email/verification-notification', [AuthController::class, 'sendVerificationNotification']);
 });

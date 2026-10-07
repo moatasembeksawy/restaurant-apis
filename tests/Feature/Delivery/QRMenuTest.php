@@ -46,6 +46,14 @@ beforeEach(function (): void {
     ]);
 });
 
+it('includes the category photo on the public menu', function (): void {
+    $this->category->update(['photo_url' => 'https://cdn.example/mains.jpg']);
+
+    $this->getJson("/api/v1/qr/{$this->table->qr_token}/menu")
+        ->assertOk()
+        ->assertJsonPath('data.categories.0.photo_url', 'https://cdn.example/mains.jpg');
+});
+
 it('returns menu for a valid qr token', function (): void {
     $this->getJson("/api/v1/qr/{$this->table->qr_token}/menu")
         ->assertOk()

@@ -6,6 +6,7 @@ namespace App\Modules\POS\Menu\Http\Controllers;
 
 use App\Modules\POS\Menu\Http\Requests\StoreMenuCategoryRequest;
 use App\Modules\POS\Menu\Http\Requests\UpdateMenuCategoryRequest;
+use App\Modules\POS\Menu\Http\Requests\UploadMenuCategoryPhotoRequest;
 use App\Modules\POS\Menu\Http\Resources\MenuCategoryResource;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Shared\Support\Authorization\BranchAccess;
@@ -23,7 +24,7 @@ class MenuCategoryController extends Controller
     public function index(Request $request): JsonResponse
     {
         $categories = MenuCategory::query()
-            ->with('availableItems')
+            ->with('availableItems', 'media')
             ->where('is_visible', true);
         BranchAccess::constrainNullable($categories, $request->user());
 
@@ -45,7 +46,7 @@ class MenuCategoryController extends Controller
 
     public function show(MenuCategory $category): JsonResponse
     {
-        return ApiResponse::success(new MenuCategoryResource($category->load('items')));
+        return ApiResponse::success(new MenuCategoryResource($category->load('items', 'media')));
     }
 
     public function update(UpdateMenuCategoryRequest $request, MenuCategory $category): JsonResponse
@@ -54,7 +55,24 @@ class MenuCategoryController extends Controller
 
         $category->update($validated);
 
-        return ApiResponse::success(new MenuCategoryResource($category), 'Category updated.');
+        return ApiResponse::success(new MenuCategoryResource($category->fresh()->load('media')), 'Category updated.');
+    }
+
+    public function uploadPhoto(UploadMenuCategoryPhotoRequest $request, MenuCategory $category): JsonResponse
+    {
+        $category->clearMediaCollection('photo');
+        $media = $category->addMediaFromRequest('photo')->toMediaCollection('photo');
+        $category->update(['photo_url' => $media->getUrl()]);
+
+        return ApiResponse::success(new MenuCategoryResource($category->fresh()->load('media')), 'Photo uploaded.');
+    }
+
+    public function deletePhoto(MenuCategory $category): JsonResponse
+    {
+        $category->clearMediaCollection('photo');
+        $category->update(['photo_url' => null]);
+
+        return ApiResponse::success(new MenuCategoryResource($category->fresh()), 'Photo removed.');
     }
 
     public function destroy(MenuCategory $category): Response

@@ -39,6 +39,8 @@ Route::middleware('permission:menu.view')->group(function (): void {
 Route::post('menu/categories', [MenuCategoryController::class, 'store'])->middleware('permission:menu.create');
 Route::match(['put', 'patch'], 'menu/categories/{category}', [MenuCategoryController::class, 'update'])->middleware('permission:menu.update');
 Route::delete('menu/categories/{category}', [MenuCategoryController::class, 'destroy'])->middleware('permission:menu.delete');
+Route::post('menu/categories/{category}/photo', [MenuCategoryController::class, 'uploadPhoto'])->middleware('permission:menu.update');
+Route::delete('menu/categories/{category}/photo', [MenuCategoryController::class, 'deletePhoto'])->middleware('permission:menu.update');
 Route::post('menu/items', [MenuItemController::class, 'store'])->middleware('permission:menu.create');
 Route::match(['put', 'patch'], 'menu/items/{item}', [MenuItemController::class, 'update'])->middleware('permission:menu.update');
 Route::delete('menu/items/{item}', [MenuItemController::class, 'destroy'])->middleware('permission:menu.delete');

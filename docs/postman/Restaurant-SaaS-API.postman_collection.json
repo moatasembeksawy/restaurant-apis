@@ -842,7 +842,7 @@
                                 "description": "Update — settings\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"description\": \"مثال\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -1424,7 +1424,7 @@
                                 "description": "Self-service restaurant onboarding. Creates tenant, owner account, and default branch. Subdomain is optional — auto-generated when omitted.\n\nAuth: None",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"restaurant_name\": \"مطعم النيل\",\n    \"subdomain\": \"nilerestaurant\",\n    \"locale\": \"ar\",\n    \"owner_name\": \"محمد أحمد\",\n    \"owner_email\": \"owner@nilerestaurant.eg\",\n    \"owner_password\": \"SecurePass123!\",\n    \"owner_phone\": \"+201012345678\",\n    \"branch_name\": \"فرع وسط البلد\",\n    \"branch_name_ar\": \"فرع وسط البلد\",\n    \"branch_address\": \"شارع قصر النيل، وسط البلد، القاهرة\",\n    \"branch_phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"kitchen_device_secret\": \"kitchen-secret-12345678\"\n}",
+                                    "raw": "{\n    \"restaurant_name\": \"مطعم النيل\",\n    \"description\": \"مثال\",\n    \"subdomain\": \"nilerestaurant\",\n    \"locale\": \"ar\",\n    \"owner_name\": \"محمد أحمد\",\n    \"owner_email\": \"owner@nilerestaurant.eg\",\n    \"owner_password\": \"SecurePass123!\",\n    \"owner_phone\": \"+201012345678\",\n    \"branch_name\": \"فرع وسط البلد\",\n    \"branch_name_ar\": \"فرع وسط البلد\",\n    \"branch_description\": \"مثال\",\n    \"branch_address\": \"شارع قصر النيل، وسط البلد، القاهرة\",\n    \"branch_phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"kitchen_device_secret\": \"kitchen-secret-12345678\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -1830,6 +1830,65 @@
                                     }
                                 }
                             }
+                        },
+                        {
+                            "name": "PUT · auth/password",
+                            "request": {
+                                "method": "PUT",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/auth/password",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "auth",
+                                        "password"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Update Password — auth/password\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"current_password\": \"SecurePass123!\",\n    \"password\": \"SecurePass123!\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
                         },
                         {
                             "name": "DELETE · Logout — revoke token",
@@ -2247,7 +2306,7 @@
                                 "description": "Update — settings\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"description\": \"مثال\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\",\n    \"whatsapp_phone_number_id\": \"+201012345678\",\n    \"talabat_webhook_secret\": \"kitchen-secret-12345678\",\n    \"elmenus_webhook_secret\": \"kitchen-secret-12345678\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2521,7 +2580,7 @@
                                 "description": "Store — branches\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"description\": \"مثال\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -2580,7 +2639,7 @@
                                 "description": "Update — branches/{branch}\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"is_active\": true,\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"name_ar\": \"كشري\",\n    \"description\": \"مثال\",\n    \"address\": \"منطقة المعادي، القاهرة\",\n    \"phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"is_active\": true,\n    \"tax_rate\": 14,\n    \"tax_rate_applies_to\": [\n        \"dine_in\",\n        \"takeaway\",\n        \"delivery\"\n    ],\n    \"service_charge_rate\": 12,\n    \"service_charge_applies_to\": [\n        \"dine_in\"\n    ]\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -3149,6 +3208,58 @@
                                     "query": []
                                 },
                                 "description": "Index — staff/shifts/{shift}/cash-movements\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "GET · staff/shifts/{shift}/items",
+                            "request": {
+                                "method": "GET",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/staff/shifts/{{shift_id}}/items",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "staff",
+                                        "shifts",
+                                        "{shift}",
+                                        "items"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Items — staff/shifts/{shift}/items\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -4228,6 +4339,67 @@
                             ]
                         },
                         {
+                            "name": "POST · menu/categories/{category}/photo",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/categories/{{category_id}}/photo",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "categories",
+                                        "{category}",
+                                        "photo"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Upload Photo — menu/categories/{category}/photo\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"photo\": \"مثال\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
                             "name": "PUT · menu/categories/{category}",
                             "request": {
                                 "method": "PUT",
@@ -4382,6 +4554,58 @@
                                     "query": []
                                 },
                                 "description": "Destroy — menu/categories/{category}\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "DELETE · menu/categories/{category}/photo",
+                            "request": {
+                                "method": "DELETE",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/menu/categories/{{category_id}}/photo",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "menu",
+                                        "categories",
+                                        "{category}",
+                                        "photo"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Delete Photo — menu/categories/{category}/photo\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -12428,7 +12652,50 @@
                                 "description": "Store — admin/tenants\n\nAuth: Admin Bearer token",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"restaurant_name\": \"مطعم النيل\",\n    \"subdomain\": \"nilerestaurant\",\n    \"locale\": \"ar\",\n    \"owner_name\": \"محمد أحمد\",\n    \"owner_email\": \"owner@nilerestaurant.eg\",\n    \"owner_password\": \"SecurePass123!\",\n    \"owner_phone\": \"+201012345678\",\n    \"branch_name\": \"فرع وسط البلد\",\n    \"branch_name_ar\": \"فرع وسط البلد\",\n    \"branch_address\": \"شارع قصر النيل، وسط البلد، القاهرة\",\n    \"branch_phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"plan\": \"starter\",\n    \"status\": \"active\"\n}",
+                                    "raw": "{\n    \"restaurant_name\": \"مطعم النيل\",\n    \"description\": \"مثال\",\n    \"subdomain\": \"nilerestaurant\",\n    \"locale\": \"ar\",\n    \"owner_name\": \"محمد أحمد\",\n    \"owner_email\": \"owner@nilerestaurant.eg\",\n    \"owner_password\": \"SecurePass123!\",\n    \"owner_phone\": \"+201012345678\",\n    \"branch_name\": \"فرع وسط البلد\",\n    \"branch_name_ar\": \"فرع وسط البلد\",\n    \"branch_description\": \"مثال\",\n    \"branch_address\": \"شارع قصر النيل، وسط البلد، القاهرة\",\n    \"branch_phone\": \"+201012345678\",\n    \"timezone\": \"Africa/Cairo\",\n    \"plan\": \"starter\",\n    \"status\": \"active\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        {
+                            "name": "POST · admin/tenants/{tenant}/financial-data",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{admin_token}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/admin/tenants/{{tenant_id}}/financial-data",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "admin",
+                                        "tenants",
+                                        "{tenant}",
+                                        "financial-data"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Purge Financial Data — admin/tenants/{tenant}/financial-data\n\nAuth: Admin Bearer token",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"confirm\": \"مثال\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"
@@ -12504,7 +12771,7 @@
                                 "description": "Update — admin/tenants/{tenant}\n\nAuth: Admin Bearer token",
                                 "body": {
                                     "mode": "raw",
-                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"subdomain\": \"nilerestaurant\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\"\n}",
+                                    "raw": "{\n    \"name\": \"Downtown Branch\",\n    \"description\": \"مثال\",\n    \"subdomain\": \"nilerestaurant\",\n    \"locale\": \"ar\",\n    \"custom_domain\": \"menu.nilerestaurant.com\"\n}",
                                     "options": {
                                         "raw": {
                                             "language": "json"

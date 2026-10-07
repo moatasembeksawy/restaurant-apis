@@ -10,10 +10,12 @@ use Database\Factories\MenuCategoryFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
 
-class MenuCategory extends BaseModel
+class MenuCategory extends BaseModel implements HasMedia
 {
-    use HasFactory;
+    use HasFactory, InteractsWithMedia;
 
     protected static function newFactory(): Factory
     {
@@ -26,9 +28,20 @@ class MenuCategory extends BaseModel
         'name_ar',
         'name_en',
         'description_ar',
+        'photo_url',
         'sort_order',
         'is_visible',
     ];
+
+    public function registerMediaCollections(): void
+    {
+        $this->addMediaCollection('photo')->singleFile();
+    }
+
+    public function photoUrl(): ?string
+    {
+        return $this->getFirstMediaUrl('photo') ?: $this->photo_url;
+    }
 
     protected function casts(): array
     {

@@ -60,3 +60,33 @@ it('deletes a menu item photo', function (): void {
 
     expect($this->item->fresh()->getMedia('photo'))->toHaveCount(0);
 });
+
+it('uploads a menu category photo', function (): void {
+    $category = MenuCategory::factory()->create(['tenant_id' => $this->tenant->id]);
+    $file = UploadedFile::fake()->image('mains.jpg');
+
+    $response = $this->withToken($this->token)
+        ->post("/api/v1/menu/categories/{$category->id}/photo", [
+            'photo' => $file,
+        ], ['Accept' => 'application/json'])
+        ->assertOk();
+
+    expect($response->json('data.photo_url'))->not->toBeNull();
+    expect($category->fresh()->getMedia('photo'))->toHaveCount(1);
+});
+
+it('deletes a menu category photo', function (): void {
+    $category = MenuCategory::factory()->create(['tenant_id' => $this->tenant->id]);
+    $file = UploadedFile::fake()->image('mains.jpg');
+
+    $this->withToken($this->token)
+        ->post("/api/v1/menu/categories/{$category->id}/photo", ['photo' => $file], ['Accept' => 'application/json'])
+        ->assertOk();
+
+    $this->withToken($this->token)
+        ->deleteJson("/api/v1/menu/categories/{$category->id}/photo")
+        ->assertOk()
+        ->assertJsonPath('data.photo_url', null);
+
+    expect($category->fresh()->getMedia('photo'))->toHaveCount(0);
+});

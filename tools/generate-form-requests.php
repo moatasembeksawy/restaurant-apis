@@ -203,6 +203,9 @@ $requests = [
     ['namespace' => 'App\\Modules\\POS\\Menu\\Http\\Requests', 'class' => 'UploadMenuItemPhotoRequest', 'rules' => <<<'RULES'
             'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
         RULES],
+    ['namespace' => 'App\\Modules\\POS\\Menu\\Http\\Requests', 'class' => 'UploadMenuCategoryPhotoRequest', 'rules' => <<<'RULES'
+            'photo' => ['required', 'image', 'mimes:jpeg,jpg,png,webp', 'max:5120'],
+        RULES],
     ['namespace' => 'App\\Modules\\POS\\Menu\\Http\\Requests', 'class' => 'StoreMenuCategoryRequest', 'rules' => <<<'RULES'
             'name_ar' => ['required', 'string', 'max:100'],
             'name_en' => ['nullable', 'string', 'max:100'],

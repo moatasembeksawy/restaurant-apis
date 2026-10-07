@@ -85,6 +85,7 @@ class QRMenuService
                 ->orWhere('branch_id', $branch->id))
             ->orderBy('sort_order')
             ->with([
+                'media',
                 'availableItems' => fn ($q) => $q->orderBy('sort_order'),
                 'availablePackages.slots.options.menuItem',
                 'availablePackages.slots.menuItem',
@@ -104,6 +105,7 @@ class QRMenuService
                     'id' => $cat->id,
                     'name_ar' => $cat->name_ar,
                     'name_en' => $cat->name_en,
+                    'photo_url' => $cat->photoUrl(),
                     'items' => $cat->availableItems->map(fn ($item) => [
                         'id' => $item->id,
                         'name_ar' => $item->name_ar,

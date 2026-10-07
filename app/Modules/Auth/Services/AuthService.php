@@ -9,6 +9,7 @@ use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Scopes\TenantScope;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
+use InvalidArgumentException;
 use Laravel\Sanctum\NewAccessToken;
 
 class AuthService
@@ -102,6 +103,31 @@ class AuthService
     public function revokeCurrentToken(User $user): void
     {
         $user->currentAccessToken()->delete();
+    }
+
+    /**
+     * Replace the authenticated user's password after verifying the current one.
+     * Other sessions are revoked; the current token stays valid.
+     *
+     * @throws InvalidArgumentException
+     */
+    public function updatePassword(User $user, string $currentPassword, string $password): void
+    {
+        if (! is_string($user->password) || ! Hash::check($currentPassword, $user->password)) {
+            throw new InvalidArgumentException('Current password is incorrect.');
+        }
+
+        $user->forceFill([
+            'password' => $password,
+        ])->save();
+
+        $currentTokenId = $user->currentAccessToken()?->getKey();
+
+        $user->tokens()
+            ->when($currentTokenId, fn ($query) => $query->whereKeyNot($currentTokenId))
+            ->delete();
+
+        AuditLogger::log('auth.password_updated', $user);
     }
 
     private function formatTokenResponse(User $user, NewAccessToken $token, bool $isDevice = false): array

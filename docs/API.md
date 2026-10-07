@@ -289,6 +289,31 @@ Me — auth/me
 
 ---
 
+#### `PUT` /api/v1/auth/password
+
+Update Password — auth/password
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `current_password` | `required, string` |
+| `password` | `required, string, min:8, max:100, confirmed, different:current_password` |
+
+```json
+{
+    "current_password": "SecurePass123!",
+    "password": "SecurePass123!"
+}
+```
+
+---
+
 #### `POST` /api/v1/auth/reset-password
 
 Reset Password — auth/reset-password
@@ -1732,6 +1757,40 @@ Update — menu/categories/{category}
     "description_ar": "مثال",
     "sort_order": 1,
     "is_visible": true
+}
+```
+
+---
+
+#### `DELETE` /api/v1/menu/categories/{category}/photo
+
+Delete Photo — menu/categories/{category}/photo
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** _None_
+- **Path params:** `{category}`
+
+---
+
+#### `POST` /api/v1/menu/categories/{category}/photo
+
+Upload Photo — menu/categories/{category}/photo
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `menu.update`
+- **Plan features:** _None_
+- **Path params:** `{category}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `photo` | `required, image, mimes:jpeg,jpg,png,webp, max:5120` |
+
+```json
+{
+    "photo": "مثال"
 }
 ```
 
@@ -3644,6 +3703,7 @@ Store — admin/tenants
 | Parameter | Rules |
 |-----------|-------|
 | `restaurant_name` | `required, string, max:150` |
+| `description` | `nullable, string, max:1000` |
 | `subdomain` | `nullable, string, max:50, alpha_dash` |
 | `locale` | `nullable, in:ar,en` |
 | `owner_name` | `required, string, max:100` |
@@ -3652,6 +3712,7 @@ Store — admin/tenants
 | `owner_phone` | `nullable, string, max:20` |
 | `branch_name` | `nullable, string, max:100` |
 | `branch_name_ar` | `nullable, string, max:100` |
+| `branch_description` | `nullable, string, max:1000` |
 | `branch_address` | `nullable, string, max:255` |
 | `branch_phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
@@ -3661,6 +3722,7 @@ Store — admin/tenants
 ```json
 {
     "restaurant_name": "مطعم النيل",
+    "description": "مثال",
     "subdomain": "nilerestaurant",
     "locale": "ar",
     "owner_name": "محمد أحمد",
@@ -3669,6 +3731,7 @@ Store — admin/tenants
     "owner_phone": "+201012345678",
     "branch_name": "فرع وسط البلد",
     "branch_name_ar": "فرع وسط البلد",
+    "branch_description": "مثال",
     "branch_address": "شارع قصر النيل، وسط البلد، القاهرة",
     "branch_phone": "+201012345678",
     "timezone": "Africa/Cairo",
@@ -3704,6 +3767,7 @@ Update — admin/tenants/{tenant}
 | Parameter | Rules |
 |-----------|-------|
 | `name` | `sometimes, string, max:150` |
+| `description` | `nullable, string, max:1000` |
 | `subdomain` | `sometimes, string, max:50, alpha_dash` |
 | `locale` | `sometimes, in:ar,en` |
 | `custom_domain` | `nullable, string, max:255` |
@@ -3711,6 +3775,7 @@ Update — admin/tenants/{tenant}
 ```json
 {
     "name": "Downtown Branch",
+    "description": "مثال",
     "subdomain": "nilerestaurant",
     "locale": "ar",
     "custom_domain": "menu.nilerestaurant.com"
@@ -3738,6 +3803,29 @@ Update Features — admin/tenants/{tenant}/features
 ```json
 {
     "feature_flags": []
+}
+```
+
+---
+
+#### `POST` /api/v1/admin/tenants/{tenant}/financial-data
+
+Purge Financial Data — admin/tenants/{tenant}/financial-data
+
+- **Auth:** Admin Bearer token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** `{tenant}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `confirm` | `required, string, max:50` |
+
+```json
+{
+    "confirm": "مثال"
 }
 ```
 
@@ -3858,6 +3946,7 @@ Store — branches
 |-----------|-------|
 | `name` | `required, string, max:100` |
 | `name_ar` | `required, string, max:100` |
+| `description` | `nullable, string, max:1000` |
 | `address` | `nullable, string, max:255` |
 | `phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
@@ -3872,6 +3961,7 @@ Store — branches
 {
     "name": "Downtown Branch",
     "name_ar": "كشري",
+    "description": "مثال",
     "address": "منطقة المعادي، القاهرة",
     "phone": "+201012345678",
     "timezone": "Africa/Cairo",
@@ -3905,6 +3995,7 @@ Update — branches/{branch}
 |-----------|-------|
 | `name` | `sometimes, string, max:100` |
 | `name_ar` | `sometimes, string, max:100` |
+| `description` | `nullable, string, max:1000` |
 | `address` | `nullable, string, max:255` |
 | `phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
@@ -3920,6 +4011,7 @@ Update — branches/{branch}
 {
     "name": "Downtown Branch",
     "name_ar": "كشري",
+    "description": "مثال",
     "address": "منطقة المعادي، القاهرة",
     "phone": "+201012345678",
     "timezone": "Africa/Cairo",
@@ -4190,6 +4282,7 @@ Update — settings
 | Parameter | Rules |
 |-----------|-------|
 | `name` | `sometimes, string, max:150` |
+| `description` | `nullable, string, max:1000` |
 | `locale` | `sometimes, in:ar,en` |
 | `custom_domain` | `nullable, string, max:255` |
 | `whatsapp_phone_number_id` | `nullable, string, max:50` |
@@ -4205,6 +4298,7 @@ Update — settings
 ```json
 {
     "name": "Downtown Branch",
+    "description": "مثال",
     "locale": "ar",
     "custom_domain": "menu.nilerestaurant.com",
     "whatsapp_phone_number_id": "+201012345678",
@@ -4642,6 +4736,17 @@ Store — staff/shifts/{shift}/cash-movements
 
 ---
 
+#### `GET` /api/v1/staff/shifts/{shift}/items
+
+Items — staff/shifts/{shift}/items
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `shifts.view`
+- **Plan features:** `staff_shifts`
+- **Path params:** `{shift}`
+
+---
+
 #### `GET` /api/v1/staff/{staff}
 
 Show — staff/{staff}
@@ -4841,6 +4946,7 @@ Self-service restaurant onboarding. Creates tenant, owner account, and default b
 | Parameter | Rules |
 |-----------|-------|
 | `restaurant_name` | `required, string, max:150` |
+| `description` | `nullable, string, max:1000` |
 | `subdomain` | `nullable, string, max:50, alpha_dash` |
 | `locale` | `nullable, in:ar,en` |
 | `owner_name` | `required, string, max:100` |
@@ -4849,6 +4955,7 @@ Self-service restaurant onboarding. Creates tenant, owner account, and default b
 | `owner_phone` | `nullable, string, max:20` |
 | `branch_name` | `nullable, string, max:100` |
 | `branch_name_ar` | `nullable, string, max:100` |
+| `branch_description` | `nullable, string, max:1000` |
 | `branch_address` | `nullable, string, max:255` |
 | `branch_phone` | `nullable, string, max:20` |
 | `timezone` | `nullable, timezone` |
@@ -4857,6 +4964,7 @@ Self-service restaurant onboarding. Creates tenant, owner account, and default b
 ```json
 {
     "restaurant_name": "مطعم النيل",
+    "description": "مثال",
     "subdomain": "nilerestaurant",
     "locale": "ar",
     "owner_name": "محمد أحمد",
@@ -4865,6 +4973,7 @@ Self-service restaurant onboarding. Creates tenant, owner account, and default b
     "owner_phone": "+201012345678",
     "branch_name": "فرع وسط البلد",
     "branch_name_ar": "فرع وسط البلد",
+    "branch_description": "مثال",
     "branch_address": "شارع قصر النيل، وسط البلد، القاهرة",
     "branch_phone": "+201012345678",
     "timezone": "Africa/Cairo",
