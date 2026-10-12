@@ -12,3 +12,5 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command(ProcessSubscriptionsCommand::class)->daily();
+
+Schedule::command('telescope:prune --hours='.(int) config('telescope.prune_hours', 48))->daily();
