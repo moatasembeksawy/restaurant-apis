@@ -29,8 +29,6 @@ class TenantSettingsController extends Controller
 
     public function show(Request $request): JsonResponse
     {
-        $this->authorizeOwner($request);
-
         return ApiResponse::success(new TenantSettingsResource($this->settings->show(app('tenant'))));
     }
 

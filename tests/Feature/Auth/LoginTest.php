@@ -11,6 +11,7 @@ use Laravel\Sanctum\PersonalAccessToken;
 beforeEach(function (): void {
     $this->tenant = Tenant::factory()->create([
         'subdomain' => 'test-restaurant',
+        'logo_url' => 'https://cdn.example.com/logo.png',
         'plan' => 'pro',
         'status' => 'active',
     ]);
@@ -44,11 +45,12 @@ it('allows an owner to login with email and password', function (): void {
                 'token_type',
                 'abilities',
                 'user' => ['id', 'name', 'role', 'tenant_id'],
-                'tenant' => ['id', 'name', 'plan', 'qr_menu_token', 'qr_menu_url'],
+                'tenant' => ['id', 'name', 'logo_url', 'plan', 'qr_menu_token', 'qr_menu_url'],
             ],
         ])
         ->assertJsonPath('data.token_type', 'Bearer')
         ->assertJsonPath('data.user.role', 'owner')
+        ->assertJsonPath('data.tenant.logo_url', 'https://cdn.example.com/logo.png')
         ->assertJsonPath('data.tenant.qr_menu_token', $this->branch->fresh()->qr_menu_token);
 });
 
@@ -85,8 +87,9 @@ it('returns me endpoint with correct structure when authenticated', function ():
         ->getJson('/api/v1/auth/me')
         ->assertOk()
         ->assertJsonStructure([
-            'data' => ['id', 'name', 'email', 'role', 'abilities', 'tenant' => ['qr_menu_token', 'qr_menu_url'], 'branch' => ['qr_menu_token', 'qr_menu_url']],
+            'data' => ['id', 'name', 'email', 'role', 'abilities', 'tenant' => ['logo_url', 'qr_menu_token', 'qr_menu_url'], 'branch' => ['qr_menu_token', 'qr_menu_url']],
         ])
+        ->assertJsonPath('data.tenant.logo_url', 'https://cdn.example.com/logo.png')
         ->assertJsonPath('data.tenant.qr_menu_token', $this->branch->qr_menu_token)
         ->assertJsonPath('data.branch.qr_menu_token', $this->branch->qr_menu_token);
 });

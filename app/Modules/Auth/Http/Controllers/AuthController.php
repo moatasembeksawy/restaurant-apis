@@ -128,6 +128,7 @@ class AuthController extends Controller
                 'id' => $user->tenant->id,
                 'name' => $user->tenant->name,
                 'description' => $user->tenant->description,
+                'logo_url' => $user->tenant->logoUrl(),
                 'plan' => $user->tenant->plan,
                 'status' => $user->tenant->status,
                 'locale' => $user->tenant->locale,

@@ -35,6 +35,22 @@ it('shows tenant settings for owner', function (): void {
     expect($response->json('data.qr_menu_url'))->toEndWith("/api/v1/qr/{$this->branch->qr_menu_token}/menu");
 });
 
+it('shows tenant settings and logo for cashier', function (): void {
+    $this->tenant->update(['logo_url' => 'https://cdn.example.com/logo.png']);
+    $cashier = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'role' => 'cashier',
+        'is_active' => true,
+    ]);
+
+    $this->withToken($cashier->createToken('test')->plainTextToken)
+        ->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('data.name', $this->tenant->name)
+        ->assertJsonPath('data.logo_url', 'https://cdn.example.com/logo.png');
+});
+
 it('updates tenant settings', function (): void {
     $response = $this->withToken($this->token)
         ->patchJson('/api/v1/settings', [

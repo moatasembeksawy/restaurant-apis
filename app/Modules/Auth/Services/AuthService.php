@@ -150,6 +150,7 @@ class AuthService
                 'id' => $user->tenant->id,
                 'name' => $user->tenant->name,
                 'description' => $user->tenant->description,
+                'logo_url' => $user->tenant->logoUrl(),
                 'plan' => $user->tenant->plan,
                 'locale' => $user->tenant->locale,
                 'qr_menu_token' => $user->branch?->qr_menu_token,
