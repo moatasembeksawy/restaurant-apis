@@ -63,6 +63,56 @@ it('assigns a rider to a delivery order', function (): void {
     expect($this->order->fresh()->rider_id)->toBe($this->rider->id);
 });
 
+it('bulk assigns delivery orders to a rider', function (): void {
+    $secondOrder = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'pending',
+        'status' => 'active',
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/deliveries/bulk-assign', [
+            'rider_id' => $this->rider->id,
+            'order_ids' => [$this->order->id, $secondOrder->id],
+        ])
+        ->assertOk()
+        ->assertJsonCount(2, 'data');
+
+    expect($this->order->fresh())
+        ->rider_id->toBe($this->rider->id)
+        ->delivery_status->toBe('assigned')
+        ->and($secondOrder->fresh())
+        ->rider_id->toBe($this->rider->id)
+        ->delivery_status->toBe('assigned');
+});
+
+it('does not partially bulk assign when an order is unavailable', function (): void {
+    $assignedOrder = Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'assigned',
+        'rider_id' => $this->rider->id,
+        'status' => 'active',
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/deliveries/bulk-assign', [
+            'rider_id' => $this->rider->id,
+            'order_ids' => [$this->order->id, $assignedOrder->id],
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'DELIVERY_ERROR');
+
+    expect($this->order->fresh()->rider_id)->toBeNull();
+});
+
 it('updates delivery status through lifecycle', function (): void {
     $this->order->update(['delivery_status' => 'assigned', 'rider_id' => $this->rider->id]);
 
@@ -227,6 +277,38 @@ it('filters unassigned deliveries by branch', function (): void {
         ->assertOk()
         ->assertJsonCount(1, 'data')
         ->assertJsonPath('data.0.id', $this->order->id);
+});
+
+it('shows every rider with taken and unpaid orders', function (): void {
+    $this->order->update([
+        'rider_id' => $this->rider->id,
+        'delivery_status' => 'assigned',
+        'total' => 125.50,
+    ]);
+
+    Order::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'customer_id' => $this->customer->id,
+        'channel' => 'own_delivery',
+        'fulfillment_type' => 'delivery',
+        'delivery_status' => 'delivered',
+        'rider_id' => $this->rider->id,
+        'status' => 'paid',
+        'total' => 80,
+    ]);
+
+    $this->withToken($this->token)
+        ->getJson('/api/v1/riders/order-summary')
+        ->assertOk()
+        ->assertJsonCount(1, 'data')
+        ->assertJsonPath('data.0.rider.id', $this->rider->id)
+        ->assertJsonPath('data.0.orders_taken_count', 2)
+        ->assertJsonPath('data.0.unpaid_orders_count', 1)
+        ->assertJsonPath('data.0.unpaid_amount', 125.5)
+        ->assertJsonCount(2, 'data.0.orders')
+        ->assertJsonCount(1, 'data.0.unpaid_orders')
+        ->assertJsonPath('data.0.unpaid_orders.0.id', $this->order->id);
 });
 
 it('rejects rider assignment for dine-in orders', function (): void {

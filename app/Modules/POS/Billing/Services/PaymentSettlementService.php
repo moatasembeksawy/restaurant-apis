@@ -127,6 +127,7 @@ class PaymentSettlementService
                 'discount_value' => $validated['discount_value'] ?? null,
                 'discount_reason' => $validated['discount_reason'] ?? null,
                 'reference' => $validated['reference'] ?? null,
+                'client_payment_id' => $validated['client_payment_id'] ?? null,
                 'order_id' => $order->id,
                 'cashier_id' => $cashier->id,
                 'staff_shift_id' => $staffShiftId,
@@ -320,7 +321,7 @@ class PaymentSettlementService
             }
 
             if ($tenant->hasFeature('inventory')) {
-                $this->stock->restoreForOrder($order->load('items'), $refundedBy);
+                $this->stock->recordRefundAsWaste($order->load('items'), $refundedBy);
             }
 
             if ($tenant->hasFeature('loyalty') && $order->customer_id) {

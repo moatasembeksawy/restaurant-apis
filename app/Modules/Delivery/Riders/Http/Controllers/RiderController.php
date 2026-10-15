@@ -6,7 +6,9 @@ namespace App\Modules\Delivery\Riders\Http\Controllers;
 
 use App\Models\User;
 use App\Modules\Delivery\Riders\Http\Requests\AssignRiderRequest;
+use App\Modules\Delivery\Riders\Http\Requests\BulkAssignRiderRequest;
 use App\Modules\Delivery\Riders\Http\Requests\IndexRiderDeliveryRequest;
+use App\Modules\Delivery\Riders\Http\Requests\IndexRiderOrderSummaryRequest;
 use App\Modules\Delivery\Riders\Http\Requests\IndexRiderRequest;
 use App\Modules\Delivery\Riders\Http\Requests\IndexUnassignedDeliveryRequest;
 use App\Modules\Delivery\Riders\Http\Requests\UpdateDeliveryStatusRequest;
@@ -51,6 +53,27 @@ class RiderController extends Controller
             $order = $this->delivery->assignRider($order, $rider);
 
             return ApiResponse::success(new OrderResource($order), 'Rider assigned.');
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'DELIVERY_ERROR', 422);
+        }
+    }
+
+    public function bulkAssign(BulkAssignRiderRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $rider = User::query()->findOrFail($validated['rider_id']);
+
+        try {
+            $orders = $this->delivery->bulkAssignRider(
+                array_map('intval', $validated['order_ids']),
+                $rider,
+                $request->user(),
+            );
+
+            return ApiResponse::success(
+                OrderResource::collection($orders),
+                $orders->count().' orders assigned.',
+            );
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'DELIVERY_ERROR', 422);
         }
@@ -116,5 +139,47 @@ class RiderController extends Controller
             ->paginate((int) ($validated['per_page'] ?? 25));
 
         return ApiResponse::paginated($orders, OrderResource::class);
+    }
+
+    /**
+     * Every active rider with all assigned orders and the subset still unpaid.
+     */
+    public function orderSummary(IndexRiderOrderSummaryRequest $request): JsonResponse
+    {
+        $validated = $request->validated();
+        $branchId = BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null);
+
+        $riders = User::query()
+            ->where('role', 'rider')
+            ->where('is_active', true)
+            ->when($branchId, fn ($query, $id) => $query->where('branch_id', $id))
+            ->get(['id', 'name', 'phone', 'branch_id']);
+
+        $orders = Order::query()
+            ->where('fulfillment_type', 'delivery')
+            ->whereIn('rider_id', $riders->pluck('id'))
+            ->where('status', '!=', 'cancelled')
+            ->with(['items', 'customer', 'district', 'customerAddress', 'rider', 'payment.splits'])
+            ->latest()
+            ->get()
+            ->groupBy('rider_id');
+
+        $data = $riders->map(function (User $rider) use ($orders, $request): array {
+            $riderOrders = $orders->get($rider->id, collect());
+            $unpaidOrders = $riderOrders
+                ->whereNotIn('status', ['paid', 'refunded'])
+                ->values();
+
+            return [
+                'rider' => (new RiderResource($rider))->resolve($request),
+                'orders_taken_count' => $riderOrders->count(),
+                'unpaid_orders_count' => $unpaidOrders->count(),
+                'unpaid_amount' => round((float) $unpaidOrders->sum('total'), 2),
+                'orders' => OrderResource::collection($riderOrders->values())->resolve($request),
+                'unpaid_orders' => OrderResource::collection($unpaidOrders)->resolve($request),
+            ];
+        })->values();
+
+        return ApiResponse::success($data);
     }
 }

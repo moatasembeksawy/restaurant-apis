@@ -85,7 +85,7 @@ it('deducts stock when order is paid', function (): void {
     expect(StockMovement::query()->where('type', 'sale')->count())->toBe(1);
 });
 
-it('receives purchase order and increases stock', function (): void {
+it('checks a received purchase order before completing it into stock', function (): void {
     $manager = User::factory()->create([
         'tenant_id' => $this->tenant->id,
         'branch_id' => $this->branch->id,
@@ -112,13 +112,53 @@ it('receives purchase order and increases stock', function (): void {
 
     $response->assertCreated();
     $poId = $response->json('data.id');
+    $itemId = $response->json('data.items.0.id');
+
+    $printResponse = $this->withToken($managerToken)
+        ->getJson("/api/v1/inventory/purchase-orders/{$poId}/print")
+        ->assertOk()
+        ->assertJsonPath('data.format', 'escpos');
+
+    expect(base64_decode($printResponse->json('data.bytes'), true))
+        ->toContain('PURCHASE ORDER')
+        ->toContain("PO #{$poId}");
+
+    $receivedItems = [
+        [
+            'purchase_order_item_id' => $itemId,
+            'received_quantity' => 4.5,
+            'unit_cost' => 23,
+        ],
+    ];
 
     $this->withToken($managerToken)
-        ->postJson("/api/v1/inventory/purchase-orders/{$poId}/receive")
+        ->postJson("/api/v1/inventory/purchase-orders/{$poId}/receive", ['items' => $receivedItems])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'INVALID_PO_STATUS');
+
+    $this->withToken($managerToken)
+        ->postJson("/api/v1/inventory/purchase-orders/{$poId}/submit")
         ->assertOk();
 
-    expect((float) $this->ingredient->fresh()->current_stock)->toBe(15.0);
-    expect(PurchaseOrder::find($poId)->status)->toBe('received');
+    $this->withToken($managerToken)
+        ->postJson("/api/v1/inventory/purchase-orders/{$poId}/receive", ['items' => $receivedItems])
+        ->assertOk()
+        ->assertJsonPath('data.status', 'received')
+        ->assertJsonPath('data.received_total', '103.50');
+
+    expect((float) $this->ingredient->fresh()->current_stock)->toBe(10.0);
+
+    $this->withToken($managerToken)
+        ->postJson("/api/v1/inventory/purchase-orders/{$poId}/complete")
+        ->assertOk()
+        ->assertJsonPath('data.status', 'completed');
+
+    expect((float) $this->ingredient->fresh()->current_stock)->toBe(14.5);
+    expect(PurchaseOrder::find($poId)->status)->toBe('completed');
+    expect((float) StockMovement::query()
+        ->where('reference_id', $poId)
+        ->where('type', 'purchase')
+        ->value('quantity'))->toBe(4.5);
 });
 
 it('deducts the destination branch stock row for a shared ingredient', function (): void {

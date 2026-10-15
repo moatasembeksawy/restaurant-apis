@@ -11,6 +11,7 @@ use App\Modules\POS\Billing\Http\Resources\ReportResource;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
+use App\Modules\Tenant\Finance\Services\ItemCostAllocationService;
 use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Carbon\Carbon;
@@ -22,6 +23,10 @@ use Illuminate\Routing\Controller;
  */
 class ReportController extends Controller
 {
+    public function __construct(
+        private readonly ItemCostAllocationService $itemCosts,
+    ) {}
+
     public function daily(DailyReportRequest $request): JsonResponse
     {
         $validated = $request->validated();
@@ -96,12 +101,14 @@ class ReportController extends Controller
         $limit = (int) ($validated['limit'] ?? 10);
         $branchId = BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null);
 
+        $allocation = $this->itemCosts->summarize($branchId, $startDate, $endDate);
+
         $items = OrderItem::query()
             ->whereNull('parent_id')
             ->whereHas('order', fn ($q) => $q
                 ->where('status', 'paid')
                 ->whereBetween('created_at', [$startDate, $endDate])
-                ->when($branchId, fn ($q2, $id) => $q2->where('branch_id', $id))
+                ->when($branchId !== null, fn ($q2) => $q2->where('branch_id', $branchId))
             )
             ->with('menuItem:id,name_ar,price,cost_price')
             ->selectRaw('menu_item_id, package_id, item_name_ar, SUM(quantity) as total_qty, SUM(subtotal) as total_revenue')
@@ -109,19 +116,32 @@ class ReportController extends Controller
             ->orderByDesc('total_qty')
             ->limit($limit)
             ->get()
-            ->map(fn ($item) => [
-                'menu_item_id' => $item->menu_item_id,
-                'package_id' => $item->package_id,
-                'name_ar' => $item->item_name_ar ?: $item->menuItem?->name_ar,
-                'total_qty' => (int) $item->total_qty,
-                'total_revenue' => round((float) $item->total_revenue, 2),
-                'profit_margin' => $item->menuItem?->profitMargin(),
-            ])
+            ->map(function ($item) use ($allocation) {
+                $quantity = (float) $item->total_qty;
+                $revenue = round((float) $item->total_revenue, 2);
+                $costs = $this->itemCosts->pricedLine(
+                    (float) (data_get($item, 'menuItem.cost_price') ?? 0),
+                    $quantity,
+                    $revenue,
+                    (float) $allocation['overhead_per_unit'],
+                );
+
+                return [
+                    'menu_item_id' => $item->menu_item_id,
+                    'package_id' => $item->package_id,
+                    'name_ar' => $item->item_name_ar ?: $item->menuItem?->name_ar,
+                    'total_qty' => (int) $quantity,
+                    'total_revenue' => $revenue,
+                    'profit_margin' => $item->menuItem?->profitMargin(),
+                    ...$costs,
+                ];
+            })
             ->values()
             ->all();
 
         return ApiResponse::success(new ReportResource([
             'items' => $items,
+            'item_cost' => $allocation,
         ]));
     }
 

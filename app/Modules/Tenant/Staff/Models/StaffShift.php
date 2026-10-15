@@ -7,6 +7,8 @@ namespace App\Modules\Tenant\Staff\Models;
 use App\Models\User;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Billing\Models\PaymentRefund;
+use App\Modules\POS\Orders\Models\Order;
+use App\Modules\Tenant\BusinessDays\Models\BusinessDay;
 use App\Modules\Tenant\Finance\Models\CashMovement;
 use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
@@ -18,6 +20,7 @@ class StaffShift extends BaseModel
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'business_day_id',
         'user_id',
         'clock_in',
         'clock_out',
@@ -48,6 +51,17 @@ class StaffShift extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function businessDay(): BelongsTo
+    {
+        return $this->belongsTo(BusinessDay::class);
+    }
+
+    /** @return HasMany<Order, $this> */
+    public function orders(): HasMany
+    {
+        return $this->hasMany(Order::class);
     }
 
     /** @return HasMany<Payment, $this> */

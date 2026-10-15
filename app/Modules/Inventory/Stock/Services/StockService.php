@@ -12,6 +12,7 @@ use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\Tenant\BusinessDays\Models\BusinessDay;
 use App\Shared\Support\Audit\AuditLogger;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
@@ -45,6 +46,7 @@ class StockService
         ?Model $reference = null,
         ?int $branchId = null,
         ?string $adjustmentDirection = null,
+        ?int $businessDayId = null,
     ): StockMovement {
         if ($quantity <= 0) {
             throw new InvalidArgumentException('Quantity must be greater than zero.');
@@ -54,8 +56,15 @@ class StockService
             throw new InvalidArgumentException("Invalid movement type: {$type}");
         }
 
-        return DB::transaction(function () use ($stock, $type, $quantity, $user, $unitCost, $notes, $reference, $branchId, $adjustmentDirection): StockMovement {
+        return DB::transaction(function () use ($stock, $type, $quantity, $user, $unitCost, $notes, $reference, $branchId, $adjustmentDirection, $businessDayId): StockMovement {
             $stock = InventoryStock::query()->lockForUpdate()->findOrFail($stock->id);
+            $movementBranchId = $branchId ?? $stock->branch_id;
+            $businessDayId ??= $reference instanceof Order
+                ? $reference->business_day_id
+                : BusinessDay::query()
+                    ->where('branch_id', $movementBranchId)
+                    ->where('status', BusinessDay::STATUS_OPEN)
+                    ->value('id');
 
             $signedQty = match ($type) {
                 'adjustment' => $adjustmentDirection === 'out' ? -$quantity : $quantity,
@@ -70,7 +79,8 @@ class StockService
 
             $movement = StockMovement::create([
                 'ingredient_id' => $stock->ingredient_id,
-                'branch_id' => $branchId ?? $stock->branch_id,
+                'branch_id' => $movementBranchId,
+                'business_day_id' => $businessDayId,
                 'user_id' => $user?->id,
                 'type' => $type,
                 'quantity' => $quantity,
@@ -82,9 +92,17 @@ class StockService
 
             $stock->update(['current_stock' => $newStock]);
 
-            if ($type === 'purchase' && $unitCost !== null) {
-                $this->updateWeightedAverageCost($stock->fresh() ?? $stock, $quantity, $unitCost);
-                $this->refreshMenuItemsCostForIngredient($stock->ingredient_id);
+            if ($unitCost !== null && in_array($type, ['purchase', 'transfer_in'], true)) {
+                $this->updateWeightedAverageCost(
+                    $stock->fresh() ?? $stock,
+                    $quantity,
+                    $unitCost,
+                    syncIngredientDefault: $type === 'purchase',
+                );
+
+                if ($type === 'purchase') {
+                    $this->refreshMenuItemsCostForIngredient($stock->ingredient_id);
+                }
             }
 
             AuditLogger::log("inventory.{$type}", $movement, [
@@ -148,15 +166,21 @@ class StockService
         });
     }
 
-    public function restoreForOrder(Order $order, ?User $user = null): void
+    public function recordRefundAsWaste(Order $order, ?User $user = null): void
     {
         if (StockMovement::query()
             ->where('reference_type', Order::class)
             ->where('reference_id', $order->id)
-            ->where('type', 'refund')
+            ->where('type', 'waste')
             ->exists()) {
             return;
         }
+
+        $refundAlreadyRecorded = StockMovement::query()
+            ->where('reference_type', Order::class)
+            ->where('reference_id', $order->id)
+            ->where('type', 'refund')
+            ->exists();
 
         $saleMovements = StockMovement::query()
             ->where('reference_type', Order::class)
@@ -168,7 +192,7 @@ class StockService
             return;
         }
 
-        DB::transaction(function () use ($saleMovements, $order, $user): void {
+        DB::transaction(function () use ($saleMovements, $order, $user, $refundAlreadyRecorded): void {
             foreach ($saleMovements as $movement) {
                 $stockRow = $this->ingredients->stockAtBranch(
                     (int) $movement->ingredient_id,
@@ -179,33 +203,111 @@ class StockService
                     continue;
                 }
 
+                if (! $refundAlreadyRecorded) {
+                    $this->recordMovement(
+                        stock: $stockRow,
+                        type: 'refund',
+                        quantity: (float) $movement->quantity,
+                        user: $user,
+                        reference: $order,
+                        branchId: $movement->branch_id,
+                        notes: "Refund for order #{$order->id}",
+                    );
+                }
+
                 $this->recordMovement(
-                    stock: $stockRow,
-                    type: 'refund',
+                    stock: $stockRow->fresh() ?? $stockRow,
+                    type: 'waste',
                     quantity: (float) $movement->quantity,
                     user: $user,
                     reference: $order,
                     branchId: $movement->branch_id,
-                    notes: "Refund for order #{$order->id}",
+                    notes: "Refunded prepared order #{$order->id}",
                 );
             }
         });
     }
 
-    public function receivePurchaseOrder(PurchaseOrder $purchaseOrder, ?User $user = null): PurchaseOrder
+    /**
+     * @param  array<int, array{purchase_order_item_id: int, received_quantity: float|int|string, unit_cost: float|int|string}>  $items
+     */
+    public function receivePurchaseOrder(PurchaseOrder $purchaseOrder, array $items, ?User $user = null): PurchaseOrder
     {
-        if ($purchaseOrder->status === 'received') {
-            throw new InvalidArgumentException('Purchase order already received.');
-        }
+        DB::transaction(function () use ($purchaseOrder, $items, $user): void {
+            $purchaseOrder = PurchaseOrder::query()
+                ->lockForUpdate()
+                ->with('items')
+                ->findOrFail($purchaseOrder->id);
 
-        if (! in_array($purchaseOrder->status, ['draft', 'ordered'])) {
-            throw new InvalidArgumentException('Purchase order cannot be received.');
-        }
+            if ($purchaseOrder->status !== 'ordered') {
+                throw new InvalidArgumentException('Only ordered purchase orders can be received.');
+            }
 
-        DB::transaction(function () use ($purchaseOrder, $user): void {
-            $purchaseOrder->load('items.ingredient');
+            $submitted = collect($items)->keyBy(
+                fn (array $item): int => (int) $item['purchase_order_item_id'],
+            );
+            $expectedIds = $purchaseOrder->items->pluck('id')->map(fn ($id): int => (int) $id)->sort()->values();
+            $submittedIds = $submitted->keys()->map(fn ($id): int => (int) $id)->sort()->values();
+
+            if ($expectedIds->all() !== $submittedIds->all()) {
+                throw new InvalidArgumentException('Received quantities must be provided for every purchase order item.');
+            }
+
+            $receivedTotal = 0.0;
+            $receivedQuantity = 0.0;
 
             foreach ($purchaseOrder->items as $line) {
+                /** @var array{received_quantity: float|int|string, unit_cost: float|int|string} $received */
+                $received = $submitted->get($line->id);
+                $quantity = (float) $received['received_quantity'];
+                $unitCost = (float) $received['unit_cost'];
+                $subtotal = round($quantity * $unitCost, 2);
+
+                $line->update([
+                    'received_quantity' => $quantity,
+                    'received_unit_cost' => $unitCost,
+                    'received_subtotal' => $subtotal,
+                ]);
+
+                $receivedQuantity += $quantity;
+                $receivedTotal += $subtotal;
+            }
+
+            if ($receivedQuantity <= 0) {
+                throw new InvalidArgumentException('At least one received quantity must be greater than zero.');
+            }
+
+            $purchaseOrder->update([
+                'status' => 'received',
+                'received_by_id' => $user?->id,
+                'received_total' => round($receivedTotal, 2),
+                'received_at' => now(),
+            ]);
+        });
+
+        return $purchaseOrder->fresh(['items', 'supplier']);
+    }
+
+    public function completePurchaseOrder(PurchaseOrder $purchaseOrder, ?User $user = null): PurchaseOrder
+    {
+        DB::transaction(function () use ($purchaseOrder, $user): void {
+            $purchaseOrder = PurchaseOrder::query()
+                ->lockForUpdate()
+                ->with('items.ingredient')
+                ->findOrFail($purchaseOrder->id);
+
+            if ($purchaseOrder->status !== 'received') {
+                throw new InvalidArgumentException('Only received purchase orders can be completed.');
+            }
+
+            foreach ($purchaseOrder->items as $line) {
+                $quantity = (float) $line->received_quantity;
+
+                if ($quantity <= 0) {
+                    continue;
+                }
+
+                $unitCost = (float) $line->received_unit_cost;
                 $stockRow = $this->ingredients->stockAtBranch(
                     (int) $line->ingredient_id,
                     $purchaseOrder->branch_id,
@@ -216,16 +318,16 @@ class StockService
                         'ingredient_id' => $line->ingredient_id,
                         'branch_id' => $purchaseOrder->branch_id,
                         'current_stock' => 0,
-                        'unit_cost' => $line->unit_cost,
+                        'unit_cost' => $unitCost,
                     ]);
                 }
 
                 $this->recordMovement(
                     stock: $stockRow,
                     type: 'purchase',
-                    quantity: (float) $line->quantity,
+                    quantity: $quantity,
                     user: $user,
-                    unitCost: (float) $line->unit_cost,
+                    unitCost: $unitCost,
                     reference: $purchaseOrder,
                     branchId: $purchaseOrder->branch_id,
                     notes: "PO #{$purchaseOrder->id}",
@@ -233,8 +335,9 @@ class StockService
             }
 
             $purchaseOrder->update([
-                'status' => 'received',
-                'received_at' => now(),
+                'status' => 'completed',
+                'completed_by_id' => $user?->id,
+                'completed_at' => now(),
             ]);
         });
 
@@ -345,8 +448,12 @@ class StockService
             ->each(fn (MenuItem $item) => $this->syncMenuItemCostPrice($item));
     }
 
-    private function updateWeightedAverageCost(InventoryStock $stock, float $incomingQty, float $incomingCost): void
-    {
+    private function updateWeightedAverageCost(
+        InventoryStock $stock,
+        float $incomingQty,
+        float $incomingCost,
+        bool $syncIngredientDefault = true,
+    ): void {
         $currentStock = (float) $stock->current_stock - $incomingQty;
 
         if ($currentStock <= 0) {
@@ -360,6 +467,11 @@ class StockService
         }
 
         $stock->refresh();
+
+        if (! $syncIngredientDefault) {
+            return;
+        }
+
         $ingredient = $stock->ingredient;
 
         if ($ingredient instanceof Ingredient) {

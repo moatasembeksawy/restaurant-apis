@@ -21,6 +21,7 @@ class OrderResource extends ModelResource
         }
 
         return [
+            'daily_number' => $this->resource->business_day_order_number,
             'district_delivery_fee' => $district !== null ? (float) $district->delivery_fee : null,
             'payment' => $payment !== null
                 ? (new PaymentResource($payment))->resolve($request)

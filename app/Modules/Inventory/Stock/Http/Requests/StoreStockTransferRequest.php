@@ -17,7 +17,7 @@ class StoreStockTransferRequest extends ApiFormRequest
             'ingredient_id' => ['required_without:items', 'integer'],
             'quantity' => ['required_without:items', 'numeric', 'min:0.001'],
             'items' => ['required_without:ingredient_id', 'array', 'min:1'],
-            'items.*.ingredient_id' => ['required', 'integer'],
+            'items.*.ingredient_id' => ['required', 'integer', 'distinct'],
             'items.*.quantity' => ['required', 'numeric', 'min:0.001'],
             'notes' => ['nullable', 'string', 'max:255'],
         ];

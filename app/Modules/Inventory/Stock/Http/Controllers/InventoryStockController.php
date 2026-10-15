@@ -31,6 +31,9 @@ class InventoryStockController extends Controller
     public function index(IndexInventoryStockRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $this->ingredients->ensureVisible(
+            branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
+        );
 
         $rows = InventoryStock::query()
             ->with('ingredient:id,sku,name_ar,name_en,unit');

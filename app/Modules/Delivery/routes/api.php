@@ -22,7 +22,9 @@ Route::middleware('feature:customers')->group(function (): void {
 Route::middleware('feature:riders')->group(function (): void {
     Route::get('riders', [RiderController::class, 'index']);
     Route::get('riders/deliveries', [RiderController::class, 'myDeliveries']);
+    Route::get('riders/order-summary', [RiderController::class, 'orderSummary']);
     Route::get('deliveries/unassigned', [RiderController::class, 'unassigned']);
+    Route::post('deliveries/bulk-assign', [RiderController::class, 'bulkAssign']);
     Route::post('orders/{order}/assign-rider', [RiderController::class, 'assign']);
     Route::patch('orders/{order}/delivery-status', [RiderController::class, 'updateDeliveryStatus']);
 });

@@ -40,6 +40,7 @@ class OrderController extends Controller
         BranchAccess::constrain($orders, $request->user(), $validated['branch_id'] ?? null);
 
         $orders = $orders
+            ->when($validated['business_day_id'] ?? null, fn ($q, $id) => $q->where('business_day_id', $id))
             ->when($validated['table_id'] ?? null, fn ($q, $id) => $q->where('floor_table_id', $id))
             ->when($validated['channel'] ?? null, fn ($q, $c) => $q->where('channel', $c))
             ->when($validated['fulfillment_type'] ?? null, fn ($q, $type) => $q->where('fulfillment_type', $type))

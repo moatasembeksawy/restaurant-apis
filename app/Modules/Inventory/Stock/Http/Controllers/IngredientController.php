@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Stock\Http\Controllers;
 
+use App\Models\User;
 use App\Modules\Inventory\Stock\Http\Requests\IndexIngredientRequest;
 use App\Modules\Inventory\Stock\Http\Requests\StoreIngredientRequest;
 use App\Modules\Inventory\Stock\Http\Requests\UpdateIngredientRequest;
 use App\Modules\Inventory\Stock\Http\Resources\IngredientResource;
 use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\Inventory\Stock\Services\IngredientService;
+use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Routing\Controller;
@@ -25,6 +27,13 @@ class IngredientController extends Controller
     public function index(IndexIngredientRequest $request): JsonResponse
     {
         $validated = $request->validated();
+        $user = $request->user();
+
+        if ($user instanceof User) {
+            $this->ingredients->ensureVisible(
+                branchId: BranchAccess::filterBranchId($user, $validated['branch_id'] ?? null),
+            );
+        }
 
         $items = Ingredient::query()
             ->with([
@@ -56,7 +65,9 @@ class IngredientController extends Controller
                     defaultCost: isset($validated['default_cost'])
                         ? (float) $validated['default_cost']
                         : (isset($validated['unit_cost']) ? (float) $validated['unit_cost'] : null),
-                )->load([
+                );
+                $this->ingredients->ensureVisible($ingredient);
+                $ingredient->load([
                     'stocks' => fn ($q) => $q->orderBy('branch_id')->with('branch:id,name,name_ar'),
                 ]);
             }
@@ -69,6 +80,7 @@ class IngredientController extends Controller
 
     public function show(Ingredient $ingredient): JsonResponse
     {
+        $this->ingredients->ensureVisible($ingredient);
         $ingredient->load([
             'stocks' => fn ($q) => $q->orderBy('branch_id')->with('branch:id,name,name_ar'),
         ]);

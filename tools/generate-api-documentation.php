@@ -39,12 +39,48 @@ const ERROR_CODES = [
     ['402', 'FEATURE_NOT_AVAILABLE', 'Plan does not include required feature'],
     ['402', 'PLAN_LIMIT_EXCEEDED', 'Plan limit reached (branches, users, orders)'],
     ['422', 'VALIDATION_ERROR', 'Request validation failed (includes field)'],
+    ['422', 'ORDER_VALIDATION_FAILED', 'An offline or online order failed business validation'],
     ['422', 'INGREDIENT_ERROR', 'Ingredient catalog missing, already stocked at that branch, or identity update failed'],
+    ['422', 'STOCK_TRANSFER_FAILED', 'Invalid transfer state, quantity, or insufficient source stock'],
+    ['404', 'NO_OPEN_BUSINESS_DAY', 'No open business day exists for the requested branch'],
+    ['422', 'BUSINESS_DAY_OPEN_FAILED', 'A business day is already open for this branch'],
+    ['422', 'BUSINESS_DAY_CLOSE_FAILED', 'Shifts or open orders still exist, or the day is already closed'],
+    ['422', 'STOCK_RETURN_FAILED', 'Remaining stock could not be returned to main inventory'],
     ['400', 'ERROR', 'Generic client error'],
     ['400', 'TENANT_REQUIRED', 'X-Tenant-Subdomain header required'],
+    ['401', 'HUB_UNAUTHENTICATED', 'Missing or invalid X-Hub-Token on a LAN hub route'],
+    ['404', 'HUB_DISABLED', 'LAN POS hub is not enabled on this server'],
+    ['404', 'HUB_SNAPSHOT_MISSING', 'No catalog snapshot is cached on the LAN hub yet'],
+    ['422', 'HUB_VALIDATION_FAILED', 'A LAN hub operation referenced a missing local order'],
+    ['422', 'HUB_CLOUD_NOT_CONFIGURED', 'POS_HUB_CLOUD_URL or POS_HUB_CLOUD_TOKEN is missing'],
+    ['422', 'ITEM_COST_ALLOCATION_FAILED', 'The item-cost period is invalid'],
+    ['502', 'HUB_CLOUD_SYNC_FAILED', 'The LAN hub could not upload operations to the cloud'],
 ];
 
-const WEBHOOK_BODIES = [
+const REQUEST_BODY_OVERRIDES = [
+    'api/v1/offline/sync' => [
+        'branch_id' => '{{branch_id}}',
+        'device_id' => '{{offline_device_id}}',
+        'operations' => [
+            [
+                'operation_id' => '{{offline_operation_id}}',
+                'type' => 'order.created',
+                'occurred_at' => '2026-10-15T14:00:00Z',
+                'payload' => [
+                    'client_order_id' => '{{offline_client_order_id}}',
+                    'channel' => 'dine_in',
+                    'fulfillment_type' => 'takeaway',
+                    'items' => [
+                        [
+                            'menu_item_id' => '{{menu_item_id}}',
+                            'quantity' => 2,
+                            'notes' => 'Created while offline',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ],
     'api/v1/webhook/paymob' => ['type' => 'TRANSACTION', 'obj' => ['id' => 123456, 'success' => true, 'amount_cents' => 15000]],
     'api/v1/webhook/fawry' => ['merchantRefNumber' => 'ORD-001', 'paymentStatus' => 'PAID', 'paymentAmount' => 150.00],
     'api/v1/webhook/aggregators/talabat' => ['external_id' => 'TBL-998877', 'status' => 'new', 'items' => [['name' => 'كشري', 'quantity' => 2, 'price' => 45.00]]],
@@ -67,21 +103,136 @@ const WEBHOOK_BODIES = [
     ],
 ];
 
+const ACTION_BODY_OVERRIDES = [
+    'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@bulkAssign' => [
+        'rider_id' => '{{rider_id}}',
+        'order_ids' => ['{{order_id}}'],
+    ],
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => [
+        'from_branch_id' => '{{source_branch_id}}',
+        'to_branch_id' => '{{destination_branch_id}}',
+        'items' => [
+            ['ingredient_id' => '{{ingredient_id}}', 'quantity' => 5],
+        ],
+        'notes' => 'Replenishment request',
+    ],
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => [
+        'items' => [
+            ['ingredient_id' => '{{ingredient_id}}', 'quantity' => 5],
+        ],
+    ],
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => [
+        'items' => [
+            ['ingredient_id' => '{{ingredient_id}}', 'quantity' => 5],
+        ],
+    ],
+    'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@receive' => [
+        'items' => [
+            [
+                'purchase_order_item_id' => '{{purchase_order_item_id}}',
+                'received_quantity' => 5,
+                'unit_cost' => 12.5,
+            ],
+        ],
+    ],
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@open' => [
+        'branch_id' => '{{branch_id}}',
+        'notes' => 'Morning open',
+    ],
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@close' => [
+        'notes' => 'End of day',
+    ],
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@waste' => [
+        'ingredient_id' => '{{ingredient_id}}',
+        'quantity' => 1.5,
+        'reason' => 'Spoilage',
+    ],
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@returnStock' => [
+        'to_branch_id' => '{{destination_branch_id}}',
+        'return_remaining' => true,
+        'notes' => 'Return leftover kitchen stock',
+    ],
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@store' => [
+        'branch_id' => '{{branch_id}}',
+        'name' => 'Dining room hub',
+    ],
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@heartbeat' => [
+        'lan_url' => 'http://192.168.1.20:7744',
+    ],
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@storeSnapshot' => [
+        'snapshot' => [
+            'schema_version' => 2,
+            'menu_items' => [
+                ['id' => '{{menu_item_id}}', 'name_ar' => 'كشري', 'price' => 50],
+            ],
+        ],
+    ],
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@markItemReady' => [
+        'client_order_id' => '{{offline_client_order_id}}',
+        'device_id' => '{{offline_device_id}}',
+        'operation_id' => '{{offline_operation_id}}',
+    ],
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@publish' => [
+        'device_id' => '{{offline_device_id}}',
+        'role' => 'pos',
+        'operations' => [
+            [
+                'operation_id' => '{{offline_operation_id}}',
+                'type' => 'order.created',
+                'occurred_at' => '2026-10-15T14:00:00Z',
+                'payload' => [
+                    'client_order_id' => '{{offline_client_order_id}}',
+                    'channel' => 'dine_in',
+                    'items' => [
+                        [
+                            'client_item_id' => '{{offline_client_item_id}}',
+                            'menu_item_id' => '{{menu_item_id}}',
+                            'quantity' => 1,
+                            'item_name_ar' => 'كشري',
+                        ],
+                    ],
+                ],
+            ],
+        ],
+    ],
+];
+
 const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Tenant\\Http\\Controllers\\OnboardingController@register' => 'Self-service restaurant onboarding. Creates tenant, owner account, and default branch. Subdomain is optional — auto-generated when omitted.',
-    'App\\Modules\\Auth\\Http\\Controllers\\AuthController@deviceLogin' => 'Branch-scoped PIN login for waiters and cashiers. Requires tenant resolution via header or subdomain host.',
+    'App\\Modules\\Auth\\Http\\Controllers\\AuthController@deviceLogin' => 'Branch-scoped PIN login for waiters and cashiers. Issues a 7-day token so a POS tablet can keep working through overnight internet outages. Requires tenant resolution via header or subdomain host.',
     'App\\Modules\\Auth\\Http\\Controllers\\AuthController@kitchenLogin' => 'Kitchen display device login using a shared branch secret.',
     'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@myDeliveries' => 'Active assigned deliveries (assigned, picked_up, en_route). Riders see their own jobs. Staff see all in-progress deliveries; optional rider_id and branch_id filters.',
     'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@unassigned' => 'Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.',
+    'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@bulkAssign' => 'Atomically assign up to 100 pending delivery orders to one active rider. The rider and every order must belong to the same branch; if any order is unavailable, none are assigned.',
+    'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@orderSummary' => 'List every active rider with all non-cancelled assigned orders, plus unpaid order count, unpaid amount, and unpaid order details. Unpaid excludes paid and refunded orders. Optional branch_id filter.',
     'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@show' => 'Public QR menu for a table token. No authentication required.',
     'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => 'Place a dine-in or takeaway order from the public QR menu.',
     'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@store' => 'Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@bootstrap' => 'Download the branch snapshot required by an offline POS: pricing, menu, packages, offers, tables, districts, staff, printers, open orders, current shift, business day, and LAN hub discovery URLs. Store the returned cursor for later incremental downloads. The hub token is never included.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@changes' => 'Download catalog and order records changed after the given cursor. Call this after a successful sync so the device picks up updates from other terminals.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@sync' => 'Upload up to 100 queued offline operations. Supported types: order.created, order.item_added, order.item_updated, order.item_removed, order.status_changed, order.item_ready, and payment.recorded (cash only). Reuse operation_id and client UUIDs when retrying. Business-rule failures return disposition rejected while remaining operations continue.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@show' => 'Return the registered LAN hub for a branch, including the last advertised LAN URL. The plaintext token is never returned after create.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@store' => 'Register or rotate the branch LAN hub. The plaintext X-Hub-Token is returned only once; store it on the branch mini-PC as POS_HUB_TOKEN.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@heartbeat' => 'Advertise the hub LAN URL while online so POS and kitchen tablets can discover it from bootstrap.lan_hub.urls.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@health' => 'Unauthenticated discovery ping for POS and kitchen tablets on the restaurant LAN. No Sanctum token and no internet required.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@snapshot' => 'Read the catalog snapshot cached on the LAN hub so tablets can start a shift without the cloud.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@storeSnapshot' => 'POS uploads the latest GET /offline/bootstrap payload to the hub while internet is available.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@publish' => 'POS or kitchen appends idempotent operations to the LAN event log. Kitchen displays poll GET /hub/events?after={id}.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@events' => 'Poll new LAN events after a cursor. Kitchen uses this instead of Reverb when the internet is down.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@kitchenQueue' => 'Projected kitchen tickets from the local event log. Display local_number, never client UUIDs, to staff.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@markItemReady' => 'Kitchen marks a line done. Writes order.item_ready onto the LAN log so POS updates immediately.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@cloudSync' => 'Upload pending hub operations to POST /offline/sync when the internet returns. Same as php artisan pos:hub:sync.',
     'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@settle' => 'Settle payment for an open order (cash, card, Vodafone Cash, split, etc.).',
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientController@index' => 'Master ingredients (one row per SKU). Includes each branch stock row, total_stock, and branch_count.',
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientController@store' => 'Create a master ingredient. Pass branch_id to also open stock at that branch.',
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\InventoryStockController@index' => 'Current quantity per branch. Filter by branch_id or ingredient_id.',
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\InventoryStockController@store' => 'Open existing master ingredient stock at a branch.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Move master ingredients between branches. Accepts a single ingredient_id+quantity or items[]. Missing destination stock is created automatically.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@index' => 'List transfers visible to the authenticated branch. Filter by branch and lifecycle status: pending, in_transit, completed, or cancelled.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Destination branch requests ingredients from a source branch. This creates a pending document and does not change stock.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@show' => 'Get one transfer with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => 'Source branch sends a pending transfer. Deducts sent quantities from source stock and changes status to in_transit. Omit items to send all requested quantities.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => 'Destination branch confirms an in-transit transfer. Adds received quantities to destination stock and changes status to completed. Omit items to receive all sent quantities.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@cancel' => 'Cancel a pending transfer from either participating branch. Sent transfers cannot be cancelled.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@verifyDomain' => 'Verify custom domain DNS configuration for white-label access.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@uploadLogo' => 'Upload the restaurant logo shown in tenant settings and on the public QR menu.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@deleteLogo' => 'Remove the restaurant logo.',
@@ -89,11 +240,22 @@ const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Tenant\\Districts\\Http\\Controllers\\DistrictController@store' => 'Create a delivery district with a fee for a specific branch. Owners and managers only. The same district name can exist on another branch with a different fee.',
     'App\\Modules\\Delivery\\Customers\\Http\\Controllers\\CustomerAddressController@index' => 'List a customer\'s saved addresses. Each address includes its district and delivery_fee.',
     'App\\Modules\\Delivery\\Customers\\Http\\Controllers\\CustomerAddressController@store' => 'Add an address for a customer. The district fee is returned for POS to display and can be overridden on the order.',
-    'App\\Modules\\Tenant\\Staff\\Http\\Controllers\\StaffShiftController@clockIn' => 'Clock in staff member for the current shift.',
+    'App\\Modules\\Tenant\\Staff\\Http\\Controllers\\StaffShiftController@clockIn' => 'Clock in staff member for the current shift. Attaches the shift to the open business day, or opens one automatically.',
     'App\\Modules\\Tenant\\Staff\\Http\\Controllers\\StaffShiftController@clockOut' => 'Clock out staff member and close the active shift.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@index' => 'List recent business days. Filter by branch, open/closed status, or business date.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@current' => 'Get the currently open business day for a branch. Pass branch_id; cashiers default to their assigned branch.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@show' => 'Get one business day, including opening stock and the frozen closing summary after close.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@open' => 'Open a trading day for a branch. Captures opening ingredient stock and resets daily order numbers to 1. Only one open day is allowed per branch.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@close' => 'Close the trading day after every shift is clocked out and every order is paid, refunded, or cancelled. Freezes the sales, payment, shift, and inventory report.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@report' => 'Live day report while open: orders, payments by method, sold items, shifts, remaining ingredients, waste, and stock returned to main inventory. After close this returns the frozen summary.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@remainingStock' => 'List remaining ingredient quantities for the business day. After close this returns the frozen remaining snapshot.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@waste' => 'Record wasted ingredients against the open business day and deduct them from branch stock.',
+    'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@returnStock' => 'Send leftover kitchen stock back to main inventory. Pass items, or return_remaining=true to send every remaining quantity. Requires a warehouse/HQ branch and the multi-branch plan.',
     'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@store' => 'Create a draft purchase order for a supplier.',
     'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@submit' => 'Submit purchase order to supplier for fulfillment.',
-    'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@receive' => 'Receive goods against a submitted purchase order.',
+    'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@print' => 'Return base64-encoded ESC/POS bytes for printing the purchase list before buying.',
+    'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@receive' => 'Check a submitted purchase order by recording every actual received quantity and unit cost. Stock is not changed yet.',
+    'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@complete' => 'Complete a checked purchase order and add its verified received quantities to inventory.',
     'App\\Modules\\Platform\\Http\\Controllers\\AdminTenantController@impersonate' => 'Issue a short-lived tenant token for platform admin impersonation.',
 ];
 
@@ -349,6 +511,15 @@ function resolveAuth(array $middleware): array
         return ['label' => 'Bearer token', 'type' => 'bearer', 'headers' => ['Authorization' => 'Bearer {{tenant_token}}']];
     }
 
+    $hasHubToken = str_contains($joined, 'AuthenticatePosHub') || str_contains($joined, 'hub.token');
+    if ($hasHubToken) {
+        return [
+            'label' => 'X-Hub-Token',
+            'type' => 'hub_token',
+            'headers' => ['X-Hub-Token' => '{{offline_hub_token}}'],
+        ];
+    }
+
     return ['label' => 'None', 'type' => 'none', 'headers' => []];
 }
 
@@ -533,6 +704,10 @@ function exampleValue(string $field, array $rules, int $depth = 0): mixed
         'tax_rate_applies_to' => ['dine_in', 'takeaway', 'delivery'],
         'service_charge_rate' => 12,
         'service_charge_applies_to' => ['dine_in'],
+        'cursor' => '2026-10-15T14:00:00Z',
+        'occurred_at' => '2026-10-15T14:00:00Z',
+        'after' => 0,
+        'lan_url' => 'http://192.168.1.20:7744',
     ];
 
     if (isset($exact[$key])) {
@@ -662,6 +837,13 @@ function jsonPretty(mixed $data): string
     return $json ?: '{}';
 }
 
+function exampleBodyForEndpoint(array $endpoint, array $rules): mixed
+{
+    return ACTION_BODY_OVERRIDES[$endpoint['action_key']]
+        ?? REQUEST_BODY_OVERRIDES[$endpoint['uri']]
+        ?? buildExamplePayload($rules);
+}
+
 // ── Markdown generation ──────────────────────────────────────────────────────
 
 /** @param list<array<string, mixed>> $endpoints */
@@ -699,7 +881,7 @@ Supported locales: `ar` (Arabic, default for Egypt) and `en`.
 
 ### Device login (waiter / cashier / kitchen)
 
-- `POST /auth/device/login` — PIN + branch, requires tenant header
+- `POST /auth/device/login` — PIN + branch, requires tenant header. Token lasts 7 days.
 - `POST /auth/device/kitchen` — kitchen display secret, requires tenant header
 
 ### Platform admin
@@ -710,6 +892,53 @@ Supported locales: `ar` (Arabic, default for Egypt) and `en`.
 ### Email verification
 
 Most tenant routes require verified email (`verified.email` middleware). Verify via `GET /auth/verify-email` link or resend with `POST /auth/email/verification-notification`.
+
+---
+
+## Offline POS Synchronization
+
+The frontend can cache a branch snapshot and replay POS operations after an internet outage.
+
+1. While online, call `GET /offline/bootstrap?branch_id={id}` and replace the local snapshot. Persist `cursor`.
+2. Generate and persist one UUID for the device, each operation, each client order, each client item, and each cash payment.
+3. Store offline operations in a durable local outbox, in the order they happened.
+4. When online, send up to 100 operations to `POST /offline/sync`.
+5. Remove only `applied` and `duplicate` operations from the outbox. Keep `rejected` operations for user review or correction.
+6. Retry network failures with the exact same `operation_id` and client UUIDs.
+7. Call `GET /offline/changes?branch_id={id}&cursor={cursor}` and replace the local cursor with the new one.
+
+The synchronization response is HTTP 200 when the batch is structurally valid. Each result has its own `disposition`: `applied`, `duplicate`, or `rejected`.
+
+Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and `payment.recorded` (cash only). Keep the sold `unit_price` on created/added items; the server preserves it and may return a `PRICE_CHANGED` warning. PIN device tokens last 7 days. Card payments and refunds are not offline.
+
+---
+
+## Kitchen / POS on LAN (no internet)
+
+POS and kitchen tablets talk through a branch mini-PC running this API with `POS_HUB_ENABLED=true`. Reverb is not used.
+
+1. While online, `POST /offline/hubs` and store the returned token as `POS_HUB_TOKEN` on the mini-PC. The token is shown only once.
+2. Start the hub: `php artisan pos:hub` (listens on port `7744` by default).
+3. POS calls `GET /offline/bootstrap` and tries `data.lan_hub.urls` plus `GET /hub/health` until one responds.
+4. POS uploads the snapshot with `POST /hub/snapshot` while online, then publishes every local operation to `POST /hub/events`.
+5. Kitchen polls `GET /hub/kitchen/queue` and `GET /hub/events?after={id}`. Marking a line done uses `PATCH /hub/kitchen/items/{clientItemId}/done`.
+6. Staff see `local_number` / `daily_number`. Client UUIDs stay internal.
+7. When internet returns, `POST /hub/cloud-sync` or `php artisan pos:hub:sync` uploads the same operations to `POST /offline/sync`.
+
+Hub routes live under `/api/v1/hub/*`, outside tenant and Sanctum middleware. Kitchen and POS send `X-Hub-Token`, not a Bearer token.
+
+---
+
+## Stock Transfer Lifecycle
+
+Cross-branch ingredient transfers use one document with controlled state transitions:
+
+1. The destination branch creates a request: `POST /inventory/transfers` → `pending`. Stock is unchanged.
+2. The source branch sends it: `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Source stock is deducted.
+3. The destination confirms receipt: `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Destination stock is increased.
+4. Either participating branch may cancel only while the transfer is `pending`.
+
+Send and receive bodies are optional. Omit `items` to accept the full previous-step quantities, or provide lower quantities for partial fulfillment or a receiving shortage. A sent or completed step cannot be applied twice.
 
 ---
 
@@ -817,7 +1046,7 @@ MD;
                 ? implode(', ', array_map(static fn ($p) => "`{{$p}}`", $endpoint['path_params']))
                 : '_None_';
 
-            $exampleBody = WEBHOOK_BODIES[$endpoint['uri']] ?? buildExamplePayload($rules['body']);
+            $exampleBody = exampleBodyForEndpoint($endpoint, $rules['body']);
             if ($rules['body'] === [] && $endpoint['method'] !== 'GET') {
                 $exampleBody = $exampleBody ?: new stdClass;
             }
@@ -934,6 +1163,18 @@ function resolvePostmanFolderPath(array $endpoint): array
         return ['03 · Menu & Floor Setup', '3.4 Printer & Kitchen Routing Setup'];
     }
 
+    if (str_starts_with($uri, 'api/v1/business-days')) {
+        return ['04 · Daily Operations (POS)', '4.0 Business Days'];
+    }
+
+    if (str_starts_with($uri, 'api/v1/hub')) {
+        return ['04 · Daily Operations (POS)', '4.9 LAN Hub'];
+    }
+
+    if (str_starts_with($uri, 'api/v1/offline')) {
+        return ['04 · Daily Operations (POS)', '4.8 Offline POS'];
+    }
+
     if (str_contains($uri, '/orders/{order}/pay') || str_contains($uri, '/orders/{order}/refund')) {
         return ['04 · Daily Operations (POS)', '4.4 Payments & Refunds'];
     }
@@ -1039,6 +1280,21 @@ function postmanRequestDisplayName(array $endpoint): string
         'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@updateStatus' => 'Update order status',
         'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@settle' => 'Settle payment',
         'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@refund' => 'Refund payment',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@index' => 'List stock transfers',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Request stock transfer',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@show' => 'Get stock transfer',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => 'Send stock transfer',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => 'Confirm stock transfer receipt',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@cancel' => 'Cancel stock transfer request',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@index' => 'List business days',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@current' => 'Get current business day',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@show' => 'Get business day',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@open' => 'Open business day',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@close' => 'Close business day',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@report' => 'Business day report',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@remainingStock' => 'Remaining ingredients',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@waste' => 'Record waste',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@returnStock' => 'Return leftover stock to main inventory',
     ];
 
     if (isset($labels[$endpoint['action_key']])) {
@@ -1135,17 +1391,22 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Settings') => 'Restaurant profile, locale, WhatsApp, custom domain DNS verification.',
         str_contains($folderName, 'Branches') => 'Manage locations. Each branch gets a qr_menu_url for shareable menus.',
         str_contains($folderName, 'Staff') && ! str_contains($folderName, 'Shifts') => 'Create staff with roles and 4-digit PINs for tablet login.',
+        str_contains($folderName, 'Business Days') => 'Open/close the trading day, reset daily order numbers, inspect remaining ingredients, record waste, and return leftover stock to main inventory.',
         str_contains($folderName, 'Shifts') => 'Clock in/out, inspect transaction-level reconciliation, record paid-in/paid-out/safe-drop movements, and reverse mistakes.',
-        str_contains($folderName, 'Expense Categories') => 'Owner/manager-defined categories used to classify restaurant operating expenses.',
-        str_contains($folderName, 'Expenses') => 'Submit, approve, void, filter, and summarize expenses. Approved cash expenses automatically reduce the linked shift drawer.',
+        str_contains($folderName, 'Expense Categories') => 'Owner/manager-defined categories used to classify restaurant operating expenses. Set allocates_to_item_cost to include approved bills in plate cost.',
+        str_contains($folderName, 'Expenses') => 'Submit, approve, void, filter, and summarize expenses. Approved cash expenses automatically reduce the linked shift drawer. GET /expenses/item-cost spreads flagged categories across paid items sold in the period.',
         str_contains($folderName, 'Menu Categories') => 'Setup menu structure before adding items.',
+        str_contains($folderName, 'Recipes') => 'Recipe lines are food cost. Approved expenses from categories with allocates_to_item_cost are divided evenly across paid items and returned as overhead_cost and full_cost.',
         str_contains($folderName, 'Ingredients') => 'Ingredients = shared master data (SKU, name, unit). Stock = quantity at one branch. Recipes and transfers use the master ingredient id.',
+        str_contains($folderName, 'Stock Transfers') => 'Request → send → confirm receipt. Source stock changes on send; destination stock changes only on receipt.',
         str_contains($folderName, 'Menu Packages') => 'Combo meals: fixed items plus choice slots. Explodes into kitchen lines on order.',
         str_contains($folderName, 'Offers') => 'Percentage or fixed discounts with optional coupon, schedule, and channel rules.',
         str_contains($folderName, 'Menu Items') => 'Add dishes with Arabic names, prices, photos.',
         str_contains($folderName, 'Floor Tables') => 'Table layout for dine-in orders and table QR codes.',
         str_contains($folderName, 'Printer & Kitchen') => 'Configure logical printers, optional kitchen stations, direct/category/item routes, and branch printing mode.',
         str_contains($folderName, '4.1 Orders') => 'Core POS flow: list → create → update status.',
+        str_contains($folderName, 'Offline POS') => 'Download a branch snapshot, queue operations locally, and replay the same operation UUIDs until the server accepts them. Register the branch LAN hub here.',
+        str_contains($folderName, 'LAN Hub') => 'Local restaurant-network endpoints. POS and kitchen use X-Hub-Token against the branch mini-PC; no internet and no Sanctum token.',
         str_contains($folderName, 'Payments') => 'Settle and refund after order is ready.',
         str_contains($folderName, 'Kitchen') => 'Kitchen queue and mark items done.',
         str_contains($folderName, 'QR Menu') => 'Public endpoints — no auth. Token from branch qr_menu_url or table QR.',
@@ -1179,7 +1440,11 @@ Frontend integration guide — run folders top to bottom.
 - `tenant_subdomain` — required on all tenant routes (or use subdomain host)
 - `tenant_token` — Bearer token after login/register
 - `branch_id`, `order_id`, `menu_item_id`, … — set after create responses
+- `source_branch_id`, `destination_branch_id` — branches participating in a transfer
+- `stock_transfer_id` — set after creating a transfer request
 - `kitchen_device_secret` — from onboarding response (shown once)
+- `offline_device_id`, `offline_operation_id`, `offline_client_order_id`, `offline_client_item_id` — stable UUIDs used to test idempotent offline retries
+- `hub_base_url`, `offline_hub_token` — LAN hub on the branch mini-PC (`http://pos-hub.local:7744/api/v1`)
 
 Regenerate: `php tools/generate-api-documentation.php`
 DESC,
@@ -1192,7 +1457,10 @@ DESC,
             ['key' => 'admin_token', 'value' => ''],
             ['key' => 'kitchen_device_secret', 'value' => ''],
             ['key' => 'branch_id', 'value' => '1'],
+            ['key' => 'source_branch_id', 'value' => '1'],
+            ['key' => 'destination_branch_id', 'value' => '2'],
             ['key' => 'order_id', 'value' => '1'],
+            ['key' => 'rider_id', 'value' => '1'],
             ['key' => 'menu_item_id', 'value' => '1'],
             ['key' => 'customer_id', 'value' => '1'],
             ['key' => 'customer_address_id', 'value' => '1'],
@@ -1201,6 +1469,8 @@ DESC,
             ['key' => 'ingredient_id', 'value' => '1'],
             ['key' => 'stock_id', 'value' => '1'],
             ['key' => 'purchase_order_id', 'value' => '1'],
+            ['key' => 'purchase_order_item_id', 'value' => '1'],
+            ['key' => 'stock_transfer_id', 'value' => '1'],
             ['key' => 'qr_token', 'value' => 'table-token-example'],
             ['key' => 'staff_id', 'value' => '1'],
             ['key' => 'table_id', 'value' => '1'],
@@ -1213,6 +1483,14 @@ DESC,
             ['key' => 'expense_id', 'value' => '1'],
             ['key' => 'printer_id', 'value' => '1'],
             ['key' => 'station_id', 'value' => '1'],
+            ['key' => 'offline_device_id', 'value' => '11111111-1111-4111-8111-111111111111'],
+            ['key' => 'offline_operation_id', 'value' => '22222222-2222-4222-8222-222222222222'],
+            ['key' => 'offline_client_order_id', 'value' => '33333333-3333-4333-8333-333333333333'],
+            ['key' => 'offline_client_item_id', 'value' => '44444444-4444-4444-8444-444444444444'],
+            ['key' => 'offline_hub_id', 'value' => '1'],
+            ['key' => 'offline_hub_token', 'value' => ''],
+            ['key' => 'hub_base_url', 'value' => 'http://pos-hub.local:7744/api/v1'],
+            ['key' => 'business_day_id', 'value' => '1'],
         ],
         'item' => $items,
     ];
@@ -1221,7 +1499,7 @@ DESC,
 function postmanRequestItem(array $endpoint, array $requestMap, array $allRules): array
 {
     $rules = rulesForEndpoint($endpoint, $requestMap, $allRules);
-    $exampleBody = WEBHOOK_BODIES[$endpoint['uri']] ?? buildExamplePayload($rules['body']);
+    $exampleBody = exampleBodyForEndpoint($endpoint, $rules['body']);
 
     $headers = [
         ['key' => 'Accept', 'value' => 'application/json'],
@@ -1233,10 +1511,11 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
     }
 
     $relativePath = preg_replace('#^api/v1/#', '', $endpoint['uri']) ?? $endpoint['uri'];
-    $url = '{{base_url}}/'.$relativePath;
+    $baseVar = str_starts_with($endpoint['uri'], 'api/v1/hub') ? '{{hub_base_url}}' : '{{base_url}}';
+    $url = $baseVar.'/'.$relativePath;
     $url = str_replace(
-        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{stock}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}', '{district}', '{address}', '{package}', '{offer}'],
-        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{stock_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}', '{{district_id}}', '{{customer_address_id}}', '{{package_id}}', '{{offer_id}}'],
+        ['{tenant}', '{branch}', '{order}', '{item}', '{customer}', '{supplier}', '{purchaseOrder}', '{stockCount}', '{stockTransfer}', '{stock}', '{invoice}', '{shift}', '{staff}', '{category}', '{table}', '{ingredient}', '{token}', '{movement}', '{expense}', '{printer}', '{station}', '{district}', '{address}', '{package}', '{offer}', '{businessDay}', '{hub}', '{clientItemId}'],
+        ['{{tenant_id}}', '{{branch_id}}', '{{order_id}}', '{{menu_item_id}}', '{{customer_id}}', '{{supplier_id}}', '{{purchase_order_id}}', '{{stock_count_id}}', '{{stock_transfer_id}}', '{{stock_id}}', '{{invoice_id}}', '{{shift_id}}', '{{staff_id}}', '{{category_id}}', '{{table_id}}', '{{ingredient_id}}', '{{qr_token}}', '{{cash_movement_id}}', '{{expense_id}}', '{{printer_id}}', '{{station_id}}', '{{district_id}}', '{{customer_address_id}}', '{{package_id}}', '{{offer_id}}', '{{business_day_id}}', '{{offline_hub_id}}', '{{offline_client_item_id}}'],
         $url,
     );
 
@@ -1256,14 +1535,14 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
         'header' => $headers,
         'url' => [
             'raw' => $url.($query ? '?'.http_build_query(array_column($query, 'value', 'key')) : ''),
-            'host' => ['{{base_url}}'],
+            'host' => [str_starts_with($endpoint['uri'], 'api/v1/hub') ? '{{hub_base_url}}' : '{{base_url}}'],
             'path' => $pathSegments,
             'query' => $query,
         ],
         'description' => endpointDescription($endpoint)."\n\nAuth: ".$endpoint['auth']['label'],
     ];
 
-    if ($rules['body'] !== [] || isset(WEBHOOK_BODIES[$endpoint['uri']])) {
+    if ($rules['body'] !== [] || isset(REQUEST_BODY_OVERRIDES[$endpoint['uri']]) || isset(ACTION_BODY_OVERRIDES[$endpoint['action_key']])) {
         $request['body'] = [
             'mode' => 'raw',
             'raw' => jsonPretty($exampleBody),
@@ -1360,13 +1639,54 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
         ];
     }
 
+    if ($endpoint['action_key'] === 'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@store') {
+        $events[] = [
+            'listen' => 'test',
+            'script' => [
+                'type' => 'text/javascript',
+                'exec' => [
+                    'const json = pm.response.json();',
+                    'if (json.data?.id) {',
+                    "    pm.collectionVariables.set('offline_hub_id', json.data.id);",
+                    '}',
+                    'if (json.data?.token) {',
+                    "    pm.collectionVariables.set('offline_hub_token', json.data.token);",
+                    '}',
+                ],
+            ],
+        ];
+    }
+
+    if ($endpoint['action_key'] === 'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@sync') {
+        $events[] = [
+            'listen' => 'test',
+            'script' => [
+                'type' => 'text/javascript',
+                'exec' => [
+                    'const json = pm.response.json();',
+                    'const result = json.data?.results?.[0];',
+                    'if (result?.server_order_id) {',
+                    "    pm.collectionVariables.set('order_id', result.server_order_id);",
+                    '}',
+                    "pm.test('operation was applied or detected as duplicate', function () {",
+                    "    pm.expect(['applied', 'duplicate']).to.include(result?.disposition);",
+                    '});',
+                ],
+            ],
+        ];
+    }
+
     $createdIdVariables = [
         'App\\Modules\\Tenant\\Staff\\Http\\Controllers\\StaffShiftController@clockIn' => 'shift_id',
+        'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@open' => 'business_day_id',
         'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\CashMovementController@store' => 'cash_movement_id',
         'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\ExpenseCategoryController@store' => 'expense_category_id',
         'App\\Modules\\Tenant\\Finance\\Http\\Controllers\\ExpenseController@store' => 'expense_id',
         'App\\Modules\\POS\\Print\\Http\\Controllers\\PrinterController@store' => 'printer_id',
         'App\\Modules\\POS\\Print\\Http\\Controllers\\KitchenStationController@store' => 'station_id',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'stock_transfer_id',
+        'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\SupplierController@store' => 'supplier_id',
+        'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@store' => 'purchase_order_id',
     ];
 
     if (isset($createdIdVariables[$endpoint['action_key']])) {
@@ -1379,6 +1699,21 @@ function postmanRequestItem(array $endpoint, array $requestMap, array $allRules)
                     'const json = pm.response.json();',
                     'if (json.data?.id) {',
                     "    pm.collectionVariables.set('{$variable}', json.data.id);",
+                    '}',
+                ],
+            ],
+        ];
+    }
+
+    if ($endpoint['action_key'] === 'App\\Modules\\Inventory\\Suppliers\\Http\\Controllers\\PurchaseOrderController@store') {
+        $events[] = [
+            'listen' => 'test',
+            'script' => [
+                'type' => 'text/javascript',
+                'exec' => [
+                    'const json = pm.response.json();',
+                    'if (json.data?.items?.[0]?.id) {',
+                    "    pm.collectionVariables.set('purchase_order_item_id', json.data.items[0].id);",
                     '}',
                 ],
             ],
@@ -1430,24 +1765,56 @@ function buildScenarioFolder(array $endpoints, array $requestMap, array $allRule
             $find('POST', 'orders/{order}/pay'),
             $find('POST', 'orders/{order}/refund'),
         ],
-        '05 · QR order (public)' => [
+        '05 · Offline POS (snapshot → sync → retry)' => [
+            $find('GET', 'offline/bootstrap'),
+            $find('POST', 'offline/sync'),
+            $find('POST', 'offline/sync'),
+            $find('GET', 'offline/changes'),
+        ],
+        '05b · LAN hub (POS → kitchen → cloud sync)' => [
+            $find('POST', 'offline/hubs'),
+            $find('POST', 'offline/hubs/{hub}/heartbeat'),
+            $find('GET', 'hub/health'),
+            $find('POST', 'hub/snapshot'),
+            $find('POST', 'hub/events'),
+            $find('GET', 'hub/kitchen/queue'),
+            $find('PATCH', 'hub/kitchen/items/{clientItemId}/done'),
+            $find('POST', 'hub/cloud-sync'),
+        ],
+        '06 · QR order (public)' => [
             $find('GET', 'qr/{token}/menu'),
             $find('POST', 'qr/{token}/orders'),
         ],
-        '06 · Custom domain verify' => [
+        '07 · Custom domain verify' => [
             $find('PATCH', 'settings'),
             $find('GET', 'settings/domain'),
             $find('POST', 'settings/domain/verify'),
         ],
-        '07 · Staff shift' => [
+        '08 · Staff shift' => [
             $find('POST', 'staff/shifts/clock-in'),
             $find('POST', 'staff/shifts/clock-out'),
         ],
-        '08 · Inventory PO flow' => [
+        '08b · Business day (open → remaining → waste → return → close)' => [
+            $find('POST', 'business-days/open'),
+            $find('GET', 'business-days/current'),
+            $find('GET', 'business-days/{businessDay}/remaining-stock'),
+            $find('POST', 'business-days/{businessDay}/waste'),
+            $find('POST', 'business-days/{businessDay}/return-stock'),
+            $find('GET', 'business-days/{businessDay}/report'),
+            $find('POST', 'business-days/{businessDay}/close'),
+        ],
+        '09 · Inventory PO flow (create → print → check → complete)' => [
             $find('POST', 'inventory/suppliers'),
             $find('POST', 'inventory/purchase-orders'),
+            $find('GET', 'inventory/purchase-orders/{purchaseOrder}/print'),
             $find('POST', 'inventory/purchase-orders/{purchaseOrder}/submit'),
             $find('POST', 'inventory/purchase-orders/{purchaseOrder}/receive'),
+            $find('POST', 'inventory/purchase-orders/{purchaseOrder}/complete'),
+        ],
+        '10 · Inventory transfer (request → send → receive)' => [
+            $find('POST', 'inventory/transfers'),
+            $find('POST', 'inventory/transfers/{stockTransfer}/send'),
+            $find('POST', 'inventory/transfers/{stockTransfer}/receive'),
         ],
     ];
 
@@ -1473,9 +1840,16 @@ function buildScenarioFolder(array $endpoints, array $requestMap, array $allRule
     $items = [];
     foreach ($scenarios as $name => $scenarioEndpoints) {
         $scenarioItems = [];
+        $offlineSyncAttempt = 0;
         foreach (array_filter($scenarioEndpoints) as $ep) {
             $item = postmanRequestItem($ep, $requestMap, $allRules);
             $pathKey = preg_replace('#^api/v1/#', '', $ep['uri']) ?? $ep['uri'];
+            if ($pathKey === 'offline/sync') {
+                $offlineSyncAttempt++;
+                $item['name'] = $offlineSyncAttempt === 1
+                    ? 'POST · Upload offline order'
+                    : 'POST · Retry same operation (returns duplicate)';
+            }
             if (isset($scenarioBodyOverrides[$name][$pathKey])) {
                 $item['request']['body']['raw'] = jsonPretty($scenarioBodyOverrides[$name][$pathKey]);
             }
@@ -1503,7 +1877,10 @@ function generatePostmanEnvironment(): array
             ['key' => 'admin_token', 'value' => '', 'type' => 'secret', 'enabled' => true],
             ['key' => 'kitchen_device_secret', 'value' => '', 'type' => 'secret', 'enabled' => true],
             ['key' => 'branch_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'source_branch_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'destination_branch_id', 'value' => '2', 'type' => 'default', 'enabled' => true],
             ['key' => 'order_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'rider_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'menu_item_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'customer_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'customer_address_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
@@ -1512,6 +1889,8 @@ function generatePostmanEnvironment(): array
             ['key' => 'ingredient_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'stock_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'purchase_order_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'purchase_order_item_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'stock_transfer_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'qr_token', 'value' => 'table-token-example', 'type' => 'default', 'enabled' => true],
             ['key' => 'staff_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'table_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
@@ -1524,6 +1903,14 @@ function generatePostmanEnvironment(): array
             ['key' => 'expense_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'printer_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
             ['key' => 'station_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'offline_device_id', 'value' => '11111111-1111-4111-8111-111111111111', 'type' => 'default', 'enabled' => true],
+            ['key' => 'offline_operation_id', 'value' => '22222222-2222-4222-8222-222222222222', 'type' => 'default', 'enabled' => true],
+            ['key' => 'offline_client_order_id', 'value' => '33333333-3333-4333-8333-333333333333', 'type' => 'default', 'enabled' => true],
+            ['key' => 'offline_client_item_id', 'value' => '44444444-4444-4444-8444-444444444444', 'type' => 'default', 'enabled' => true],
+            ['key' => 'offline_hub_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'offline_hub_token', 'value' => '', 'type' => 'secret', 'enabled' => true],
+            ['key' => 'hub_base_url', 'value' => 'http://pos-hub.local:7744/api/v1', 'type' => 'default', 'enabled' => true],
+            ['key' => 'business_day_id', 'value' => '1', 'type' => 'default', 'enabled' => true],
         ],
         '_postman_variable_scope' => 'environment',
         '_postman_exported_at' => gmdate('c'),

@@ -6,10 +6,12 @@ namespace App\Modules\Inventory\Suppliers\Http\Controllers;
 
 use App\Modules\Inventory\Stock\Services\StockService;
 use App\Modules\Inventory\Suppliers\Http\Requests\IndexPurchaseOrderRequest;
+use App\Modules\Inventory\Suppliers\Http\Requests\ReceivePurchaseOrderRequest;
 use App\Modules\Inventory\Suppliers\Http\Requests\StorePurchaseOrderRequest;
 use App\Modules\Inventory\Suppliers\Http\Resources\PurchaseOrderResource;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrderItem;
+use App\Shared\Infrastructure\PrintJob\EscPosBuilder;
 use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Http\JsonResponse;
@@ -23,7 +25,10 @@ use InvalidArgumentException;
  */
 class PurchaseOrderController extends Controller
 {
-    public function __construct(private readonly StockService $stock) {}
+    public function __construct(
+        private readonly StockService $stock,
+        private readonly EscPosBuilder $escPos,
+    ) {}
 
     public function index(IndexPurchaseOrderRequest $request): JsonResponse
     {
@@ -79,6 +84,21 @@ class PurchaseOrderController extends Controller
         );
     }
 
+    /**
+     * Printable purchase list bytes for a thermal print bridge.
+     */
+    public function print(PurchaseOrder $purchaseOrder): JsonResponse
+    {
+        $purchaseOrder->load(['items.ingredient', 'supplier', 'branch']);
+
+        return ApiResponse::success([
+            'purchase_order_id' => $purchaseOrder->id,
+            'format' => 'escpos',
+            'encoding' => 'binary',
+            'bytes' => base64_encode($this->escPos->buildPurchaseOrder($purchaseOrder)),
+        ]);
+    }
+
     public function submit(PurchaseOrder $purchaseOrder): JsonResponse
     {
         if ($purchaseOrder->status !== 'draft') {
@@ -93,12 +113,33 @@ class PurchaseOrderController extends Controller
         return ApiResponse::success(new PurchaseOrderResource($purchaseOrder), 'Purchase order submitted to supplier.');
     }
 
-    public function receive(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
+    /**
+     * Record the quantities and costs received for a submitted purchase order.
+     */
+    public function receive(ReceivePurchaseOrderRequest $request, PurchaseOrder $purchaseOrder): JsonResponse
     {
         try {
-            $po = $this->stock->receivePurchaseOrder($purchaseOrder, $request->user());
+            $po = $this->stock->receivePurchaseOrder(
+                $purchaseOrder,
+                $request->validated('items'),
+                $request->user(),
+            );
 
-            return ApiResponse::success(new PurchaseOrderResource($po), 'Purchase order received. Stock updated.');
+            return ApiResponse::success(new PurchaseOrderResource($po), 'Purchase order received and ready for completion.');
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'INVALID_PO_STATUS', 422);
+        }
+    }
+
+    /**
+     * Complete a checked purchase order and add its received items to stock.
+     */
+    public function complete(Request $request, PurchaseOrder $purchaseOrder): JsonResponse
+    {
+        try {
+            $po = $this->stock->completePurchaseOrder($purchaseOrder, $request->user());
+
+            return ApiResponse::success(new PurchaseOrderResource($po), 'Purchase order completed. Stock updated.');
         } catch (InvalidArgumentException $e) {
             return ApiResponse::error($e->getMessage(), 'INVALID_PO_STATUS', 422);
         }

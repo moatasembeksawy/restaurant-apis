@@ -39,9 +39,16 @@ Route::middleware('feature:inventory')->group(function (): void {
         Route::put('menu/items/{item}/recipe', [RecipeController::class, 'sync']);
     });
 
-    Route::middleware(['feature:multi_branch', 'permission:inventory.manage'])->group(function (): void {
+    Route::middleware(['feature:multi_branch', 'permission:inventory.view'])->group(function (): void {
         Route::get('inventory/transfers', [StockTransferController::class, 'index']);
+        Route::get('inventory/transfers/{stockTransfer}', [StockTransferController::class, 'show']);
+    });
+
+    Route::middleware(['feature:multi_branch', 'permission:inventory.manage'])->group(function (): void {
         Route::post('inventory/transfers', [StockTransferController::class, 'store']);
+        Route::post('inventory/transfers/{stockTransfer}/send', [StockTransferController::class, 'send']);
+        Route::post('inventory/transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive']);
+        Route::post('inventory/transfers/{stockTransfer}/cancel', [StockTransferController::class, 'cancel']);
     });
 });
 
@@ -50,6 +57,7 @@ Route::middleware('feature:suppliers')->group(function (): void {
         Route::get('inventory/suppliers', [SupplierController::class, 'index']);
         Route::get('inventory/purchase-orders', [PurchaseOrderController::class, 'index']);
         Route::get('inventory/purchase-orders/{purchaseOrder}', [PurchaseOrderController::class, 'show']);
+        Route::get('inventory/purchase-orders/{purchaseOrder}/print', [PurchaseOrderController::class, 'print']);
     });
 
     Route::middleware('permission:suppliers.manage')->group(function (): void {
@@ -58,5 +66,6 @@ Route::middleware('feature:suppliers')->group(function (): void {
         Route::post('inventory/purchase-orders', [PurchaseOrderController::class, 'store']);
         Route::post('inventory/purchase-orders/{purchaseOrder}/submit', [PurchaseOrderController::class, 'submit']);
         Route::post('inventory/purchase-orders/{purchaseOrder}/receive', [PurchaseOrderController::class, 'receive']);
+        Route::post('inventory/purchase-orders/{purchaseOrder}/complete', [PurchaseOrderController::class, 'complete']);
     });
 });

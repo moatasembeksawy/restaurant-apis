@@ -14,16 +14,22 @@ class PurchaseOrderItem extends Model
         'purchase_order_id',
         'ingredient_id',
         'quantity',
+        'received_quantity',
         'unit_cost',
+        'received_unit_cost',
         'subtotal',
+        'received_subtotal',
     ];
 
     protected function casts(): array
     {
         return [
             'quantity' => 'decimal:4',
+            'received_quantity' => 'decimal:4',
             'unit_cost' => 'decimal:4',
+            'received_unit_cost' => 'decimal:4',
             'subtotal' => 'decimal:2',
+            'received_subtotal' => 'decimal:2',
         ];
     }
 

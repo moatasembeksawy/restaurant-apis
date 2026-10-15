@@ -14,6 +14,7 @@ class IndexStaffShiftRequest extends ApiFormRequest
         return [
             'branch_id' => ['nullable', 'integer'],
             'user_id' => ['nullable', 'integer'],
+            'business_day_id' => ['nullable', 'integer', 'exists:business_days,id'],
             'date' => ['nullable', 'date'],
         ];
     }

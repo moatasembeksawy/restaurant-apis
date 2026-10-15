@@ -109,6 +109,43 @@ it('reuses the master ingredient when the same item is opened at another branch'
         ->assertJsonPath('errors.0.code', 'INGREDIENT_ERROR');
 });
 
+it('lists a shared ingredient after switching to another branch', function (): void {
+    $other = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'branch_id' => $this->branch->id,
+            'name_ar' => 'طماطم',
+            'name_en' => 'Tomato',
+            'unit' => 'kg',
+            'current_stock' => 20,
+        ])
+        ->assertCreated();
+
+    $catalog = $this->withToken($this->token)
+        ->getJson('/api/v1/inventory/ingredients?branch_id='.$other->id)
+        ->assertOk()
+        ->assertJsonPath('data.0.name_ar', 'طماطم');
+
+    $branchIds = collect($catalog->json('data.0.stocks'))->pluck('branch_id');
+    expect($branchIds)->toContain($this->branch->id);
+    expect($branchIds)->toContain($other->id);
+
+    $stock = $this->withToken($this->token)
+        ->getJson('/api/v1/inventory/stock?branch_id='.$other->id)
+        ->assertOk();
+
+    expect($stock->json('data'))->toHaveCount(1);
+    expect($stock->json('data.0.name_ar'))->toBe('طماطم');
+    expect((float) $stock->json('data.0.current_stock'))->toBe(0.0);
+
+    $original = $this->withToken($this->token)
+        ->getJson('/api/v1/inventory/stock?branch_id='.$this->branch->id)
+        ->assertOk();
+
+    expect((float) $original->json('data.0.current_stock'))->toBe(20.0);
+});
+
 it('lists ingredients with branch stock and a total', function (): void {
     $other = Branch::factory()->create(['tenant_id' => $this->tenant->id]);
 

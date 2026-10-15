@@ -116,7 +116,7 @@ function refundOrder(object $test, User $user, int $orderId, array $payload = []
     return $test->postJson("/api/v1/orders/{$orderId}/refund", $payload);
 }
 
-it('refunds a paid order and restores inventory stock', function (): void {
+it('refunds a paid order and records its ingredients as waste', function (): void {
     payOrder($this, $this->cashier, $this->order->id);
 
     expect((float) $this->ingredient->fresh()->current_stock)->toBe(9.0);
@@ -128,8 +128,9 @@ it('refunds a paid order and restores inventory stock', function (): void {
     expect($response->json('data.refund.amount'))->toBe('100.00');
     expect($this->order->fresh()->status)->toBe('refunded');
     expect(PaymentRefund::query()->count())->toBe(1);
-    expect((float) $this->ingredient->fresh()->current_stock)->toBe(10.0);
+    expect((float) $this->ingredient->fresh()->current_stock)->toBe(9.0);
     expect(StockMovement::query()->where('type', 'refund')->count())->toBe(1);
+    expect(StockMovement::query()->where('type', 'waste')->count())->toBe(1);
 });
 
 it('reverses loyalty earn and redeem on refund', function (): void {

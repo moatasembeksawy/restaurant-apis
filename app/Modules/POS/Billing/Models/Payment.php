@@ -48,6 +48,7 @@ class Payment extends Model
         'discount_value',
         'discount_reason',
         'reference',
+        'client_payment_id',
         'refunded_at',
     ];
 

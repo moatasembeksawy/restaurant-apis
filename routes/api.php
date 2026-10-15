@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Modules\Delivery\Aggregators\Http\Controllers\AggregatorWebhookController;
 use App\Modules\Delivery\QRMenu\Http\Controllers\QRMenuController;
 use App\Modules\Delivery\WhatsApp\Http\Controllers\WhatsAppWebhookController;
+use App\Modules\POS\Offline\Http\Controllers\LocalHubController;
 use App\Modules\Tenant\Http\Controllers\FawryWebhookController;
 use App\Modules\Tenant\Http\Controllers\OnboardingController;
 use App\Modules\Tenant\Http\Controllers\PaymobWebhookController;
@@ -40,6 +41,21 @@ Route::prefix('v1')->group(function (): void {
 
         // Tenant / Subscription management
         require base_path('app/Modules/Tenant/routes/api.php');
+    });
+
+    // ── LAN POS hub (no tenant/MySQL — kitchen and POS on the restaurant LAN) ─
+    Route::prefix('hub')->middleware('hub.enabled')->group(function (): void {
+        Route::get('health', [LocalHubController::class, 'health']);
+        Route::middleware('hub.token')->group(function (): void {
+            Route::get('snapshot', [LocalHubController::class, 'snapshot']);
+            Route::post('snapshot', [LocalHubController::class, 'storeSnapshot']);
+            Route::get('events', [LocalHubController::class, 'events']);
+            Route::post('events', [LocalHubController::class, 'publish']);
+            Route::get('kitchen/queue', [LocalHubController::class, 'kitchenQueue']);
+            Route::patch('kitchen/items/{clientItemId}/done', [LocalHubController::class, 'markItemReady'])
+                ->whereUuid('clientItemId');
+            Route::post('cloud-sync', [LocalHubController::class, 'cloudSync']);
+        });
     });
 
     // ── Public routes (no auth — QR menus, webhook receivers) ─────────────────

@@ -35,6 +35,7 @@ class StaffShiftController extends Controller
                     branchId: BranchAccess::filterBranchId($request->user(), $validated['branch_id'] ?? null),
                     userId: isset($validated['user_id']) ? (int) $validated['user_id'] : null,
                     date: $validated['date'] ?? null,
+                    businessDayId: isset($validated['business_day_id']) ? (int) $validated['business_day_id'] : null,
                 ),
             ),
         );

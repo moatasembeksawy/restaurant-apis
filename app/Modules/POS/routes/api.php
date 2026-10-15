@@ -9,6 +9,8 @@ use App\Modules\POS\Kitchen\Http\Controllers\KitchenController;
 use App\Modules\POS\Menu\Http\Controllers\MenuCategoryController;
 use App\Modules\POS\Menu\Http\Controllers\MenuItemController;
 use App\Modules\POS\Offers\Http\Controllers\OfferController;
+use App\Modules\POS\Offline\Http\Controllers\OfflineHubController;
+use App\Modules\POS\Offline\Http\Controllers\OfflineSyncController;
 use App\Modules\POS\Orders\Http\Controllers\OrderController;
 use App\Modules\POS\Orders\Http\Controllers\OrderItemController;
 use App\Modules\POS\Packages\Http\Controllers\MenuPackageController;
@@ -47,6 +49,17 @@ Route::delete('menu/items/{item}', [MenuItemController::class, 'destroy'])->midd
 Route::patch('menu/items/{item}/toggle', [MenuItemController::class, 'toggle'])->middleware('permission:menu.update');
 Route::post('menu/items/{item}/photo', [MenuItemController::class, 'uploadPhoto'])->middleware('permission:menu.update');
 Route::delete('menu/items/{item}/photo', [MenuItemController::class, 'deletePhoto'])->middleware('permission:menu.update');
+
+// ── Offline POS synchronization ──────────────────────────────────────────────
+Route::middleware('permission:orders.create')->prefix('offline')->group(function (): void {
+    Route::get('bootstrap', [OfflineSyncController::class, 'bootstrap']);
+    Route::get('changes', [OfflineSyncController::class, 'changes']);
+    Route::post('sync', [OfflineSyncController::class, 'sync']);
+    Route::get('hubs', [OfflineHubController::class, 'show']);
+    Route::post('hubs', [OfflineHubController::class, 'store']);
+    Route::post('hubs/{hub}/heartbeat', [OfflineHubController::class, 'heartbeat']);
+});
+
 Route::middleware('feature:menu_packages')->group(function (): void {
     Route::middleware('permission:menu.view')->group(function (): void {
         Route::get('menu/packages', [MenuPackageController::class, 'index']);

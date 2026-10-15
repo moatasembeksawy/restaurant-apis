@@ -29,7 +29,7 @@ Supported locales: `ar` (Arabic, default for Egypt) and `en`.
 
 ### Device login (waiter / cashier / kitchen)
 
-- `POST /auth/device/login` — PIN + branch, requires tenant header
+- `POST /auth/device/login` — PIN + branch, requires tenant header. Token lasts 7 days.
 - `POST /auth/device/kitchen` — kitchen display secret, requires tenant header
 
 ### Platform admin
@@ -40,6 +40,53 @@ Supported locales: `ar` (Arabic, default for Egypt) and `en`.
 ### Email verification
 
 Most tenant routes require verified email (`verified.email` middleware). Verify via `GET /auth/verify-email` link or resend with `POST /auth/email/verification-notification`.
+
+---
+
+## Offline POS Synchronization
+
+The frontend can cache a branch snapshot and replay POS operations after an internet outage.
+
+1. While online, call `GET /offline/bootstrap?branch_id={id}` and replace the local snapshot. Persist `cursor`.
+2. Generate and persist one UUID for the device, each operation, each client order, each client item, and each cash payment.
+3. Store offline operations in a durable local outbox, in the order they happened.
+4. When online, send up to 100 operations to `POST /offline/sync`.
+5. Remove only `applied` and `duplicate` operations from the outbox. Keep `rejected` operations for user review or correction.
+6. Retry network failures with the exact same `operation_id` and client UUIDs.
+7. Call `GET /offline/changes?branch_id={id}&cursor={cursor}` and replace the local cursor with the new one.
+
+The synchronization response is HTTP 200 when the batch is structurally valid. Each result has its own `disposition`: `applied`, `duplicate`, or `rejected`.
+
+Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and `payment.recorded` (cash only). Keep the sold `unit_price` on created/added items; the server preserves it and may return a `PRICE_CHANGED` warning. PIN device tokens last 7 days. Card payments and refunds are not offline.
+
+---
+
+## Kitchen / POS on LAN (no internet)
+
+POS and kitchen tablets talk through a branch mini-PC running this API with `POS_HUB_ENABLED=true`. Reverb is not used.
+
+1. While online, `POST /offline/hubs` and store the returned token as `POS_HUB_TOKEN` on the mini-PC. The token is shown only once.
+2. Start the hub: `php artisan pos:hub` (listens on port `7744` by default).
+3. POS calls `GET /offline/bootstrap` and tries `data.lan_hub.urls` plus `GET /hub/health` until one responds.
+4. POS uploads the snapshot with `POST /hub/snapshot` while online, then publishes every local operation to `POST /hub/events`.
+5. Kitchen polls `GET /hub/kitchen/queue` and `GET /hub/events?after={id}`. Marking a line done uses `PATCH /hub/kitchen/items/{clientItemId}/done`.
+6. Staff see `local_number` / `daily_number`. Client UUIDs stay internal.
+7. When internet returns, `POST /hub/cloud-sync` or `php artisan pos:hub:sync` uploads the same operations to `POST /offline/sync`.
+
+Hub routes live under `/api/v1/hub/*`, outside tenant and Sanctum middleware. Kitchen and POS send `X-Hub-Token`, not a Bearer token.
+
+---
+
+## Stock Transfer Lifecycle
+
+Cross-branch ingredient transfers use one document with controlled state transitions:
+
+1. The destination branch creates a request: `POST /inventory/transfers` → `pending`. Stock is unchanged.
+2. The source branch sends it: `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Source stock is deducted.
+3. The destination confirms receipt: `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Destination stock is increased.
+4. Either participating branch may cancel only while the transfer is `pending`.
+
+Send and receive bodies are optional. Omit `items` to accept the full previous-step quantities, or provide lower quantities for partial fulfillment or a receiving shortage. A sent or completed step cannot be applied twice.
 
 ---
 
@@ -116,9 +163,22 @@ Failure returns:
 | 402 | `FEATURE_NOT_AVAILABLE` | Plan does not include required feature |
 | 402 | `PLAN_LIMIT_EXCEEDED` | Plan limit reached (branches, users, orders) |
 | 422 | `VALIDATION_ERROR` | Request validation failed (includes field) |
+| 422 | `ORDER_VALIDATION_FAILED` | An offline or online order failed business validation |
 | 422 | `INGREDIENT_ERROR` | Ingredient catalog missing, already stocked at that branch, or identity update failed |
+| 422 | `STOCK_TRANSFER_FAILED` | Invalid transfer state, quantity, or insufficient source stock |
+| 404 | `NO_OPEN_BUSINESS_DAY` | No open business day exists for the requested branch |
+| 422 | `BUSINESS_DAY_OPEN_FAILED` | A business day is already open for this branch |
+| 422 | `BUSINESS_DAY_CLOSE_FAILED` | Shifts or open orders still exist, or the day is already closed |
+| 422 | `STOCK_RETURN_FAILED` | Remaining stock could not be returned to main inventory |
 | 400 | `ERROR` | Generic client error |
 | 400 | `TENANT_REQUIRED` | X-Tenant-Subdomain header required |
+| 401 | `HUB_UNAUTHENTICATED` | Missing or invalid X-Hub-Token on a LAN hub route |
+| 404 | `HUB_DISABLED` | LAN POS hub is not enabled on this server |
+| 404 | `HUB_SNAPSHOT_MISSING` | No catalog snapshot is cached on the LAN hub yet |
+| 422 | `HUB_VALIDATION_FAILED` | A LAN hub operation referenced a missing local order |
+| 422 | `HUB_CLOUD_NOT_CONFIGURED` | POS_HUB_CLOUD_URL or POS_HUB_CLOUD_TOKEN is missing |
+| 422 | `ITEM_COST_ALLOCATION_FAILED` | The item-cost period is invalid |
+| 502 | `HUB_CLOUD_SYNC_FAILED` | The LAN hub could not upload operations to the cloud |
 
 ---
 
@@ -184,7 +244,7 @@ Kitchen display device login using a shared branch secret.
 
 #### `POST` /api/v1/auth/device/login
 
-Branch-scoped PIN login for waiters and cashiers. Requires tenant resolution via header or subdomain host.
+Branch-scoped PIN login for waiters and cashiers. Issues a 7-day token so a POS tablet can keep working through overnight internet outages. Requires tenant resolution via header or subdomain host.
 
 - **Auth:** Tenant header only
 - **Permissions:** _None_
@@ -539,6 +599,34 @@ Orders — customers/{customer}/orders
 
 ---
 
+#### `POST` /api/v1/deliveries/bulk-assign
+
+Atomically assign up to 100 pending delivery orders to one active rider. The rider and every order must belong to the same branch; if any order is unavailable, none are assigned.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `riders`
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `rider_id` | `required, integer, exists:users,id` |
+| `order_ids` | `required, array, min:1, max:100` |
+| `order_ids.*` | `required, integer, distinct, exists:orders,id` |
+
+```json
+{
+    "rider_id": "{{rider_id}}",
+    "order_ids": [
+        "{{order_id}}"
+    ]
+}
+```
+
+---
+
 #### `GET` /api/v1/deliveries/unassigned
 
 Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.
@@ -638,6 +726,23 @@ Active assigned deliveries (assigned, picked_up, en_route). Riders see their own
 | `branch_id` | `nullable, integer` |
 | `per_page` | `nullable, integer, min:1, max:100` |
 | `page` | `nullable, integer, min:1` |
+
+---
+
+#### `GET` /api/v1/riders/order-summary
+
+List every active rider with all non-cancelled assigned orders, plus unpaid order count, unpaid amount, and unpaid order details. Unpaid excludes paid and refunded orders. Optional branch_id filter.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** _None_
+- **Plan features:** `riders`
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
 
 ---
 
@@ -892,6 +997,7 @@ Master ingredients (one row per SKU). Includes each branch stock row, total_stoc
 | Parameter | Rules |
 |-----------|-------|
 | `active` | `nullable, boolean` |
+| `branch_id` | `nullable, integer` |
 | `per_page` | `nullable, integer, min:1, max:100` |
 | `page` | `nullable, integer, min:1` |
 
@@ -1124,9 +1230,9 @@ Show — inventory/purchase-orders/{purchaseOrder}
 
 ---
 
-#### `POST` /api/v1/inventory/purchase-orders/{purchaseOrder}/receive
+#### `POST` /api/v1/inventory/purchase-orders/{purchaseOrder}/complete
 
-Receive goods against a submitted purchase order.
+Complete a checked purchase order and add its verified received quantities to inventory.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `suppliers.manage`
@@ -1139,6 +1245,49 @@ _None_
 
 ```json
 {}
+```
+
+---
+
+#### `GET` /api/v1/inventory/purchase-orders/{purchaseOrder}/print
+
+Return base64-encoded ESC/POS bytes for printing the purchase list before buying.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.view`
+- **Plan features:** `suppliers`
+- **Path params:** `{purchaseOrder}`
+
+---
+
+#### `POST` /api/v1/inventory/purchase-orders/{purchaseOrder}/receive
+
+Check a submitted purchase order by recording every actual received quantity and unit cost. Stock is not changed yet.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `suppliers.manage`
+- **Plan features:** `suppliers`
+- **Path params:** `{purchaseOrder}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `items` | `required, array, min:1` |
+| `items.*.purchase_order_item_id` | `required, integer, distinct` |
+| `items.*.received_quantity` | `required, numeric, min:0` |
+| `items.*.unit_cost` | `required, numeric, min:0` |
+
+```json
+{
+    "items": [
+        {
+            "purchase_order_item_id": "{{purchase_order_item_id}}",
+            "received_quantity": 5,
+            "unit_cost": 12.5
+        }
+    ]
+}
 ```
 
 ---
@@ -1444,10 +1593,10 @@ Update — inventory/suppliers/{supplier}
 
 #### `GET` /api/v1/inventory/transfers
 
-Index — inventory/transfers
+List transfers visible to the authenticated branch. Filter by branch and lifecycle status: pending, in_transit, completed, or cancelled.
 
 - **Auth:** Bearer token + tenant header
-- **Permissions:** `inventory.manage`
+- **Permissions:** `inventory.view`
 - **Plan features:** `inventory`, `multi_branch`
 - **Path params:** _None_
 
@@ -1456,12 +1605,13 @@ Index — inventory/transfers
 | Parameter | Rules |
 |-----------|-------|
 | `branch_id` | `nullable, integer` |
+| `status` | `nullable, in:pending,in_transit,completed,cancelled` |
 
 ---
 
 #### `POST` /api/v1/inventory/transfers
 
-Move master ingredients between branches. Accepts a single ingredient_id+quantity or items[]. Missing destination stock is created automatically.
+Destination branch requests ingredients from a source branch. This creates a pending document and does not change stock.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -1477,29 +1627,111 @@ Move master ingredients between branches. Accepts a single ingredient_id+quantit
 | `ingredient_id` | `required_without:items, integer` |
 | `quantity` | `required_without:items, numeric, min:0.001` |
 | `items` | `required_without:ingredient_id, array, min:1` |
-| `items.*.ingredient_id` | `required, integer` |
+| `items.*.ingredient_id` | `required, integer, distinct` |
 | `items.*.quantity` | `required, numeric, min:0.001` |
 | `notes` | `nullable, string, max:255` |
 
 ```json
 {
-    "from_branch_id": 1,
-    "to_branch_id": 1,
-    "ingredient_id": "{{ingredient_id}}",
-    "quantity": 2,
+    "from_branch_id": "{{source_branch_id}}",
+    "to_branch_id": "{{destination_branch_id}}",
     "items": [
         {
-            "ingredient_id": 1,
-            "quantity": 5,
-            "unit_cost": 12.5
-        },
-        {
-            "ingredient_id": 2,
-            "quantity": 2,
-            "unit_cost": 8
+            "ingredient_id": "{{ingredient_id}}",
+            "quantity": 5
         }
     ],
-    "notes": "بدون بصل"
+    "notes": "Replenishment request"
+}
+```
+
+---
+
+#### `GET` /api/v1/inventory/transfers/{stockTransfer}
+
+Get one transfer with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.view`
+- **Plan features:** `inventory`, `multi_branch`
+- **Path params:** `{stockTransfer}`
+
+---
+
+#### `POST` /api/v1/inventory/transfers/{stockTransfer}/cancel
+
+Cancel a pending transfer from either participating branch. Sent transfers cannot be cancelled.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.manage`
+- **Plan features:** `inventory`, `multi_branch`
+- **Path params:** `{stockTransfer}`
+
+**Request body**
+
+_None_
+
+```json
+{}
+```
+
+---
+
+#### `POST` /api/v1/inventory/transfers/{stockTransfer}/receive
+
+Destination branch confirms an in-transit transfer. Adds received quantities to destination stock and changes status to completed. Omit items to receive all sent quantities.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.manage`
+- **Plan features:** `inventory`, `multi_branch`
+- **Path params:** `{stockTransfer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `items` | `nullable, array, min:1` |
+| `items.*.ingredient_id` | `required, integer, distinct` |
+| `items.*.quantity` | `required, numeric, min:0` |
+
+```json
+{
+    "items": [
+        {
+            "ingredient_id": "{{ingredient_id}}",
+            "quantity": 5
+        }
+    ]
+}
+```
+
+---
+
+#### `POST` /api/v1/inventory/transfers/{stockTransfer}/send
+
+Source branch sends a pending transfer. Deducts sent quantities from source stock and changes status to in_transit. Omit items to send all requested quantities.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.manage`
+- **Plan features:** `inventory`, `multi_branch`
+- **Path params:** `{stockTransfer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `items` | `nullable, array, min:1` |
+| `items.*.ingredient_id` | `required, integer, distinct` |
+| `items.*.quantity` | `required, numeric, min:0` |
+
+```json
+{
+    "items": [
+        {
+            "ingredient_id": "{{ingredient_id}}",
+            "quantity": 5
+        }
+    ]
 }
 ```
 
@@ -1514,6 +1746,14 @@ Cost — menu/items/{item}/cost
 - **Plan features:** `inventory`
 - **Path params:** `{item}`
 
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
+| `start_date` | `nullable, date` |
+| `end_date` | `nullable, date, after_or_equal:start_date` |
+
 ---
 
 #### `GET` /api/v1/menu/items/{item}/recipe
@@ -1524,6 +1764,14 @@ Show — menu/items/{item}/recipe
 - **Permissions:** `inventory.view`
 - **Plan features:** `inventory`
 - **Path params:** `{item}`
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
+| `start_date` | `nullable, date` |
+| `end_date` | `nullable, date, after_or_equal:start_date` |
 
 ---
 
@@ -1558,6 +1806,200 @@ Sync — menu/items/{item}/recipe
 ---
 
 ### POS
+
+#### `POST` /api/v1/hub/cloud-sync
+
+Upload pending hub operations to POST /offline/sync when the internet returns. Same as php artisan pos:hub:sync.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+_None_
+
+```json
+{}
+```
+
+---
+
+#### `GET` /api/v1/hub/events
+
+Poll new LAN events after a cursor. Kitchen uses this instead of Reverb when the internet is down.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `after` | `nullable, integer, min:0` |
+
+---
+
+#### `POST` /api/v1/hub/events
+
+POS or kitchen appends idempotent operations to the LAN event log. Kitchen displays poll GET /hub/events?after={id}.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `device_id` | `required, uuid` |
+| `role` | `required, in:pos,kitchen` |
+| `operations` | `required, array, min:1, max:100` |
+| `operations.*.operation_id` | `required, uuid, distinct` |
+| `operations.*.type` | `required, in:order.created,order.item_added,order.item_updated,order.item_removed,order.status_changed,order.item_ready,payment.recorded` |
+| `operations.*.occurred_at` | `required, date` |
+| `operations.*.payload` | `required, array` |
+| `operations.*.payload.client_order_id` | `required, uuid` |
+| `operations.*.payload.client_item_id` | `nullable, uuid` |
+| `operations.*.payload.status` | `nullable, in:active,cooking,ready,completed,cancelled` |
+| `operations.*.payload.quantity` | `nullable, integer, min:1` |
+| `operations.*.payload.unit_price` | `nullable, numeric, min:0` |
+| `operations.*.payload.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.package_id` | `nullable, integer` |
+| `operations.*.payload.item_name_ar` | `nullable, string` |
+| `operations.*.payload.notes` | `nullable, string` |
+| `operations.*.payload.items` | `nullable, array, min:1` |
+| `operations.*.payload.items.*.client_item_id` | `nullable, uuid, distinct` |
+| `operations.*.payload.items.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_id` | `nullable, integer` |
+| `operations.*.payload.items.*.quantity` | `required, integer, min:1` |
+| `operations.*.payload.items.*.unit_price` | `nullable, numeric, min:0` |
+| `operations.*.payload.items.*.item_name_ar` | `nullable, string` |
+| `operations.*.payload.items.*.notes` | `nullable, string` |
+
+```json
+{
+    "device_id": "{{offline_device_id}}",
+    "role": "pos",
+    "operations": [
+        {
+            "operation_id": "{{offline_operation_id}}",
+            "type": "order.created",
+            "occurred_at": "2026-10-15T14:00:00Z",
+            "payload": {
+                "client_order_id": "{{offline_client_order_id}}",
+                "channel": "dine_in",
+                "items": [
+                    {
+                        "client_item_id": "{{offline_client_item_id}}",
+                        "menu_item_id": "{{menu_item_id}}",
+                        "quantity": 1,
+                        "item_name_ar": "كشري"
+                    }
+                ]
+            }
+        }
+    ]
+}
+```
+
+---
+
+#### `GET` /api/v1/hub/health
+
+Unauthenticated discovery ping for POS and kitchen tablets on the restaurant LAN. No Sanctum token and no internet required.
+
+- **Auth:** None
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `PATCH` /api/v1/hub/kitchen/items/{clientItemId}/done
+
+Kitchen marks a line done. Writes order.item_ready onto the LAN log so POS updates immediately.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** `{clientItemId}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `client_order_id` | `required, uuid` |
+| `device_id` | `nullable, uuid` |
+| `operation_id` | `nullable, uuid` |
+
+```json
+{
+    "client_order_id": "{{offline_client_order_id}}",
+    "device_id": "{{offline_device_id}}",
+    "operation_id": "{{offline_operation_id}}"
+}
+```
+
+---
+
+#### `GET` /api/v1/hub/kitchen/queue
+
+Projected kitchen tickets from the local event log. Display local_number, never client UUIDs, to staff.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `GET` /api/v1/hub/snapshot
+
+Read the catalog snapshot cached on the LAN hub so tablets can start a shift without the cloud.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `POST` /api/v1/hub/snapshot
+
+POS uploads the latest GET /offline/bootstrap payload to the hub while internet is available.
+
+- **Auth:** X-Hub-Token
+- **Permissions:** _None_
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `snapshot` | `required, array` |
+
+```json
+{
+    "snapshot": {
+        "schema_version": 2,
+        "menu_items": [
+            {
+                "id": "{{menu_item_id}}",
+                "name_ar": "كشري",
+                "price": 50
+            }
+        ]
+    }
+}
+```
+
+---
 
 #### `GET` /api/v1/invoices/failed
 
@@ -2605,6 +3047,198 @@ _None_
 
 ---
 
+#### `GET` /api/v1/offline/bootstrap
+
+Download the branch snapshot required by an offline POS: pricing, menu, packages, offers, tables, districts, staff, printers, open orders, current shift, business day, and LAN hub discovery URLs. Store the returned cursor for later incremental downloads. The hub token is never included.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.create`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+
+---
+
+#### `GET` /api/v1/offline/changes
+
+Download catalog and order records changed after the given cursor. Call this after a successful sync so the device picks up updates from other terminals.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.create`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `cursor` | `required, date` |
+
+---
+
+#### `GET` /api/v1/offline/hubs
+
+Return the registered LAN hub for a branch, including the last advertised LAN URL. The plaintext token is never returned after create.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.create`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+
+---
+
+#### `POST` /api/v1/offline/hubs
+
+Register or rotate the branch LAN hub. The plaintext X-Hub-Token is returned only once; store it on the branch mini-PC as POS_HUB_TOKEN.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.create`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `name` | `nullable, string, max:100` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "name": "Dining room hub"
+}
+```
+
+---
+
+#### `POST` /api/v1/offline/hubs/{hub}/heartbeat
+
+Advertise the hub LAN URL while online so POS and kitchen tablets can discover it from bootstrap.lan_hub.urls.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.create`
+- **Plan features:** _None_
+- **Path params:** `{hub}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `lan_url` | `required, url, max:255` |
+
+```json
+{
+    "lan_url": "http://192.168.1.20:7744"
+}
+```
+
+---
+
+#### `POST` /api/v1/offline/sync
+
+Upload up to 100 queued offline operations. Supported types: order.created, order.item_added, order.item_updated, order.item_removed, order.status_changed, order.item_ready, and payment.recorded (cash only). Reuse operation_id and client UUIDs when retrying. Business-rule failures return disposition rejected while remaining operations continue.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `orders.create`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `required, integer` |
+| `device_id` | `required, uuid` |
+| `operations` | `required, array, min:1, max:100` |
+| `operations.*.operation_id` | `required, uuid, distinct` |
+| `operations.*.type` | `required, in:order.created,order.item_added,order.item_updated,order.item_removed,order.status_changed,order.item_ready,payment.recorded` |
+| `operations.*.occurred_at` | `required, date` |
+| `operations.*.payload` | `required, array` |
+| `operations.*.payload.client_order_id` | `required, uuid` |
+| `operations.*.payload.server_order_id` | `nullable, integer` |
+| `operations.*.payload.floor_table_id` | `nullable, integer` |
+| `operations.*.payload.channel` | `nullable, in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `operations.*.payload.fulfillment_type` | `nullable, in:dine_in,takeaway,delivery` |
+| `operations.*.payload.notes` | `nullable, string` |
+| `operations.*.payload.delivery_address` | `nullable, string, max:500` |
+| `operations.*.payload.delivery_fee` | `nullable, numeric, min:0` |
+| `operations.*.payload.customer_id` | `nullable, integer` |
+| `operations.*.payload.customer_address_id` | `nullable, integer` |
+| `operations.*.payload.district_id` | `nullable, integer` |
+| `operations.*.payload.coupon_code` | `nullable, string, max:50` |
+| `operations.*.payload.status` | `nullable, in:active,cooking,ready,completed,cancelled` |
+| `operations.*.payload.client_item_id` | `nullable, uuid` |
+| `operations.*.payload.client_payment_id` | `nullable, uuid` |
+| `operations.*.payload.method` | `nullable, in:cash` |
+| `operations.*.payload.amount` | `nullable, numeric, min:0` |
+| `operations.*.payload.cash_tendered` | `nullable, numeric, min:0` |
+| `operations.*.payload.quantity` | `nullable, integer, min:1` |
+| `operations.*.payload.unit_price` | `nullable, numeric, min:0` |
+| `operations.*.payload.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.package_id` | `nullable, integer` |
+| `operations.*.payload.items` | `nullable, array, min:1` |
+| `operations.*.payload.items.*.client_item_id` | `nullable, uuid, distinct` |
+| `operations.*.payload.items.*.menu_item_id` | `required_without:operations.*.payload.items.*.package_id, nullable, integer` |
+| `operations.*.payload.items.*.package_id` | `required_without:operations.*.payload.items.*.menu_item_id, nullable, integer` |
+| `operations.*.payload.items.*.quantity` | `required, integer, min:1` |
+| `operations.*.payload.items.*.unit_price` | `nullable, numeric, min:0` |
+| `operations.*.payload.items.*.notes` | `nullable, string` |
+| `operations.*.payload.items.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.slots` | `nullable, array` |
+| `operations.*.payload.items.*.selections` | `nullable, array` |
+| `operations.*.payload.items.*.selections.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.slots.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.items.*.slots.*.id` | `nullable, integer` |
+| `operations.*.payload.items.*.slots.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.slots.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.slots.*.menu_item_ids.*` | `integer` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "device_id": "{{offline_device_id}}",
+    "operations": [
+        {
+            "operation_id": "{{offline_operation_id}}",
+            "type": "order.created",
+            "occurred_at": "2026-10-15T14:00:00Z",
+            "payload": {
+                "client_order_id": "{{offline_client_order_id}}",
+                "channel": "dine_in",
+                "fulfillment_type": "takeaway",
+                "items": [
+                    {
+                        "menu_item_id": "{{menu_item_id}}",
+                        "quantity": 2,
+                        "notes": "Created while offline"
+                    }
+                ]
+            }
+        }
+    ]
+}
+```
+
+---
+
 #### `GET` /api/v1/orders
 
 Index — orders
@@ -2620,6 +3254,7 @@ Index — orders
 |-----------|-------|
 | `status` | `nullable, in:active,cooking,ready,completed,paid,cancelled` |
 | `branch_id` | `nullable, integer` |
+| `business_day_id` | `nullable, integer, exists:business_days,id` |
 | `table_id` | `nullable, integer` |
 | `channel` | `nullable, in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
 | `fulfillment_type` | `nullable, in:dine_in,takeaway,delivery` |
@@ -4031,6 +4666,174 @@ Update — branches/{branch}
 
 ---
 
+#### `GET` /api/v1/business-days
+
+List recent business days. Filter by branch, open/closed status, or business date.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer, exists:branches,id` |
+| `status` | `nullable, in:open,closed` |
+| `date` | `nullable, date_format:Y-m-d` |
+
+---
+
+#### `GET` /api/v1/business-days/current
+
+Get the currently open business day for a branch. Pass branch_id; cashiers default to their assigned branch.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `POST` /api/v1/business-days/open
+
+Open a trading day for a branch. Captures opening ingredient stock and resets daily order numbers to 1. Only one open day is allowed per branch.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.manage`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer, exists:branches,id` |
+| `notes` | `nullable, string, max:1000` |
+
+```json
+{
+    "branch_id": "{{branch_id}}",
+    "notes": "Morning open"
+}
+```
+
+---
+
+#### `GET` /api/v1/business-days/{businessDay}
+
+Get one business day, including opening stock and the frozen closing summary after close.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.view`
+- **Plan features:** _None_
+- **Path params:** `{businessDay}`
+
+---
+
+#### `POST` /api/v1/business-days/{businessDay}/close
+
+Close the trading day after every shift is clocked out and every order is paid, refunded, or cancelled. Freezes the sales, payment, shift, and inventory report.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.manage`
+- **Plan features:** _None_
+- **Path params:** `{businessDay}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `notes` | `nullable, string, max:1000` |
+
+```json
+{
+    "notes": "End of day"
+}
+```
+
+---
+
+#### `GET` /api/v1/business-days/{businessDay}/remaining-stock
+
+List remaining ingredient quantities for the business day. After close this returns the frozen remaining snapshot.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.view`
+- **Plan features:** _None_
+- **Path params:** `{businessDay}`
+
+---
+
+#### `GET` /api/v1/business-days/{businessDay}/report
+
+Live day report while open: orders, payments by method, sold items, shifts, remaining ingredients, waste, and stock returned to main inventory. After close this returns the frozen summary.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.view`
+- **Plan features:** _None_
+- **Path params:** `{businessDay}`
+
+---
+
+#### `POST` /api/v1/business-days/{businessDay}/return-stock
+
+Send leftover kitchen stock back to main inventory. Pass items, or return_remaining=true to send every remaining quantity. Requires a warehouse/HQ branch and the multi-branch plan.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.manage`
+- **Plan features:** `inventory`, `multi_branch`
+- **Path params:** `{businessDay}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `to_branch_id` | `nullable, integer, exists:branches,id` |
+| `return_remaining` | `nullable, boolean` |
+| `items` | `required_without:return_remaining, array, min:1` |
+| `items.*.ingredient_id` | `required, integer, distinct, exists:ingredients,id` |
+| `items.*.quantity` | `required, numeric, min:0.001` |
+| `notes` | `nullable, string, max:255` |
+
+```json
+{
+    "to_branch_id": "{{destination_branch_id}}",
+    "return_remaining": true,
+    "notes": "Return leftover kitchen stock"
+}
+```
+
+---
+
+#### `POST` /api/v1/business-days/{businessDay}/waste
+
+Record wasted ingredients against the open business day and deduct them from branch stock.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `business_days.manage`
+- **Plan features:** `waste_log`
+- **Path params:** `{businessDay}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `ingredient_id` | `required, integer, exists:ingredients,id` |
+| `quantity` | `required, numeric, min:0.001` |
+| `reason` | `nullable, string, max:255` |
+
+```json
+{
+    "ingredient_id": "{{ingredient_id}}",
+    "quantity": 1.5,
+    "reason": "Spoilage"
+}
+```
+
+---
+
 #### `POST` /api/v1/cash-movements/{movement}/reverse
 
 Reverse — cash-movements/{movement}/reverse
@@ -4080,11 +4883,42 @@ Store — expense-categories
 |-----------|-------|
 | `name` | `required, string, max:100, unique:expense_categories,name,NULL,id` |
 | `code` | `nullable, string, max:64, unique:expense_categories,code,NULL,id` |
+| `allocates_to_item_cost` | `sometimes, boolean` |
 
 ```json
 {
     "name": "Downtown Branch",
-    "code": "مثال"
+    "code": "مثال",
+    "allocates_to_item_cost": true
+}
+```
+
+---
+
+#### `PATCH` /api/v1/expense-categories/{expenseCategory}
+
+Update — expense-categories/{expenseCategory}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expense_categories.manage`
+- **Plan features:** _None_
+- **Path params:** `{expenseCategory}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `sometimes, string, max:100, unique:expense_categories,name,NULL,id` |
+| `code` | `nullable, string, max:64, unique:expense_categories,code,NULL,id` |
+| `is_active` | `sometimes, boolean` |
+| `allocates_to_item_cost` | `sometimes, boolean` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "code": "مثال",
+    "is_active": true,
+    "allocates_to_item_cost": true
 }
 ```
 
@@ -4149,6 +4983,25 @@ Store — expenses
     "expense_date": "مثال"
 }
 ```
+
+---
+
+#### `GET` /api/v1/expenses/item-cost
+
+Item Cost — expenses/item-cost
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `expenses.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Query parameters**
+
+| Parameter | Rules |
+|-----------|-------|
+| `branch_id` | `nullable, integer` |
+| `start_date` | `nullable, date` |
+| `end_date` | `nullable, date, after_or_equal:start_date` |
 
 ---
 
@@ -4601,6 +5454,7 @@ Index — staff/shifts
 |-----------|-------|
 | `branch_id` | `nullable, integer` |
 | `user_id` | `nullable, integer` |
+| `business_day_id` | `nullable, integer, exists:business_days,id` |
 | `date` | `nullable, date` |
 
 ---
@@ -4624,7 +5478,7 @@ Active — staff/shifts/active
 
 #### `POST` /api/v1/staff/shifts/clock-in
 
-Clock in staff member for the current shift.
+Clock in staff member for the current shift. Attaches the shift to the open business day, or opens one automatically.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `shifts.operate`

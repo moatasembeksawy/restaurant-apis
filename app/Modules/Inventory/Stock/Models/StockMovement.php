@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Inventory\Stock\Models;
 
 use App\Models\User;
+use App\Modules\Tenant\BusinessDays\Models\BusinessDay;
 use App\Modules\Tenant\Models\Branch;
 use App\Shared\Domain\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -15,6 +16,7 @@ class StockMovement extends BaseModel
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'business_day_id',
         'ingredient_id',
         'user_id',
         'type',
@@ -41,6 +43,11 @@ class StockMovement extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function businessDay(): BelongsTo
+    {
+        return $this->belongsTo(BusinessDay::class);
     }
 
     public function user(): BelongsTo

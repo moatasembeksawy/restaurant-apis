@@ -6,11 +6,13 @@ namespace App\Modules\Tenant\Finance\Http\Controllers;
 
 use App\Models\User;
 use App\Modules\Tenant\Finance\Http\Requests\IndexExpenseRequest;
+use App\Modules\Tenant\Finance\Http\Requests\ItemCostAllocationRequest;
 use App\Modules\Tenant\Finance\Http\Requests\StoreExpenseRequest;
 use App\Modules\Tenant\Finance\Http\Requests\VoidExpenseRequest;
 use App\Modules\Tenant\Finance\Http\Resources\ExpenseResource;
 use App\Modules\Tenant\Finance\Models\Expense;
 use App\Modules\Tenant\Finance\Services\ExpenseService;
+use App\Modules\Tenant\Finance\Services\ItemCostAllocationService;
 use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Http\Resources\ApiResponse;
 use Illuminate\Database\Eloquent\Builder;
@@ -26,6 +28,7 @@ class ExpenseController extends Controller
 {
     public function __construct(
         private readonly ExpenseService $expenses,
+        private readonly ItemCostAllocationService $itemCosts,
     ) {}
 
     public function index(IndexExpenseRequest $request): JsonResponse
@@ -84,6 +87,25 @@ class ExpenseController extends Controller
             'by_category' => array_values($byCategory),
             'by_payment_method' => $byPaymentMethod,
         ]);
+    }
+
+    /**
+     * Allocate approved operating expenses across items sold in the period.
+     */
+    public function itemCost(ItemCostAllocationRequest $request): JsonResponse
+    {
+        try {
+            $summary = $this->itemCosts->summarizeForUser(
+                $request->user(),
+                $request->validated('branch_id'),
+                $request->validated('start_date'),
+                $request->validated('end_date'),
+            );
+        } catch (InvalidArgumentException $e) {
+            return ApiResponse::error($e->getMessage(), 'ITEM_COST_ALLOCATION_FAILED', 422);
+        }
+
+        return ApiResponse::success($summary);
     }
 
     public function store(StoreExpenseRequest $request): JsonResponse

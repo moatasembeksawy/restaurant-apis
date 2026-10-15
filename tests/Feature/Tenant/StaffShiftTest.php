@@ -29,6 +29,8 @@ it('clocks staff in and out', function (): void {
         ->assertJsonPath('data.is_active', true)
         ->assertJsonPath('data.user_id', $this->cashier->id);
 
+    expect($clockIn->json('data.business_day_id'))->not->toBeNull();
+
     expect(StaffShift::query()->whereNull('clock_out')->count())->toBe(1);
 
     $this->withToken($this->token)

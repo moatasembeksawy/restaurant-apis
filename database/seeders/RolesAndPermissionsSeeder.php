@@ -38,6 +38,9 @@ class RolesAndPermissionsSeeder extends Seeder
             // Reports
             'reports.view', 'reports.export',
 
+            // Business days
+            'business_days.view', 'business_days.manage',
+
             // Offers
             'offers.view', 'offers.manage',
 
@@ -83,6 +86,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'printing.view', 'printing.manage', 'printing.execute',
                 'payments.process', 'payments.discount', 'payments.refund',
                 'reports.view', 'reports.export',
+                'business_days.view', 'business_days.manage',
                 'audit.view',
                 'offers.view', 'offers.manage',
                 'inventory.view', 'inventory.manage',
@@ -102,6 +106,7 @@ class RolesAndPermissionsSeeder extends Seeder
                 'orders.view', 'orders.create', 'orders.update',
                 'payments.process', 'payments.discount',
                 'reports.view',
+                'business_days.view',
                 'offers.view',
                 'printing.view', 'printing.execute',
                 'shifts.view', 'shifts.operate',

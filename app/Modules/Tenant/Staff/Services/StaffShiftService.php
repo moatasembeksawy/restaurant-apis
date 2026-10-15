@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Staff\Services;
 
 use App\Models\User;
+use App\Modules\Tenant\BusinessDays\Services\BusinessDayService;
 use App\Modules\Tenant\Staff\Models\StaffShift;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Authorization\BranchAccess;
@@ -15,10 +16,11 @@ class StaffShiftService
 {
     public function __construct(
         private readonly StaffShiftSalesService $sales,
+        private readonly BusinessDayService $businessDays,
     ) {}
 
     /** @return Collection<int, array<string, mixed>> */
-    public function list(?int $branchId = null, ?int $userId = null, ?string $date = null): Collection
+    public function list(?int $branchId = null, ?int $userId = null, ?string $date = null, ?int $businessDayId = null): Collection
     {
         $query = StaffShift::query()
             ->with(['user:id,name,role', 'branch:id,name'])
@@ -30,6 +32,10 @@ class StaffShiftService
 
         if ($userId) {
             $query->where('user_id', $userId);
+        }
+
+        if ($businessDayId) {
+            $query->where('business_day_id', $businessDayId);
         }
 
         if ($date) {
@@ -113,9 +119,11 @@ class StaffShiftService
         }
 
         BranchAccess::assertCanAccess($user, (int) $branchId);
+        $businessDay = $this->businessDays->resolveOrOpen((int) $branchId, $user);
 
         $shift = StaffShift::create([
             'branch_id' => $branchId,
+            'business_day_id' => $businessDay->id,
             'user_id' => $user->id,
             'clock_in' => now(),
             'notes' => $notes,
@@ -173,6 +181,7 @@ class StaffShiftService
             'user_role' => $shift->user?->role,
             'branch_id' => $shift->branch_id,
             'branch_name' => $shift->branch?->name,
+            'business_day_id' => $shift->business_day_id,
             'clock_in' => $shift->clock_in?->toIso8601String(),
             'clock_out' => $shift->clock_out?->toIso8601String(),
             'is_active' => $shift->isActive(),

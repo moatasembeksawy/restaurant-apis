@@ -14,11 +14,19 @@ class ExpenseCategory extends BaseModel
         'name',
         'code',
         'is_active',
+        'allocates_to_item_cost',
+    ];
+
+    protected $attributes = [
+        'allocates_to_item_cost' => false,
     ];
 
     protected function casts(): array
     {
-        return ['is_active' => 'boolean'];
+        return [
+            'is_active' => 'boolean',
+            'allocates_to_item_cost' => 'boolean',
+        ];
     }
 
     public function expenses(): HasMany

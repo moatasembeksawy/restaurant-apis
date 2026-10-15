@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Modules\Tenant\BusinessDays\Services\BusinessDayService;
 use App\Modules\Tenant\Staff\Models\StaffShift;
 use Database\Seeders\RolesAndPermissionsSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -28,9 +29,14 @@ uses(TestCase::class)->in('Unit');
 
 function startCashierShift(User $user, float $openingFloat = 0): StaffShift
 {
+    $businessDay = $user->branch_id
+        ? app(BusinessDayService::class)->resolveOrOpen((int) $user->branch_id, $user)
+        : null;
+
     return StaffShift::create([
         'tenant_id' => $user->tenant_id,
         'branch_id' => $user->branch_id,
+        'business_day_id' => $businessDay?->id,
         'user_id' => $user->id,
         'clock_in' => now(),
         'opening_float' => $openingFloat,

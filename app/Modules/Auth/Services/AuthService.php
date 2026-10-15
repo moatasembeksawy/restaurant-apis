@@ -61,7 +61,7 @@ class AuthService
             throw new AuthenticationException('Invalid PIN or branch.');
         }
 
-        $token = $user->createToken($deviceName, $user->tokenAbilities(), now()->addHours(12));
+        $token = $user->createToken($deviceName, $user->tokenAbilities(), now()->addDays(7));
 
         AuditLogger::log('auth.login', $user, ['method' => 'pin']);
 

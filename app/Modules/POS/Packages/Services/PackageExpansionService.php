@@ -41,7 +41,14 @@ class PackageExpansionService
 
         $quantity = max(1, (int) ($line['quantity'] ?? 1));
         $resolved = $this->resolveSelections($package, $this->incomingSelections($line));
-        $unitPrice = round((float) $package->price + $resolved['extra_price'], 2);
+        $catalogPrice = round((float) $package->price + $resolved['extra_price'], 2);
+        $unitPrice = array_key_exists('unit_price', $line) && $line['unit_price'] !== null
+            ? round((float) $line['unit_price'], 2)
+            : $catalogPrice;
+
+        if ($unitPrice < 0) {
+            throw new InvalidArgumentException('Package price cannot be negative.');
+        }
 
         $parent = $order->items()->create([
             'line_type' => OrderItem::LINE_PACKAGE,
@@ -55,6 +62,7 @@ class PackageExpansionService
             'status' => 'ready',
             'notes' => $line['notes'] ?? null,
             'selections' => $resolved['snapshot'],
+            'client_item_id' => $line['client_item_id'] ?? null,
         ]);
 
         foreach ($resolved['components'] as $component) {

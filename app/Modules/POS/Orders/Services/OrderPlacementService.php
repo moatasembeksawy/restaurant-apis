@@ -13,12 +13,15 @@ use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Orders\Support\OrderDeliveryDestination;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\BusinessDays\Services\BusinessDayService;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Staff\Services\StaffShiftService;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Authorization\BranchAccess;
 use App\Shared\Support\Broadcasting\SafeBroadcast;
+use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -27,6 +30,8 @@ class OrderPlacementService
     public function __construct(
         private readonly PlanLimitService $planLimits,
         private readonly OrderLineService $lines,
+        private readonly BusinessDayService $businessDays,
+        private readonly StaffShiftService $shifts,
     ) {}
 
     /**
@@ -48,12 +53,25 @@ class OrderPlacementService
         ?int $customerAddressId = null,
         ?int $districtId = null,
         ?string $couponCode = null,
+        ?string $clientOrderId = null,
+        ?string $sourceDeviceId = null,
+        ?CarbonInterface $offlineCreatedAt = null,
     ): Order {
         $this->planLimits->check('orders');
 
         $user = auth()->user();
         if ($user instanceof User) {
             BranchAccess::assertCanAccess($user, $branchId);
+        }
+
+        if (
+            $floorTableId !== null
+            && FloorTable::query()
+                ->whereKey($floorTableId)
+                ->where('branch_id', $branchId)
+                ->doesntExist()
+        ) {
+            throw new InvalidArgumentException('Table does not belong to the selected branch.');
         }
 
         $destination = OrderDeliveryDestination::resolve(
@@ -100,6 +118,14 @@ class OrderPlacementService
 
         /** @var Tenant $tenant */
         $tenant = app('tenant');
+        $businessDay = $this->businessDays->resolveOrOpen(
+            $branchId,
+            $user instanceof User ? $user : null,
+        );
+        $activeShift = $user instanceof User ? $this->shifts->resolveActiveShift($user) : null;
+        $staffShiftId = $activeShift && (int) $activeShift->branch_id === $branchId
+            ? $activeShift->id
+            : null;
 
         if ($customerId !== null && Customer::query()->whereKey($customerId)->doesntExist()) {
             throw new InvalidArgumentException('Customer not found.');
@@ -133,12 +159,21 @@ class OrderPlacementService
             $deliveryFee,
             $charges,
             $externalRef,
+            $clientOrderId,
+            $sourceDeviceId,
+            $offlineCreatedAt,
             $items,
+            $businessDay,
+            $staffShiftId,
         ): Order {
+            $orderNumber = $this->businessDays->allocateOrderNumber($businessDay);
             $order = Order::create([
                 'branch_id' => $branchId,
+                'business_day_id' => $businessDay->id,
+                'business_day_order_number' => $orderNumber,
                 'floor_table_id' => $floorTableId,
                 'waiter_id' => $waiterId,
+                'staff_shift_id' => $staffShiftId,
                 'customer_id' => $customerId,
                 'customer_address_id' => $customerAddressId,
                 'district_id' => $districtId,
@@ -154,6 +189,9 @@ class OrderPlacementService
                 'service_charge_applies_to' => $charges['service_charge_applies_to'],
                 'delivery_status' => OrderFulfillment::requiresDeliveryTracking($fulfillmentType) ? 'pending' : null,
                 'external_ref' => $externalRef,
+                'client_order_id' => $clientOrderId,
+                'source_device_id' => $sourceDeviceId,
+                'offline_created_at' => $offlineCreatedAt,
                 'status' => 'pending',
             ]);
 

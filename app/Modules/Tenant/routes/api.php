@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Modules\Tenant\BusinessDays\Http\Controllers\BusinessDayController;
 use App\Modules\Tenant\Districts\Http\Controllers\DistrictController;
 use App\Modules\Tenant\Finance\Http\Controllers\CashMovementController;
 use App\Modules\Tenant\Finance\Http\Controllers\ExpenseCategoryController;
@@ -16,6 +17,22 @@ use App\Modules\Tenant\Http\Controllers\TenantSettingsController;
 use App\Modules\Tenant\Reports\Http\Controllers\BranchReportController;
 use App\Modules\Tenant\Staff\Http\Controllers\StaffShiftController;
 use Illuminate\Support\Facades\Route;
+
+Route::middleware('permission:business_days.view')->group(function (): void {
+    Route::get('business-days', [BusinessDayController::class, 'index']);
+    Route::get('business-days/current', [BusinessDayController::class, 'current']);
+    Route::get('business-days/{businessDay}', [BusinessDayController::class, 'show']);
+    Route::get('business-days/{businessDay}/report', [BusinessDayController::class, 'report']);
+    Route::get('business-days/{businessDay}/remaining-stock', [BusinessDayController::class, 'remainingStock']);
+});
+Route::middleware('permission:business_days.manage')->group(function (): void {
+    Route::post('business-days/open', [BusinessDayController::class, 'open']);
+    Route::post('business-days/{businessDay}/close', [BusinessDayController::class, 'close']);
+    Route::post('business-days/{businessDay}/waste', [BusinessDayController::class, 'waste'])
+        ->middleware('feature:waste_log');
+    Route::post('business-days/{businessDay}/return-stock', [BusinessDayController::class, 'returnStock'])
+        ->middleware(['feature:inventory', 'feature:multi_branch']);
+});
 
 Route::middleware('permission:subscription.view')->get('subscription', [SubscriptionController::class, 'show']);
 Route::middleware('permission:subscription.manage')->group(function (): void {
@@ -57,11 +74,14 @@ Route::middleware('feature:staff_shifts')->group(function (): void {
 
 Route::get('expense-categories', [ExpenseCategoryController::class, 'index'])
     ->middleware('permission:expenses.view');
-Route::post('expense-categories', [ExpenseCategoryController::class, 'store'])
-    ->middleware('permission:expense_categories.manage');
+Route::middleware('permission:expense_categories.manage')->group(function (): void {
+    Route::post('expense-categories', [ExpenseCategoryController::class, 'store']);
+    Route::patch('expense-categories/{expenseCategory}', [ExpenseCategoryController::class, 'update']);
+});
 Route::middleware('permission:expenses.view')->group(function (): void {
     Route::get('expenses', [ExpenseController::class, 'index']);
     Route::get('expenses/summary', [ExpenseController::class, 'summary']);
+    Route::get('expenses/item-cost', [ExpenseController::class, 'itemCost']);
     Route::get('expenses/{expense}', [ExpenseController::class, 'show']);
 });
 Route::post('expenses', [ExpenseController::class, 'store'])

@@ -17,6 +17,7 @@ class IndexOrderRequest extends ApiFormRequest
         return array_merge([
             'status' => ['nullable', 'in:active,cooking,ready,completed,paid,cancelled'],
             'branch_id' => ['nullable', 'integer'],
+            'business_day_id' => ['nullable', 'integer', 'exists:business_days,id'],
             'table_id' => ['nullable', 'integer'],
             'channel' => ['nullable', 'in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery'],
             'fulfillment_type' => ['nullable', 'in:dine_in,takeaway,delivery'],

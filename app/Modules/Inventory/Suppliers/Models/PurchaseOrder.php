@@ -17,19 +17,25 @@ class PurchaseOrder extends BaseModel
         'branch_id',
         'supplier_id',
         'created_by',
+        'received_by_id',
+        'completed_by_id',
         'status',
         'total',
+        'received_total',
         'notes',
         'ordered_at',
         'received_at',
+        'completed_at',
     ];
 
     protected function casts(): array
     {
         return [
             'total' => 'decimal:2',
+            'received_total' => 'decimal:2',
             'ordered_at' => 'datetime',
             'received_at' => 'datetime',
+            'completed_at' => 'datetime',
         ];
     }
 
@@ -46,6 +52,16 @@ class PurchaseOrder extends BaseModel
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function receiver(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'received_by_id');
+    }
+
+    public function completer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'completed_by_id');
     }
 
     /** @return HasMany<PurchaseOrderItem, $this> */

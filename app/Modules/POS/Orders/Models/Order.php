@@ -12,9 +12,11 @@ use App\Modules\POS\Offers\Models\OrderAdjustment;
 use App\Modules\POS\Offers\Services\OfferEngine;
 use App\Modules\POS\Orders\Support\OrderCharges;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\BusinessDays\Models\BusinessDay;
 use App\Modules\Tenant\Districts\Models\District;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
+use App\Modules\Tenant\Staff\Models\StaffShift;
 use App\Shared\Domain\Models\BaseModel;
 use Database\Factories\OrderFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -35,8 +37,11 @@ class Order extends BaseModel
     protected $fillable = [
         'tenant_id',
         'branch_id',
+        'business_day_id',
+        'business_day_order_number',
         'floor_table_id',
         'waiter_id',
+        'staff_shift_id',
         'customer_id',
         'customer_address_id',
         'district_id',
@@ -46,6 +51,9 @@ class Order extends BaseModel
         'status',
         'delivery_status',
         'external_ref',
+        'client_order_id',
+        'source_device_id',
+        'offline_created_at',
         'notes',
         'coupon_code',
         'delivery_address',
@@ -74,6 +82,7 @@ class Order extends BaseModel
             'service_charge' => 'decimal:2',
             'service_charge_applies_to' => 'array',
             'total' => 'decimal:2',
+            'offline_created_at' => 'immutable_datetime',
         ];
     }
 
@@ -153,6 +162,16 @@ class Order extends BaseModel
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
+    }
+
+    public function businessDay(): BelongsTo
+    {
+        return $this->belongsTo(BusinessDay::class);
+    }
+
+    public function staffShift(): BelongsTo
+    {
+        return $this->belongsTo(StaffShift::class);
     }
 
     /** @return BelongsTo<Tenant, $this> */

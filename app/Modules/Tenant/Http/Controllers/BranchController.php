@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Tenant\Http\Controllers;
 
+use App\Modules\Inventory\Stock\Services\IngredientService;
 use App\Modules\Tenant\Http\Requests\StoreBranchRequest;
 use App\Modules\Tenant\Http\Requests\UpdateBranchRequest;
 use App\Modules\Tenant\Http\Resources\BranchResource;
@@ -22,7 +23,10 @@ use Illuminate\Routing\Controller;
  */
 class BranchController extends Controller
 {
-    public function __construct(private readonly PlanLimitService $planLimits) {}
+    public function __construct(
+        private readonly PlanLimitService $planLimits,
+        private readonly IngredientService $ingredients,
+    ) {}
 
     public function index(): JsonResponse
     {
@@ -53,6 +57,7 @@ class BranchController extends Controller
         ]);
 
         AuditLogger::log('branch.created', $branch, ['created_by' => $request->user()->id]);
+        $this->ingredients->ensureVisible(branchId: (int) $branch->id);
 
         return ApiResponse::created(new BranchResource($branch), 'Branch created.');
     }

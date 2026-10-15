@@ -13,12 +13,18 @@ class StockTransferItem extends Model
         'stock_transfer_id',
         'ingredient_id',
         'quantity',
+        'sent_quantity',
+        'received_quantity',
+        'unit_cost',
     ];
 
     protected function casts(): array
     {
         return [
             'quantity' => 'decimal:4',
+            'sent_quantity' => 'decimal:4',
+            'received_quantity' => 'decimal:4',
+            'unit_cost' => 'decimal:4',
         ];
     }
 

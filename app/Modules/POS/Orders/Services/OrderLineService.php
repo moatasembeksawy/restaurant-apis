@@ -30,11 +30,20 @@ class OrderLineService
             throw new InvalidArgumentException('Menu item not found.');
         }
 
-        if (! $menuItem->is_available) {
+        $hasSoldPrice = array_key_exists('unit_price', $line) && $line['unit_price'] !== null;
+
+        if (! $menuItem->is_available && ! $hasSoldPrice) {
             throw new InvalidArgumentException("Menu item {$menuItem->id} is unavailable.");
         }
 
         $quantity = max(1, (int) ($line['quantity'] ?? 1));
+        $unitPrice = $hasSoldPrice
+            ? round((float) $line['unit_price'], 2)
+            : round((float) $menuItem->price, 2);
+
+        if ($unitPrice < 0) {
+            throw new InvalidArgumentException('Item price cannot be negative.');
+        }
 
         return $order->items()->create([
             'line_type' => OrderItem::LINE_ITEM,
@@ -42,11 +51,12 @@ class OrderLineService
             'package_id' => null,
             'parent_id' => null,
             'item_name_ar' => $menuItem->name_ar,
-            'unit_price' => $menuItem->price,
+            'unit_price' => $unitPrice,
             'quantity' => $quantity,
-            'subtotal' => round((float) $menuItem->price * $quantity, 2),
+            'subtotal' => round($unitPrice * $quantity, 2),
             'status' => 'pending',
             'notes' => $line['notes'] ?? null,
+            'client_item_id' => $line['client_item_id'] ?? null,
         ]);
     }
 

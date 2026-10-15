@@ -56,8 +56,12 @@ final class BranchAccess
         }
 
         if ($model instanceof StockTransfer) {
-            self::assertCanAccess($user, (int) $model->from_branch_id);
-            self::assertCanAccess($user, (int) $model->to_branch_id);
+            $fromBranchId = (int) $model->from_branch_id;
+            $toBranchId = (int) $model->to_branch_id;
+
+            if (! self::canAccess($user, $fromBranchId) && ! self::canAccess($user, $toBranchId)) {
+                throw new BranchAccessDeniedException;
+            }
 
             return;
         }

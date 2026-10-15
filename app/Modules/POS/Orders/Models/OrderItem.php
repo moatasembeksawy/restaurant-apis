@@ -30,6 +30,7 @@ class OrderItem extends Model
         'subtotal',
         'status',
         'notes',
+        'client_item_id',
         'selections',
         'cooked_at',
     ];

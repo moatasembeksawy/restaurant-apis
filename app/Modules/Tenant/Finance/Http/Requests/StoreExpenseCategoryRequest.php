@@ -34,6 +34,7 @@ class StoreExpenseCategoryRequest extends ApiFormRequest
                 'max:64',
                 $uniqueCode,
             ],
+            'allocates_to_item_cost' => ['sometimes', 'boolean'],
         ];
     }
 }

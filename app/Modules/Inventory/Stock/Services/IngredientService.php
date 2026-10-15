@@ -6,6 +6,7 @@ namespace App\Modules\Inventory\Stock\Services;
 
 use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\Inventory\Stock\Models\InventoryStock;
+use App\Modules\Tenant\Models\Branch;
 use Illuminate\Support\Str;
 use InvalidArgumentException;
 
@@ -110,6 +111,68 @@ class IngredientService
             'unit_cost' => $unitCost ?? $ingredient->default_cost,
             'is_active' => $data['is_active'] ?? true,
         ]);
+    }
+
+    /**
+     * Open a zero-quantity stock row at every tenant branch that is missing one
+     * so the shared catalog stays visible after switching branches.
+     */
+    public function ensureVisible(?Ingredient $ingredient = null, ?int $branchId = null): void
+    {
+        $branchIds = $branchId !== null
+            ? collect([$branchId])
+            : Branch::query()->pluck('id');
+
+        if ($branchIds->isEmpty()) {
+            return;
+        }
+
+        $ingredients = $ingredient !== null
+            ? collect([$ingredient])
+            : Ingredient::query()->get(['id', 'tenant_id', 'default_cost', 'is_active']);
+
+        if ($ingredients->isEmpty()) {
+            return;
+        }
+
+        $existing = InventoryStock::query()
+            ->when($ingredient !== null, fn ($q) => $q->where('ingredient_id', $ingredient->id))
+            ->when($branchId !== null, fn ($q) => $q->where('branch_id', $branchId))
+            ->whereIn('branch_id', $branchIds->all())
+            ->get(['ingredient_id', 'branch_id'])
+            ->map(fn (InventoryStock $row): string => $row->ingredient_id.'-'.$row->branch_id)
+            ->all();
+
+        $existingSet = array_flip($existing);
+        $now = now();
+        $rows = [];
+
+        foreach ($ingredients as $item) {
+            foreach ($branchIds as $id) {
+                $branchKey = (int) $id;
+                $key = $item->id.'-'.$branchKey;
+
+                if (isset($existingSet[$key])) {
+                    continue;
+                }
+
+                $rows[] = [
+                    'tenant_id' => $item->tenant_id,
+                    'ingredient_id' => $item->id,
+                    'branch_id' => $branchKey,
+                    'current_stock' => 0,
+                    'reorder_level' => 0,
+                    'unit_cost' => $item->default_cost ?? 0,
+                    'is_active' => $item->is_active ? 1 : 0,
+                    'created_at' => $now,
+                    'updated_at' => $now,
+                ];
+            }
+        }
+
+        if ($rows !== []) {
+            InventoryStock::query()->insert($rows);
+        }
     }
 
     public function stockAtBranch(int $ingredientId, ?int $branchId): ?InventoryStock

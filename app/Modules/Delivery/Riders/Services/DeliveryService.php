@@ -7,6 +7,9 @@ namespace App\Modules\Delivery\Riders\Services;
 use App\Models\User;
 use App\Modules\POS\Orders\Models\Order;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\BranchAccess;
+use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
 class DeliveryService
@@ -42,6 +45,69 @@ class DeliveryService
         ]);
 
         return $order->fresh(['rider', 'payment.splits']);
+    }
+
+    /**
+     * @param  list<int>  $orderIds
+     * @return Collection<int, Order>
+     */
+    public function bulkAssignRider(array $orderIds, User $rider, User $assignedBy): Collection
+    {
+        if (
+            $rider->role !== 'rider'
+            || ! $rider->is_active
+            || $rider->tenant_id !== $assignedBy->tenant_id
+        ) {
+            throw new InvalidArgumentException('Invalid rider.');
+        }
+
+        return DB::transaction(function () use ($orderIds, $rider, $assignedBy): Collection {
+            $orders = Order::query()
+                ->whereKey($orderIds)
+                ->lockForUpdate()
+                ->get();
+
+            if ($orders->count() !== count($orderIds)) {
+                throw new InvalidArgumentException('One or more orders could not be found.');
+            }
+
+            foreach ($orders as $order) {
+                if (! BranchAccess::canAccess($assignedBy, (int) $order->branch_id)) {
+                    throw new InvalidArgumentException('One or more orders are outside your branch access.');
+                }
+
+                if (
+                    ! $order->isDelivery()
+                    || $order->rider_id !== null
+                    || $order->delivery_status !== 'pending'
+                    || in_array($order->status, ['cancelled', 'completed', 'paid', 'refunded'], true)
+                ) {
+                    throw new InvalidArgumentException("Order {$order->id} is not available for assignment.");
+                }
+
+                if ((int) $rider->branch_id !== (int) $order->branch_id) {
+                    throw new InvalidArgumentException("Rider and order {$order->id} must belong to the same branch.");
+                }
+            }
+
+            foreach ($orders as $order) {
+                $order->update([
+                    'rider_id' => $rider->id,
+                    'delivery_status' => 'assigned',
+                ]);
+
+                AuditLogger::log('delivery.rider_assigned', $order, [
+                    'rider_id' => $rider->id,
+                    'rider_name' => $rider->name,
+                    'bulk' => true,
+                ]);
+            }
+
+            return Order::query()
+                ->whereKey($orderIds)
+                ->with(['items', 'customer', 'district', 'customerAddress', 'rider', 'payment.splits'])
+                ->get();
+        });
     }
 
     public function updateDeliveryStatus(Order $order, string $status): Order
