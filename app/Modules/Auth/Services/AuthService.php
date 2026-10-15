@@ -121,7 +121,7 @@ class AuthService
             'password' => $password,
         ])->save();
 
-        $currentTokenId = $user->currentAccessToken()?->getKey();
+        $currentTokenId = $user->currentAccessToken()->getKey();
 
         $user->tokens()
             ->when($currentTokenId, fn ($query) => $query->whereKeyNot($currentTokenId))

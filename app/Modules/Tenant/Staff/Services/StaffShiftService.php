@@ -182,7 +182,7 @@ class StaffShiftService
             'branch_id' => $shift->branch_id,
             'branch_name' => $shift->branch?->name,
             'business_day_id' => $shift->business_day_id,
-            'clock_in' => $shift->clock_in?->toIso8601String(),
+            'clock_in' => $shift->clock_in->toIso8601String(),
             'clock_out' => $shift->clock_out?->toIso8601String(),
             'is_active' => $shift->isActive(),
             'duration_minutes' => $shift->clock_out

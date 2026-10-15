@@ -339,7 +339,8 @@ class StockTransferService
         $caps = [];
 
         foreach ($transfer->items as $item) {
-            $caps[(int) $item->ingredient_id] = round((float) $item->{$basis}, 4);
+            $cap = $basis === 'sent_quantity' ? $item->sent_quantity : $item->quantity;
+            $caps[(int) $item->ingredient_id] = round((float) $cap, 4);
         }
 
         $quantities = $caps;

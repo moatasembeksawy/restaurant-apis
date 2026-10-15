@@ -83,7 +83,7 @@ class BusinessDayService
 
             AuditLogger::log('business_day.opened', $day, [
                 'branch_id' => $branchId,
-                'business_date' => $day->business_date?->toDateString(),
+                'business_date' => $day->business_date->toDateString(),
             ]);
 
             return $day->load(['branch:id,name', 'openedBy:id,name']);

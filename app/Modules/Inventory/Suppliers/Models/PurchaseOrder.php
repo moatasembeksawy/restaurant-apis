@@ -39,11 +39,13 @@ class PurchaseOrder extends BaseModel
         ];
     }
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);
     }
 
+    /** @return BelongsTo<Supplier, $this> */
     public function supplier(): BelongsTo
     {
         return $this->belongsTo(Supplier::class);

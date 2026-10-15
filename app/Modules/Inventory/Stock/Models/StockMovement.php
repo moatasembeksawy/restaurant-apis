@@ -11,6 +11,9 @@ use App\Shared\Domain\Models\BaseModel;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\MorphTo;
 
+/**
+ * @property 'purchase'|'waste'|'sale'|'adjustment'|'refund'|'transfer_in'|'transfer_out'|'production' $type
+ */
 class StockMovement extends BaseModel
 {
     protected $fillable = [
@@ -35,6 +38,7 @@ class StockMovement extends BaseModel
         ];
     }
 
+    /** @return BelongsTo<Ingredient, $this> */
     public function ingredient(): BelongsTo
     {
         return $this->belongsTo(Ingredient::class);

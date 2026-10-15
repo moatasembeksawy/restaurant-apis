@@ -31,6 +31,16 @@ class StaffShift extends BaseModel
         'cash_variance',
     ];
 
+    /**
+     * @return array{
+     *     clock_in: 'datetime',
+     *     clock_out: 'datetime',
+     *     opening_float: 'decimal:2',
+     *     closing_cash_count: 'decimal:2',
+     *     expected_cash: 'decimal:2',
+     *     cash_variance: 'decimal:2'
+     * }
+     */
     protected function casts(): array
     {
         return [
@@ -43,11 +53,13 @@ class StaffShift extends BaseModel
         ];
     }
 
+    /** @return BelongsTo<User, $this> */
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
+    /** @return BelongsTo<Branch, $this> */
     public function branch(): BelongsTo
     {
         return $this->belongsTo(Branch::class);

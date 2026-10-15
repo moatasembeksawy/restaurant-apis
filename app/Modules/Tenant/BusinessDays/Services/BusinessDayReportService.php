@@ -22,14 +22,6 @@ class BusinessDayReportService
         'refund' => 1,
     ];
 
-    /** @var array<string, int> */
-    private const OUT_TYPES = [
-        'sale' => 1,
-        'waste' => 1,
-        'transfer_out' => 1,
-        'production' => 1,
-    ];
-
     /** @return array<string, mixed> */
     public function build(BusinessDay $day): array
     {
@@ -102,7 +94,7 @@ class BusinessDayReportService
                 'user_id' => $shift->user_id,
                 'user_name' => $shift->user?->name,
                 'user_role' => $shift->user?->role,
-                'clock_in' => $shift->clock_in?->toIso8601String(),
+                'clock_in' => $shift->clock_in->toIso8601String(),
                 'clock_out' => $shift->clock_out?->toIso8601String(),
                 'is_active' => $shift->isActive(),
                 'opening_float' => (string) $shift->opening_float,
@@ -115,10 +107,10 @@ class BusinessDayReportService
 
         return [
             'business_day_id' => $day->id,
-            'business_date' => $day->business_date?->toDateString(),
+            'business_date' => $day->business_date->toDateString(),
             'branch_id' => $day->branch_id,
             'status' => $day->status,
-            'opened_at' => $day->opened_at?->toIso8601String(),
+            'opened_at' => $day->opened_at->toIso8601String(),
             'closed_at' => $day->closed_at?->toIso8601String(),
             'orders' => [
                 'total' => $orders->count(),

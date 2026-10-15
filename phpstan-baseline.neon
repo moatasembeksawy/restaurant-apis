@@ -361,36 +361,6 @@ parameters:
 			path: app/Modules/Tenant/Staff/Services/StaffShiftSalesService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name\.$#'
-			identifier: property.notFound
-			count: 2
-			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$role\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
-
-		-
-			message: '#^Cannot call method diffInMinutes\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 3
-			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
-
-		-
-			message: '#^Cannot call method toIso8601String\(\) on string\.$#'
-			identifier: method.nonObject
-			count: 2
-			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
-
-		-
-			message: '#^Using nullsafe method call on non\-nullable type string\. Use \-\> instead\.$#'
-			identifier: nullsafe.neverNull
-			count: 1
-			path: app/Modules/Tenant/Staff/Services/StaffShiftService.php
-
-		-
 			message: '#^Cannot call method isFuture\(\) on string\.$#'
 			identifier: method.nonObject
 			count: 1

@@ -176,14 +176,14 @@ class EscPosBuilder
     {
         $this->reset()->alignCenter()->bold()->text('PURCHASE ORDER')->bold(false)
             ->text('PO #'.$purchaseOrder->id)
-            ->text($purchaseOrder->branch->name_ar ?? $purchaseOrder->branch->name)
+            ->text($purchaseOrder->branch->name_ar)
             ->separator()->alignLeft()
             ->text('Supplier: '.$purchaseOrder->supplier->name)
             ->text('Date: '.$purchaseOrder->created_at->format('Y-m-d H:i'))
             ->separator();
 
         foreach ($purchaseOrder->items as $item) {
-            $name = $item->ingredient->name_ar ?? $item->ingredient->name;
+            $name = $item->ingredient->name_ar;
             $this->bold()->text($name)->bold(false)
                 ->text(sprintf(
                     '  %s x %s = %s',

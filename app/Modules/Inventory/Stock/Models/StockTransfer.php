@@ -74,6 +74,7 @@ class StockTransfer extends BaseModel
         return $this->belongsTo(User::class, 'cancelled_by_id');
     }
 
+    /** @return HasMany<StockTransferItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(StockTransferItem::class);

@@ -36,6 +36,16 @@ class BusinessDay extends BaseModel
         'closing_summary',
     ];
 
+    /**
+     * @return array{
+     *     business_date: 'date',
+     *     opened_at: 'datetime',
+     *     closed_at: 'datetime',
+     *     opening_stock: 'array',
+     *     closing_summary: 'array',
+     *     next_order_number: 'integer'
+     * }
+     */
     protected function casts(): array
     {
         return [
@@ -63,6 +73,7 @@ class BusinessDay extends BaseModel
         return $this->belongsTo(User::class, 'closed_by_id');
     }
 
+    /** @return HasMany<StaffShift, $this> */
     public function shifts(): HasMany
     {
         return $this->hasMany(StaffShift::class);
@@ -73,6 +84,7 @@ class BusinessDay extends BaseModel
         return $this->hasMany(Order::class);
     }
 
+    /** @return HasMany<StockMovement, $this> */
     public function stockMovements(): HasMany
     {
         return $this->hasMany(StockMovement::class);

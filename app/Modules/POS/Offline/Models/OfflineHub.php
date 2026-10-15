@@ -20,6 +20,7 @@ class OfflineHub extends BaseModel
         'last_seen_at',
     ];
 
+    /** @return array{last_seen_at: 'datetime'} */
     protected function casts(): array
     {
         return [
