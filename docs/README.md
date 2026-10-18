@@ -100,14 +100,17 @@ Hub routes are `/api/v1/hub/*`. They do not use Sanctum or tenant middleware. Se
 
 Bulk assignment is atomic: the rider and orders must belong to the same branch, and no order is assigned if any selected order is unavailable. In the rider summary, unpaid means the order status is neither `paid` nor `refunded`; cancelled orders are excluded.
 
-## Ingredient transfer cycle
+## Ingredient transfer cycle (issue voucher)
 
-1. Destination requests stock with `POST /inventory/transfers`; status becomes `pending` and stock is unchanged.
-2. Source sends with `POST /inventory/transfers/{stockTransfer}/send`; sent quantity is deducted and status becomes `in_transit`.
-3. Destination confirms with `POST /inventory/transfers/{stockTransfer}/receive`; received quantity is added and status becomes `completed`.
-4. A transfer can be cancelled by either branch only while it is pending.
+The warehouse is a branch. The restaurant asks that branch (or another restaurant) for ingredients.
 
-The send and receive requests may omit `items` to use the full previous-step quantities, or provide lower quantities for partial fulfillment and shortages.
+1. Restaurant creates `POST /inventory/transfers` → `pending`. Stock is unchanged.
+2. Warehouse prepares with `POST /inventory/transfers/{stockTransfer}/prepare` → `preparing`. Stock is unchanged.
+3. Warehouse dispatches with `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Warehouse stock is deducted.
+4. Restaurant accepts with `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Restaurant stock is increased.
+5. Either side may cancel while `pending` or `preparing`. After dispatch, only the restaurant can reject; sent quantities return to the warehouse.
+
+Send and receive may omit `items` to use the full previous-step quantities, or send lower quantities for partial fulfillment.
 
 ## Purchase order cycle
 

@@ -268,7 +268,7 @@ class BusinessDayService
             notes: $notes ?? "Return from business day #{$day->id}",
         );
 
-        return $this->transfers->send($transfer, $user);
+        return $this->transfers->send($this->transfers->prepare($transfer, $user), $user);
     }
 
     /** @return list<array<string, mixed>> */

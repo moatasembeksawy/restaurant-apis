@@ -46,6 +46,7 @@ Route::middleware('feature:inventory')->group(function (): void {
 
     Route::middleware(['feature:multi_branch', 'permission:inventory.manage'])->group(function (): void {
         Route::post('inventory/transfers', [StockTransferController::class, 'store']);
+        Route::post('inventory/transfers/{stockTransfer}/prepare', [StockTransferController::class, 'prepare']);
         Route::post('inventory/transfers/{stockTransfer}/send', [StockTransferController::class, 'send']);
         Route::post('inventory/transfers/{stockTransfer}/receive', [StockTransferController::class, 'receive']);
         Route::post('inventory/transfers/{stockTransfer}/cancel', [StockTransferController::class, 'cancel']);

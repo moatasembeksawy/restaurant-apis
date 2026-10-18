@@ -13,7 +13,7 @@ class IndexStockTransferRequest extends ApiFormRequest
     {
         return [
             'branch_id' => ['nullable', 'integer'],
-            'status' => ['nullable', 'in:pending,in_transit,completed,cancelled'],
+            'status' => ['nullable', 'in:pending,preparing,in_transit,completed,cancelled'],
         ];
     }
 }

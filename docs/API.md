@@ -79,14 +79,15 @@ Hub routes live under `/api/v1/hub/*`, outside tenant and Sanctum middleware. Ki
 
 ## Stock Transfer Lifecycle
 
-Cross-branch ingredient transfers use one document with controlled state transitions:
+An issue voucher (اذن صرف) moves ingredients from a warehouse or source branch to a restaurant:
 
-1. The destination branch creates a request: `POST /inventory/transfers` → `pending`. Stock is unchanged.
-2. The source branch sends it: `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Source stock is deducted.
-3. The destination confirms receipt: `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Destination stock is increased.
-4. Either participating branch may cancel only while the transfer is `pending`.
+1. Restaurant creates the voucher: `POST /inventory/transfers` → `pending`. Stock is unchanged.
+2. Warehouse accepts and prepares it: `POST /inventory/transfers/{stockTransfer}/prepare` → `preparing`. Stock is unchanged.
+3. Warehouse dispatches the goods: `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Warehouse stock is deducted.
+4. Restaurant accepts: `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Restaurant stock is increased.
+5. Restaurant (or warehouse, before dispatch) may cancel: `POST /inventory/transfers/{stockTransfer}/cancel`. After dispatch, only the restaurant can reject; sent quantities return to the warehouse.
 
-Send and receive bodies are optional. Omit `items` to accept the full previous-step quantities, or provide lower quantities for partial fulfillment or a receiving shortage. A sent or completed step cannot be applied twice.
+Send and receive bodies are optional. Omit `items` to accept the full previous-step quantities, or provide lower quantities for partial fulfillment or a receiving shortage. A completed voucher cannot be applied twice.
 
 ---
 
@@ -1593,7 +1594,7 @@ Update — inventory/suppliers/{supplier}
 
 #### `GET` /api/v1/inventory/transfers
 
-List transfers visible to the authenticated branch. Filter by branch and lifecycle status: pending, in_transit, completed, or cancelled.
+List issue vouchers visible to the authenticated branch. Filter by branch and status: pending, preparing, in_transit, completed, or cancelled.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.view`
@@ -1605,13 +1606,13 @@ List transfers visible to the authenticated branch. Filter by branch and lifecyc
 | Parameter | Rules |
 |-----------|-------|
 | `branch_id` | `nullable, integer` |
-| `status` | `nullable, in:pending,in_transit,completed,cancelled` |
+| `status` | `nullable, in:pending,preparing,in_transit,completed,cancelled` |
 
 ---
 
 #### `POST` /api/v1/inventory/transfers
 
-Destination branch requests ingredients from a source branch. This creates a pending document and does not change stock.
+Restaurant creates an issue voucher asking a warehouse or another branch for ingredients. Status becomes pending. Stock is unchanged.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -1649,7 +1650,7 @@ Destination branch requests ingredients from a source branch. This creates a pen
 
 #### `GET` /api/v1/inventory/transfers/{stockTransfer}
 
-Get one transfer with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.
+Get one issue voucher with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.view`
@@ -1660,7 +1661,30 @@ Get one transfer with requested, sent, and received quantities plus the users an
 
 #### `POST` /api/v1/inventory/transfers/{stockTransfer}/cancel
 
-Cancel a pending transfer from either participating branch. Sent transfers cannot be cancelled.
+Cancel a pending or preparing voucher from either side. After dispatch, only the restaurant can reject the shipment; warehouse stock is restored.
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `inventory.manage`
+- **Plan features:** `inventory`, `multi_branch`
+- **Path params:** `{stockTransfer}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `reason` | `nullable, string, max:255` |
+
+```json
+{
+    "reason": "طلب العميل إلغاء الطلب"
+}
+```
+
+---
+
+#### `POST` /api/v1/inventory/transfers/{stockTransfer}/prepare
+
+Warehouse accepts a pending voucher and starts preparing the goods. Status becomes preparing. Stock is unchanged.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -1679,7 +1703,7 @@ _None_
 
 #### `POST` /api/v1/inventory/transfers/{stockTransfer}/receive
 
-Destination branch confirms an in-transit transfer. Adds received quantities to destination stock and changes status to completed. Omit items to receive all sent quantities.
+Restaurant accepts an in-transit shipment. Adds received quantities to restaurant stock and changes status to completed. Omit items to receive all sent quantities.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`
@@ -1709,7 +1733,7 @@ Destination branch confirms an in-transit transfer. Adds received quantities to 
 
 #### `POST` /api/v1/inventory/transfers/{stockTransfer}/send
 
-Source branch sends a pending transfer. Deducts sent quantities from source stock and changes status to in_transit. Omit items to send all requested quantities.
+Warehouse dispatches a prepared voucher back to the restaurant. Deducts sent quantities from warehouse stock and changes status to in_transit. Omit items to send all requested quantities.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `inventory.manage`

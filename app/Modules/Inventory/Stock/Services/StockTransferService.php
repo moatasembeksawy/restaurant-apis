@@ -116,6 +116,32 @@ class StockTransferService
         });
     }
 
+    public function prepare(StockTransfer $transfer, User $user): StockTransfer
+    {
+        BranchAccess::assertCanAccess($user, (int) $transfer->from_branch_id);
+
+        return DB::transaction(function () use ($transfer, $user): StockTransfer {
+            $transfer = $this->lock($transfer);
+
+            if ($transfer->status !== StockTransfer::STATUS_PENDING) {
+                throw new InvalidArgumentException('Only a pending issue voucher can be prepared.');
+            }
+
+            $transfer->update([
+                'status' => StockTransfer::STATUS_PREPARING,
+                'prepared_by_id' => $user->id,
+                'prepared_at' => now(),
+            ]);
+
+            AuditLogger::log('inventory.transfer.prepared', $transfer, [
+                'from_branch_id' => $transfer->from_branch_id,
+                'to_branch_id' => $transfer->to_branch_id,
+            ]);
+
+            return $this->present($transfer);
+        });
+    }
+
     /**
      * @param  list<array{ingredient_id: int, quantity: float|int|string}>|null  $lines
      */
@@ -126,8 +152,8 @@ class StockTransferService
         return DB::transaction(function () use ($transfer, $user, $lines): StockTransfer {
             $transfer = $this->lock($transfer);
 
-            if ($transfer->status !== StockTransfer::STATUS_PENDING || $this->hasMovement($transfer, 'transfer_out')) {
-                throw new InvalidArgumentException('Only a pending request can be sent.');
+            if ($transfer->status !== StockTransfer::STATUS_PREPARING || $this->hasMovement($transfer, 'transfer_out')) {
+                throw new InvalidArgumentException('The warehouse must prepare this request before sending it.');
             }
 
             $quantities = $this->resolveQuantities($transfer, $lines, 'quantity', 'Sent quantity cannot exceed the requested quantity.');
@@ -230,7 +256,7 @@ class StockTransferService
         });
     }
 
-    public function cancel(StockTransfer $transfer, User $user): StockTransfer
+    public function cancel(StockTransfer $transfer, User $user, ?string $reason = null): StockTransfer
     {
         $fromBranchId = (int) $transfer->from_branch_id;
         $toBranchId = (int) $transfer->to_branch_id;
@@ -239,22 +265,31 @@ class StockTransferService
             throw new BranchAccessDeniedException;
         }
 
-        return DB::transaction(function () use ($transfer, $user): StockTransfer {
+        return DB::transaction(function () use ($transfer, $user, $reason, $toBranchId): StockTransfer {
             $transfer = $this->lock($transfer);
 
-            if ($transfer->status !== StockTransfer::STATUS_PENDING) {
-                throw new InvalidArgumentException('Only a pending request can be cancelled.');
+            if (in_array($transfer->status, [StockTransfer::STATUS_COMPLETED, StockTransfer::STATUS_CANCELLED], true)) {
+                throw new InvalidArgumentException('This issue voucher can no longer be cancelled.');
+            }
+
+            $previousStatus = $transfer->status;
+
+            if ($previousStatus === StockTransfer::STATUS_IN_TRANSIT) {
+                BranchAccess::assertCanAccess($user, $toBranchId);
+                $this->returnDispatchedStock($transfer, $user, $reason);
             }
 
             $transfer->update([
                 'status' => StockTransfer::STATUS_CANCELLED,
                 'cancelled_by_id' => $user->id,
                 'cancelled_at' => now(),
+                'cancel_reason' => $reason,
             ]);
 
             AuditLogger::log('inventory.transfer.cancelled', $transfer, [
                 'from_branch_id' => $transfer->from_branch_id,
                 'to_branch_id' => $transfer->to_branch_id,
+                'status_was' => $previousStatus,
             ]);
 
             return $this->present($transfer);
@@ -301,6 +336,48 @@ class StockTransferService
             );
         } catch (RuntimeException $e) {
             throw new InvalidArgumentException($e->getMessage());
+        }
+    }
+
+    private function returnDispatchedStock(StockTransfer $transfer, User $user, ?string $reason): void
+    {
+        if ($this->hasMovement($transfer, 'transfer_in')) {
+            throw new InvalidArgumentException('This shipment has already been received and cannot be rejected.');
+        }
+
+        foreach ($transfer->items as $item) {
+            $sentQty = round((float) ($item->sent_quantity ?? 0), 4);
+
+            if ($sentQty <= 0) {
+                $item->update(['received_quantity' => 0]);
+
+                continue;
+            }
+
+            $source = $this->sourceStock((int) $transfer->from_branch_id, (int) $item->ingredient_id);
+
+            if (! $source) {
+                $source = $this->ingredients->openAtBranch([
+                    'ingredient_id' => $item->ingredient_id,
+                    'branch_id' => $transfer->from_branch_id,
+                    'current_stock' => 0,
+                    'unit_cost' => $item->unit_cost ?? 0,
+                    'is_active' => true,
+                ]);
+            }
+
+            $this->move(
+                stock: $source,
+                type: 'transfer_in',
+                quantity: $sentQty,
+                user: $user,
+                unitCost: $item->unit_cost !== null ? (float) $item->unit_cost : null,
+                notes: $reason ?? "Restaurant rejected transfer #{$transfer->id}",
+                transfer: $transfer,
+                branchId: (int) $transfer->from_branch_id,
+            );
+
+            $item->update(['received_quantity' => 0]);
         }
     }
 
@@ -400,6 +477,7 @@ class StockTransferService
             'toBranch:id,name',
             'items.ingredient',
             'user:id,name',
+            'preparedBy:id,name',
             'sentBy:id,name',
             'receivedBy:id,name',
             'cancelledBy:id,name',

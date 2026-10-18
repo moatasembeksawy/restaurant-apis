@@ -2573,10 +2573,10 @@
                     ]
                 },
                 {
-                    "name": "10 · Inventory transfer (request → send → receive)",
+                    "name": "10 · Inventory transfer (request → prepare → send → receive)",
                     "item": [
                         {
-                            "name": "POST · Request stock transfer",
+                            "name": "POST · Request issue voucher",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -2608,7 +2608,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Destination branch requests ingredients from a source branch. This creates a pending document and does not change stock.\n\nAuth: Bearer token + tenant header",
+                                "description": "Restaurant creates an issue voucher asking a warehouse or another branch for ingredients. Status becomes pending. Stock is unchanged.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"from_branch_id\": \"{{source_branch_id}}\",\n    \"to_branch_id\": \"{{destination_branch_id}}\",\n    \"items\": [\n        {\n            \"ingredient_id\": \"{{ingredient_id}}\",\n            \"quantity\": 5\n        }\n    ],\n    \"notes\": \"Replenishment request\"\n}",
@@ -2647,7 +2647,59 @@
                             ]
                         },
                         {
-                            "name": "POST · Send stock transfer",
+                            "name": "POST · Warehouse prepares issue voucher",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/transfers/{{stock_transfer_id}}/prepare",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "transfers",
+                                        "{stockTransfer}",
+                                        "prepare"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Warehouse accepts a pending voucher and starts preparing the goods. Status becomes preparing. Stock is unchanged.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · Warehouse dispatches issue voucher",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -2681,7 +2733,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Source branch sends a pending transfer. Deducts sent quantities from source stock and changes status to in_transit. Omit items to send all requested quantities.\n\nAuth: Bearer token + tenant header",
+                                "description": "Warehouse dispatches a prepared voucher back to the restaurant. Deducts sent quantities from warehouse stock and changes status to in_transit. Omit items to send all requested quantities.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"items\": [\n        {\n            \"ingredient_id\": \"{{ingredient_id}}\",\n            \"quantity\": 5\n        }\n    ]\n}",
@@ -2708,7 +2760,7 @@
                             ]
                         },
                         {
-                            "name": "POST · Confirm stock transfer receipt",
+                            "name": "POST · Restaurant accepts goods",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -2742,7 +2794,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Destination branch confirms an in-transit transfer. Adds received quantities to destination stock and changes status to completed. Omit items to receive all sent quantities.\n\nAuth: Bearer token + tenant header",
+                                "description": "Restaurant accepts an in-transit shipment. Adds received quantities to restaurant stock and changes status to completed. Omit items to receive all sent quantities.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"items\": [\n        {\n            \"ingredient_id\": \"{{ingredient_id}}\",\n            \"quantity\": 5\n        }\n    ]\n}",
@@ -14892,7 +14944,7 @@
                     "name": "7.6 Stock Transfers",
                     "item": [
                         {
-                            "name": "GET · List stock transfers",
+                            "name": "GET · List issue vouchers",
                             "request": {
                                 "method": "GET",
                                 "header": [
@@ -14931,11 +14983,11 @@
                                         {
                                             "key": "status",
                                             "value": "pending",
-                                            "description": "nullable, in:pending,in_transit,completed,cancelled"
+                                            "description": "nullable, in:pending,preparing,in_transit,completed,cancelled"
                                         }
                                     ]
                                 },
-                                "description": "List transfers visible to the authenticated branch. Filter by branch and lifecycle status: pending, in_transit, completed, or cancelled.\n\nAuth: Bearer token + tenant header"
+                                "description": "List issue vouchers visible to the authenticated branch. Filter by branch and status: pending, preparing, in_transit, completed, or cancelled.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -14953,7 +15005,7 @@
                             ]
                         },
                         {
-                            "name": "GET · Get stock transfer",
+                            "name": "GET · Get issue voucher",
                             "request": {
                                 "method": "GET",
                                 "header": [
@@ -14986,7 +15038,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Get one transfer with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.\n\nAuth: Bearer token + tenant header"
+                                "description": "Get one issue voucher with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.\n\nAuth: Bearer token + tenant header"
                             },
                             "event": [
                                 {
@@ -15004,7 +15056,7 @@
                             ]
                         },
                         {
-                            "name": "POST · Request stock transfer",
+                            "name": "POST · Request issue voucher",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -15036,7 +15088,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Destination branch requests ingredients from a source branch. This creates a pending document and does not change stock.\n\nAuth: Bearer token + tenant header",
+                                "description": "Restaurant creates an issue voucher asking a warehouse or another branch for ingredients. Status becomes pending. Stock is unchanged.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"from_branch_id\": \"{{source_branch_id}}\",\n    \"to_branch_id\": \"{{destination_branch_id}}\",\n    \"items\": [\n        {\n            \"ingredient_id\": \"{{ingredient_id}}\",\n            \"quantity\": 5\n        }\n    ],\n    \"notes\": \"Replenishment request\"\n}",
@@ -15075,7 +15127,7 @@
                             ]
                         },
                         {
-                            "name": "POST · Cancel stock transfer request",
+                            "name": "POST · Cancel or reject issue voucher",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -15109,7 +15161,16 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Cancel a pending transfer from either participating branch. Sent transfers cannot be cancelled.\n\nAuth: Bearer token + tenant header"
+                                "description": "Cancel a pending or preparing voucher from either side. After dispatch, only the restaurant can reject the shipment; warehouse stock is restored.\n\nAuth: Bearer token + tenant header",
+                                "body": {
+                                    "mode": "raw",
+                                    "raw": "{\n    \"reason\": \"طلب العميل إلغاء الطلب\"\n}",
+                                    "options": {
+                                        "raw": {
+                                            "language": "json"
+                                        }
+                                    }
+                                }
                             },
                             "event": [
                                 {
@@ -15127,7 +15188,59 @@
                             ]
                         },
                         {
-                            "name": "POST · Confirm stock transfer receipt",
+                            "name": "POST · Warehouse prepares issue voucher",
+                            "request": {
+                                "method": "POST",
+                                "header": [
+                                    {
+                                        "key": "Accept",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Content-Type",
+                                        "value": "application/json"
+                                    },
+                                    {
+                                        "key": "Authorization",
+                                        "value": "Bearer {{tenant_token}}"
+                                    },
+                                    {
+                                        "key": "X-Tenant-Subdomain",
+                                        "value": "{{tenant_subdomain}}"
+                                    }
+                                ],
+                                "url": {
+                                    "raw": "{{base_url}}/inventory/transfers/{{stock_transfer_id}}/prepare",
+                                    "host": [
+                                        "{{base_url}}"
+                                    ],
+                                    "path": [
+                                        "inventory",
+                                        "transfers",
+                                        "{stockTransfer}",
+                                        "prepare"
+                                    ],
+                                    "query": []
+                                },
+                                "description": "Warehouse accepts a pending voucher and starts preparing the goods. Status becomes preparing. Stock is unchanged.\n\nAuth: Bearer token + tenant header"
+                            },
+                            "event": [
+                                {
+                                    "listen": "prerequest",
+                                    "script": {
+                                        "type": "text/javascript",
+                                        "exec": [
+                                            "if (!pm.collectionVariables.get('tenant_subdomain')) {",
+                                            "    console.warn('Set tenant_subdomain collection variable');",
+                                            "}",
+                                            "pm.request.headers.upsert({ key: 'X-Tenant-Subdomain', value: pm.collectionVariables.get('tenant_subdomain') });"
+                                        ]
+                                    }
+                                }
+                            ]
+                        },
+                        {
+                            "name": "POST · Restaurant accepts goods",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -15161,7 +15274,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Destination branch confirms an in-transit transfer. Adds received quantities to destination stock and changes status to completed. Omit items to receive all sent quantities.\n\nAuth: Bearer token + tenant header",
+                                "description": "Restaurant accepts an in-transit shipment. Adds received quantities to restaurant stock and changes status to completed. Omit items to receive all sent quantities.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"items\": [\n        {\n            \"ingredient_id\": \"{{ingredient_id}}\",\n            \"quantity\": 5\n        }\n    ]\n}",
@@ -15188,7 +15301,7 @@
                             ]
                         },
                         {
-                            "name": "POST · Send stock transfer",
+                            "name": "POST · Warehouse dispatches issue voucher",
                             "request": {
                                 "method": "POST",
                                 "header": [
@@ -15222,7 +15335,7 @@
                                     ],
                                     "query": []
                                 },
-                                "description": "Source branch sends a pending transfer. Deducts sent quantities from source stock and changes status to in_transit. Omit items to send all requested quantities.\n\nAuth: Bearer token + tenant header",
+                                "description": "Warehouse dispatches a prepared voucher back to the restaurant. Deducts sent quantities from warehouse stock and changes status to in_transit. Omit items to send all requested quantities.\n\nAuth: Bearer token + tenant header",
                                 "body": {
                                     "mode": "raw",
                                     "raw": "{\n    \"items\": [\n        {\n            \"ingredient_id\": \"{{ingredient_id}}\",\n            \"quantity\": 5\n        }\n    ]\n}",
@@ -15249,7 +15362,7 @@
                             ]
                         }
                     ],
-                    "description": "Request → send → confirm receipt. Source stock changes on send; destination stock changes only on receipt."
+                    "description": "Issue voucher: restaurant requests → warehouse prepares → warehouse dispatches → restaurant accepts or rejects."
                 }
             ]
         },

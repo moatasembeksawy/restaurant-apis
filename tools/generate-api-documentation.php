@@ -227,12 +227,13 @@ const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\IngredientController@store' => 'Create a master ingredient. Pass branch_id to also open stock at that branch.',
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\InventoryStockController@index' => 'Current quantity per branch. Filter by branch_id or ingredient_id.',
     'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\InventoryStockController@store' => 'Open existing master ingredient stock at a branch.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@index' => 'List transfers visible to the authenticated branch. Filter by branch and lifecycle status: pending, in_transit, completed, or cancelled.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Destination branch requests ingredients from a source branch. This creates a pending document and does not change stock.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@show' => 'Get one transfer with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => 'Source branch sends a pending transfer. Deducts sent quantities from source stock and changes status to in_transit. Omit items to send all requested quantities.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => 'Destination branch confirms an in-transit transfer. Adds received quantities to destination stock and changes status to completed. Omit items to receive all sent quantities.',
-    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@cancel' => 'Cancel a pending transfer from either participating branch. Sent transfers cannot be cancelled.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@index' => 'List issue vouchers visible to the authenticated branch. Filter by branch and status: pending, preparing, in_transit, completed, or cancelled.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Restaurant creates an issue voucher asking a warehouse or another branch for ingredients. Status becomes pending. Stock is unchanged.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@show' => 'Get one issue voucher with requested, sent, and received quantities plus the users and timestamps for each lifecycle step.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@prepare' => 'Warehouse accepts a pending voucher and starts preparing the goods. Status becomes preparing. Stock is unchanged.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => 'Warehouse dispatches a prepared voucher back to the restaurant. Deducts sent quantities from warehouse stock and changes status to in_transit. Omit items to send all requested quantities.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => 'Restaurant accepts an in-transit shipment. Adds received quantities to restaurant stock and changes status to completed. Omit items to receive all sent quantities.',
+    'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@cancel' => 'Cancel a pending or preparing voucher from either side. After dispatch, only the restaurant can reject the shipment; warehouse stock is restored.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@verifyDomain' => 'Verify custom domain DNS configuration for white-label access.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@uploadLogo' => 'Upload the restaurant logo shown in tenant settings and on the public QR menu.',
     'App\\Modules\\Tenant\\Http\\Controllers\\TenantSettingsController@deleteLogo' => 'Remove the restaurant logo.',
@@ -931,14 +932,15 @@ Hub routes live under `/api/v1/hub/*`, outside tenant and Sanctum middleware. Ki
 
 ## Stock Transfer Lifecycle
 
-Cross-branch ingredient transfers use one document with controlled state transitions:
+An issue voucher (اذن صرف) moves ingredients from a warehouse or source branch to a restaurant:
 
-1. The destination branch creates a request: `POST /inventory/transfers` → `pending`. Stock is unchanged.
-2. The source branch sends it: `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Source stock is deducted.
-3. The destination confirms receipt: `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Destination stock is increased.
-4. Either participating branch may cancel only while the transfer is `pending`.
+1. Restaurant creates the voucher: `POST /inventory/transfers` → `pending`. Stock is unchanged.
+2. Warehouse accepts and prepares it: `POST /inventory/transfers/{stockTransfer}/prepare` → `preparing`. Stock is unchanged.
+3. Warehouse dispatches the goods: `POST /inventory/transfers/{stockTransfer}/send` → `in_transit`. Warehouse stock is deducted.
+4. Restaurant accepts: `POST /inventory/transfers/{stockTransfer}/receive` → `completed`. Restaurant stock is increased.
+5. Restaurant (or warehouse, before dispatch) may cancel: `POST /inventory/transfers/{stockTransfer}/cancel`. After dispatch, only the restaurant can reject; sent quantities return to the warehouse.
 
-Send and receive bodies are optional. Omit `items` to accept the full previous-step quantities, or provide lower quantities for partial fulfillment or a receiving shortage. A sent or completed step cannot be applied twice.
+Send and receive bodies are optional. Omit `items` to accept the full previous-step quantities, or provide lower quantities for partial fulfillment or a receiving shortage. A completed voucher cannot be applied twice.
 
 ---
 
@@ -1280,12 +1282,13 @@ function postmanRequestDisplayName(array $endpoint): string
         'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@updateStatus' => 'Update order status',
         'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@settle' => 'Settle payment',
         'App\\Modules\\POS\\Billing\\Http\\Controllers\\PaymentController@refund' => 'Refund payment',
-        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@index' => 'List stock transfers',
-        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Request stock transfer',
-        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@show' => 'Get stock transfer',
-        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => 'Send stock transfer',
-        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => 'Confirm stock transfer receipt',
-        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@cancel' => 'Cancel stock transfer request',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@index' => 'List issue vouchers',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@store' => 'Request issue voucher',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@show' => 'Get issue voucher',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@prepare' => 'Warehouse prepares issue voucher',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@send' => 'Warehouse dispatches issue voucher',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@receive' => 'Restaurant accepts goods',
+        'App\\Modules\\Inventory\\Stock\\Http\\Controllers\\StockTransferController@cancel' => 'Cancel or reject issue voucher',
         'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@index' => 'List business days',
         'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@current' => 'Get current business day',
         'App\\Modules\\Tenant\\BusinessDays\\Http\\Controllers\\BusinessDayController@show' => 'Get business day',
@@ -1398,7 +1401,7 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Menu Categories') => 'Setup menu structure before adding items.',
         str_contains($folderName, 'Recipes') => 'Recipe lines are food cost. Approved expenses from categories with allocates_to_item_cost are divided evenly across paid items and returned as overhead_cost and full_cost.',
         str_contains($folderName, 'Ingredients') => 'Ingredients = shared master data (SKU, name, unit). Stock = quantity at one branch. Recipes and transfers use the master ingredient id.',
-        str_contains($folderName, 'Stock Transfers') => 'Request → send → confirm receipt. Source stock changes on send; destination stock changes only on receipt.',
+        str_contains($folderName, 'Stock Transfers') => 'Issue voucher: restaurant requests → warehouse prepares → warehouse dispatches → restaurant accepts or rejects.',
         str_contains($folderName, 'Menu Packages') => 'Combo meals: fixed items plus choice slots. Explodes into kitchen lines on order.',
         str_contains($folderName, 'Offers') => 'Percentage or fixed discounts with optional coupon, schedule, and channel rules.',
         str_contains($folderName, 'Menu Items') => 'Add dishes with Arabic names, prices, photos.',
@@ -1811,8 +1814,9 @@ function buildScenarioFolder(array $endpoints, array $requestMap, array $allRule
             $find('POST', 'inventory/purchase-orders/{purchaseOrder}/receive'),
             $find('POST', 'inventory/purchase-orders/{purchaseOrder}/complete'),
         ],
-        '10 · Inventory transfer (request → send → receive)' => [
+        '10 · Inventory transfer (request → prepare → send → receive)' => [
             $find('POST', 'inventory/transfers'),
+            $find('POST', 'inventory/transfers/{stockTransfer}/prepare'),
             $find('POST', 'inventory/transfers/{stockTransfer}/send'),
             $find('POST', 'inventory/transfers/{stockTransfer}/receive'),
         ],

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Inventory\Stock\Http\Controllers;
 
+use App\Modules\Inventory\Stock\Http\Requests\CancelStockTransferRequest;
 use App\Modules\Inventory\Stock\Http\Requests\IndexStockTransferRequest;
 use App\Modules\Inventory\Stock\Http\Requests\StockTransferLinesRequest;
 use App\Modules\Inventory\Stock\Http\Requests\StoreStockTransferRequest;
@@ -55,7 +56,7 @@ class StockTransferController extends Controller
                 user: $request->user(),
                 notes: $validated['notes'] ?? null,
             ),
-            'Transfer requested.',
+            'Issue voucher requested.',
             201,
         );
     }
@@ -65,11 +66,19 @@ class StockTransferController extends Controller
         return ApiResponse::success(new StockTransferResource($this->transfers->present($stockTransfer)));
     }
 
+    public function prepare(Request $request, StockTransfer $stockTransfer): JsonResponse
+    {
+        return $this->respond(
+            fn () => $this->transfers->prepare($stockTransfer, $request->user()),
+            'Warehouse accepted the request and is preparing the goods.',
+        );
+    }
+
     public function send(StockTransferLinesRequest $request, StockTransfer $stockTransfer): JsonResponse
     {
         return $this->respond(
             fn () => $this->transfers->send($stockTransfer, $request->user(), $request->validated('items')),
-            'Transfer sent.',
+            'Goods dispatched to the restaurant.',
         );
     }
 
@@ -77,15 +86,19 @@ class StockTransferController extends Controller
     {
         return $this->respond(
             fn () => $this->transfers->receive($stockTransfer, $request->user(), $request->validated('items')),
-            'Transfer received.',
+            'Goods received.',
         );
     }
 
-    public function cancel(Request $request, StockTransfer $stockTransfer): JsonResponse
+    public function cancel(CancelStockTransferRequest $request, StockTransfer $stockTransfer): JsonResponse
     {
         return $this->respond(
-            fn () => $this->transfers->cancel($stockTransfer, $request->user()),
-            'Transfer cancelled.',
+            fn () => $this->transfers->cancel(
+                $stockTransfer,
+                $request->user(),
+                $request->validated('reason'),
+            ),
+            'Issue voucher cancelled.',
         );
     }
 
