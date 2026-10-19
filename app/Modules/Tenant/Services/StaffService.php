@@ -8,15 +8,13 @@ use App\Models\User;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Subscription\Services\PlanLimitService;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\RoleAssignment;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Hash;
 use InvalidArgumentException;
 
 class StaffService
 {
-    /** @var list<string> */
-    private const STAFF_ROLES = ['manager', 'cashier', 'waiter', 'cook', 'rider'];
-
     public function __construct(private readonly PlanLimitService $planLimits) {}
 
     /** @return Collection<int, User> */
@@ -39,9 +37,7 @@ class StaffService
             throw new InvalidArgumentException('Cannot create additional owner accounts via staff API.');
         }
 
-        if (! in_array($role, self::STAFF_ROLES, true)) {
-            throw new InvalidArgumentException('Invalid staff role.');
-        }
+        $this->assertAssignableRole($role);
 
         $this->assertBranchBelongsToTenant((int) $data['branch_id']);
 
@@ -53,7 +49,7 @@ class StaffService
             throw new InvalidArgumentException('This email is already registered.');
         }
 
-        if (in_array($role, ['waiter', 'cashier', 'cook', 'rider'], true) && empty($data['pin']) && empty($data['password'])) {
+        if ($role !== 'manager' && empty($data['pin']) && empty($data['password'])) {
             throw new InvalidArgumentException('PIN or password is required for this role.');
         }
 
@@ -88,9 +84,7 @@ class StaffService
                 throw new InvalidArgumentException('Cannot promote staff to owner.');
             }
 
-            if (! in_array($data['role'], self::STAFF_ROLES, true)) {
-                throw new InvalidArgumentException('Invalid staff role.');
-            }
+            $this->assertAssignableRole($data['role']);
         }
 
         if (isset($data['branch_id'])) {
@@ -177,6 +171,15 @@ class StaffService
             'has_pin' => $user->pin !== null,
             'created_at' => $user->created_at?->toISOString(),
         ];
+    }
+
+    private function assertAssignableRole(string $role): void
+    {
+        $tenantId = (int) app('tenant')->id;
+
+        if (! RoleAssignment::isAssignable($role, $tenantId)) {
+            throw new InvalidArgumentException('Invalid staff role.');
+        }
     }
 
     private function assertBranchBelongsToTenant(int $branchId): void

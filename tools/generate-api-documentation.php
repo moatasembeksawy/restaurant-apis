@@ -1148,6 +1148,9 @@ function resolvePostmanFolderPath(array $endpoint): array
     if (str_starts_with($uri, 'api/v1/audit-log')) {
         return ['02 · Tenant Setup', '2.6 Audit Log'];
     }
+    if (str_starts_with($uri, 'api/v1/permissions') || str_starts_with($uri, 'api/v1/roles')) {
+        return ['02 · Tenant Setup', '2.8 Roles & Permissions'];
+    }
 
     if (str_starts_with($uri, 'api/v1/menu/categories')) {
         return ['03 · Menu & Floor Setup', '3.1 Menu Categories'];
@@ -1394,6 +1397,7 @@ function folderDescription(string $folderName): string
         str_contains($folderName, 'Settings') => 'Restaurant profile, locale, WhatsApp, custom domain DNS verification.',
         str_contains($folderName, 'Branches') => 'Manage locations. Each branch gets a qr_menu_url for shareable menus.',
         str_contains($folderName, 'Staff') && ! str_contains($folderName, 'Shifts') => 'Create staff with roles and 4-digit PINs for tablet login.',
+        str_contains($folderName, 'Roles') => 'Permission catalog plus restaurant roles. Customizing a system role applies only to this restaurant. The owner role stays locked. Assign a custom role from the staff endpoints.',
         str_contains($folderName, 'Business Days') => 'Open/close the trading day, reset daily order numbers, inspect remaining ingredients, record waste, and return leftover stock to main inventory.',
         str_contains($folderName, 'Shifts') => 'Clock in/out, inspect transaction-level reconciliation, record paid-in/paid-out/safe-drop movements, and reverse mistakes.',
         str_contains($folderName, 'Expense Categories') => 'Owner/manager-defined categories used to classify restaurant operating expenses. Set allocates_to_item_cost to include approved bills in plate cost.',

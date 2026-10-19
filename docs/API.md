@@ -5116,6 +5116,28 @@ Health — ops/health
 
 ---
 
+#### `GET` /api/v1/permissions
+
+Index — permissions
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `GET` /api/v1/permissions/{permission}
+
+Show — permissions/{permission}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.view`
+- **Plan features:** _None_
+- **Path params:** `{permission}`
+
+---
+
 #### `GET` /api/v1/reports/branches/compare
 
 Compare — reports/branches/compare
@@ -5131,6 +5153,176 @@ Compare — reports/branches/compare
 |-----------|-------|
 | `start_date` | `nullable, date` |
 | `end_date` | `nullable, date, after_or_equal:start_date` |
+
+---
+
+#### `GET` /api/v1/roles
+
+Index — roles
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.view`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+---
+
+#### `POST` /api/v1/roles
+
+Store — roles
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** _None_
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `required, string, regex:/^[a-z][a-z0-9_]{1,48}$/` |
+| `permissions` | `sometimes, array` |
+| `permissions.*` | `string, distinct` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "permissions": []
+}
+```
+
+---
+
+#### `DELETE` /api/v1/roles/{role}
+
+Destroy — roles/{role}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** `{role}`
+
+---
+
+#### `GET` /api/v1/roles/{role}
+
+Show — roles/{role}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.view`
+- **Plan features:** _None_
+- **Path params:** `{role}`
+
+---
+
+#### `PATCH` /api/v1/roles/{role}
+
+Update — roles/{role}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** `{role}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `sometimes, string, regex:/^[a-z][a-z0-9_]{1,48}$/` |
+| `permissions` | `sometimes, array` |
+| `permissions.*` | `string, distinct` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "permissions": []
+}
+```
+
+---
+
+#### `PUT` /api/v1/roles/{role}
+
+Update — roles/{role}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** `{role}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `name` | `sometimes, string, regex:/^[a-z][a-z0-9_]{1,48}$/` |
+| `permissions` | `sometimes, array` |
+| `permissions.*` | `string, distinct` |
+
+```json
+{
+    "name": "Downtown Branch",
+    "permissions": []
+}
+```
+
+---
+
+#### `POST` /api/v1/roles/{role}/permissions
+
+Attach Permissions — roles/{role}/permissions
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** `{role}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `permissions` | `required, array, min:1` |
+| `permissions.*` | `string, distinct` |
+
+```json
+{
+    "permissions": []
+}
+```
+
+---
+
+#### `PUT` /api/v1/roles/{role}/permissions
+
+Sync Permissions — roles/{role}/permissions
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** `{role}`
+
+**Request body**
+
+| Parameter | Rules |
+|-----------|-------|
+| `permissions` | `present, array` |
+| `permissions.*` | `string, distinct` |
+
+```json
+{
+    "permissions": []
+}
+```
+
+---
+
+#### `DELETE` /api/v1/roles/{role}/permissions/{permission}
+
+Detach Permission — roles/{role}/permissions/{permission}
+
+- **Auth:** Bearer token + tenant header
+- **Permissions:** `users.manage`
+- **Plan features:** _None_
+- **Path params:** `{role}`, `{permission}`
 
 ---
 
@@ -5439,26 +5631,10 @@ Store — staff
 
 **Request body**
 
-| Parameter | Rules |
-|-----------|-------|
-| `name` | `required, string, max:100` |
-| `email` | `nullable, email, max:255` |
-| `phone` | `nullable, string, max:20` |
-| `role` | `required, in:manager,cashier,waiter,cook,rider` |
-| `branch_id` | `required, integer` |
-| `password` | `nullable, string, min:8, max:100` |
-| `pin` | `nullable, string, regex:/^\d{4}$/` |
+_None_
 
 ```json
-{
-    "name": "Downtown Branch",
-    "email": "owner@nilerestaurant.eg",
-    "phone": "+201012345678",
-    "role": "manager",
-    "branch_id": "{{branch_id}}",
-    "password": "SecurePass123!",
-    "pin": "1234"
-}
+{}
 ```
 
 ---
@@ -5647,28 +5823,10 @@ Update — staff/{staff}
 
 **Request body**
 
-| Parameter | Rules |
-|-----------|-------|
-| `name` | `sometimes, string, max:100` |
-| `email` | `nullable, email, max:255` |
-| `phone` | `nullable, string, max:20` |
-| `role` | `sometimes, in:manager,cashier,waiter,cook,rider` |
-| `branch_id` | `sometimes, integer` |
-| `password` | `nullable, string, min:8, max:100` |
-| `pin` | `nullable, string, regex:/^\d{4}$/` |
-| `is_active` | `sometimes, boolean` |
+_None_
 
 ```json
-{
-    "name": "Downtown Branch",
-    "email": "owner@nilerestaurant.eg",
-    "phone": "+201012345678",
-    "role": "manager",
-    "branch_id": "{{branch_id}}",
-    "password": "SecurePass123!",
-    "pin": "1234",
-    "is_active": true
-}
+{}
 ```
 
 ---

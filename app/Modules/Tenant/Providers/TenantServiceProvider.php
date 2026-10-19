@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Providers;
 
 use App\Modules\Tenant\Reports\Services\BranchComparisonService;
+use App\Modules\Tenant\Roles\Services\RoleService;
 use App\Modules\Tenant\Services\CustomDomainService;
 use App\Modules\Tenant\Services\StaffService;
 use App\Modules\Tenant\Services\TenantOnboardingService;
@@ -25,6 +26,7 @@ class TenantServiceProvider extends ServiceProvider
         $this->app->singleton(TenantSettingsService::class);
         $this->app->singleton(CustomDomainService::class);
         $this->app->singleton(StaffService::class);
+        $this->app->singleton(RoleService::class);
         $this->app->singleton(StaffShiftService::class);
         $this->app->singleton(BranchComparisonService::class);
     }

@@ -17,6 +17,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\Permission\PermissionRegistrar;
 use Spatie\Permission\Traits\HasRoles;
 
 class User extends Authenticatable implements MustVerifyEmail
@@ -80,8 +81,22 @@ class User extends Authenticatable implements MustVerifyEmail
             'waiter' => ['tables:*', 'menu:read', 'orders:create', 'orders:update'],
             'cook' => ['kitchen:*', 'orders:read'],
             'rider' => ['deliveries:*'],
-            default => [],
+            default => $this->tenant_id ? $this->permissionNames() : [],
         };
+    }
+
+    /** @return list<string> */
+    private function permissionNames(): array
+    {
+        $registrar = app(PermissionRegistrar::class);
+        $previous = $registrar->getPermissionsTeamId();
+        $registrar->setPermissionsTeamId($this->tenant_id);
+
+        try {
+            return $this->getAllPermissions()->pluck('name')->sort()->values()->all();
+        } finally {
+            $registrar->setPermissionsTeamId($previous);
+        }
     }
 
     // ── Relations ──────────────────────────────────────────────────────────────

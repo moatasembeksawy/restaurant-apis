@@ -6,6 +6,7 @@ namespace App\Modules\Auth\Services;
 
 use App\Models\User;
 use App\Shared\Support\Audit\AuditLogger;
+use App\Shared\Support\Authorization\SystemRoles;
 use App\Shared\Support\Scopes\TenantScope;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
@@ -52,7 +53,10 @@ class AuthService
         $user = User::query()
             ->where('tenant_id', $tenant->id)
             ->where('branch_id', $branchId)
-            ->whereIn('role', ['waiter', 'cashier', 'cook'])
+            ->where(function ($query): void {
+                $query->whereIn('role', ['waiter', 'cashier', 'cook'])
+                    ->orWhereNotIn('role', SystemRoles::NAMES);
+            })
             ->where('is_active', true)
             ->get()
             ->first(fn (User $u) => Hash::check($pin, $u->pin));

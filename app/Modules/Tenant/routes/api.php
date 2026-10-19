@@ -15,6 +15,8 @@ use App\Modules\Tenant\Http\Controllers\StaffController;
 use App\Modules\Tenant\Http\Controllers\SubscriptionController;
 use App\Modules\Tenant\Http\Controllers\TenantSettingsController;
 use App\Modules\Tenant\Reports\Http\Controllers\BranchReportController;
+use App\Modules\Tenant\Roles\Http\Controllers\PermissionController;
+use App\Modules\Tenant\Roles\Http\Controllers\RoleController;
 use App\Modules\Tenant\Staff\Http\Controllers\StaffShiftController;
 use Illuminate\Support\Facades\Route;
 
@@ -89,6 +91,24 @@ Route::post('expenses', [ExpenseController::class, 'store'])
 Route::middleware('permission:expenses.approve')->group(function (): void {
     Route::post('expenses/{expense}/approve', [ExpenseController::class, 'approve']);
     Route::post('expenses/{expense}/void', [ExpenseController::class, 'void']);
+});
+
+Route::middleware('permission:users.view')->group(function (): void {
+    Route::get('permissions', [PermissionController::class, 'index']);
+    Route::get('permissions/{permission}', [PermissionController::class, 'show'])->whereNumber('permission');
+    Route::get('roles', [RoleController::class, 'index']);
+    Route::get('roles/{role}', [RoleController::class, 'show'])->whereNumber('role');
+});
+
+Route::middleware('permission:users.manage')->group(function (): void {
+    Route::post('roles', [RoleController::class, 'store']);
+    Route::match(['put', 'patch'], 'roles/{role}', [RoleController::class, 'update'])->whereNumber('role');
+    Route::delete('roles/{role}', [RoleController::class, 'destroy'])->whereNumber('role');
+    Route::put('roles/{role}/permissions', [RoleController::class, 'syncPermissions'])->whereNumber('role');
+    Route::post('roles/{role}/permissions', [RoleController::class, 'attachPermissions'])->whereNumber('role');
+    Route::delete('roles/{role}/permissions/{permission}', [RoleController::class, 'detachPermission'])
+        ->whereNumber('role')
+        ->whereNumber('permission');
 });
 
 Route::get('staff', [StaffController::class, 'index'])->middleware('permission:staff.view');

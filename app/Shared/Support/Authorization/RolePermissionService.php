@@ -15,13 +15,22 @@ class RolePermissionService
             return;
         }
 
-        setPermissionsTeamId(null);
+        $role = Role::query()
+            ->where('name', $user->role)
+            ->where('guard_name', SystemRoles::GUARD)
+            ->where(function ($query) use ($user): void {
+                $query->where('tenant_id', $user->tenant_id)
+                    ->orWhereNull('tenant_id');
+            })
+            ->get()
+            ->sortBy(fn (Role $candidate): int => $candidate->getAttribute('tenant_id') === null ? 1 : 0)
+            ->first();
 
-        if (! Role::query()->where('name', $user->role)->where('guard_name', 'web')->exists()) {
+        if (! $role instanceof Role) {
             return;
         }
 
         setPermissionsTeamId($user->tenant_id);
-        $user->syncRoles([$user->role]);
+        $user->syncRoles([$role]);
     }
 }
