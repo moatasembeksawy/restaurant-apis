@@ -32,6 +32,7 @@ class PaymentController extends Controller
             $code = match (true) {
                 str_contains($e->getMessage(), 'already been paid') => 'ORDER_ALREADY_PAID',
                 str_contains($e->getMessage(), 'clock in') => 'NO_ACTIVE_SHIFT',
+                str_contains($e->getMessage(), 'Insufficient stock') => 'INSUFFICIENT_STOCK',
                 default => 'PAYMENT_FAILED',
             };
 

@@ -153,14 +153,18 @@ class StockService
                         continue;
                     }
 
-                    $this->recordMovement(
-                        stock: $stockRow,
-                        type: 'sale',
-                        quantity: $deductQty,
-                        reference: $order,
-                        branchId: $order->branch_id,
-                        notes: "Order #{$order->id} — {$orderItem->item_name_ar}",
-                    );
+                    try {
+                        $this->recordMovement(
+                            stock: $stockRow,
+                            type: 'sale',
+                            quantity: $deductQty,
+                            reference: $order,
+                            branchId: $order->branch_id,
+                            notes: "Order #{$order->id} — {$orderItem->item_name_ar}",
+                        );
+                    } catch (RuntimeException $e) {
+                        throw new InvalidArgumentException($e->getMessage());
+                    }
                 }
             }
         });

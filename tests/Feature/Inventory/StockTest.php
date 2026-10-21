@@ -85,6 +85,22 @@ it('deducts stock when order is paid', function (): void {
     expect(StockMovement::query()->where('type', 'sale')->count())->toBe(1);
 });
 
+it('rejects payment when stock cannot cover the order', function (): void {
+    $this->ingredient->update(['current_stock' => 0.2]);
+
+    $this->withToken($this->token)
+        ->postJson("/api/v1/orders/{$this->order->id}/pay", [
+            'method' => 'cash',
+            'amount' => 100,
+        ])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.code', 'INSUFFICIENT_STOCK');
+
+    expect($this->order->fresh()->status)->toBe('ready');
+    expect((float) $this->ingredient->fresh()->current_stock)->toBe(0.2);
+    expect(StockMovement::query()->where('type', 'sale')->count())->toBe(0);
+});
+
 it('checks a received purchase order before completing it into stock', function (): void {
     $manager = User::factory()->create([
         'tenant_id' => $this->tenant->id,
