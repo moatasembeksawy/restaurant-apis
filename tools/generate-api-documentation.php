@@ -912,6 +912,8 @@ The synchronization response is HTTP 200 when the batch is structurally valid. E
 
 Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and `payment.recorded` (cash only). Keep the sold `unit_price` on created/added items; the server preserves it and may return a `PRICE_CHANGED` warning. PIN device tokens last 7 days. Card payments and refunds are not offline.
 
+Customers are not part of the snapshot. For offline delivery, send `customer_phone`, `customer_name`, `delivery_address`, and optional `district_id` on `order.created`. The server finds or creates the customer by phone. Address-only delivery is allowed (no customer record).
+
 ---
 
 ## Kitchen / POS on LAN (no internet)

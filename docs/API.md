@@ -59,6 +59,8 @@ The synchronization response is HTTP 200 when the batch is structurally valid. E
 
 Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and `payment.recorded` (cash only). Keep the sold `unit_price` on created/added items; the server preserves it and may return a `PRICE_CHANGED` warning. PIN device tokens last 7 days. Card payments and refunds are not offline.
 
+Customers are not part of the snapshot. For offline delivery, send `customer_phone`, `customer_name`, `delivery_address`, and optional `district_id` on `order.created`. The server finds or creates the customer by phone. Address-only delivery is allowed (no customer record).
+
 ---
 
 ## Kitchen / POS on LAN (no internet)
@@ -788,6 +790,13 @@ Place a dine-in or takeaway order from the public QR menu.
 | `items.*.selections.*.menu_item_id` | `nullable, integer` |
 | `items.*.selections.*.menu_item_ids` | `nullable, array` |
 | `items.*.selections.*.menu_item_ids.*` | `integer` |
+| `items.*.package_selections` | `nullable, array` |
+| `items.*.package_selections.*.slot_id` | `nullable, integer` |
+| `items.*.package_selections.*.id` | `nullable, integer` |
+| `items.*.package_selections.*.menu_item_id` | `nullable, integer` |
+| `items.*.package_selections.*.menu_item_ids` | `nullable, array` |
+| `items.*.package_selections.*.menu_item_ids.*` | `integer` |
+| `items.*.package_selections.*.quantity` | `nullable, integer, min:1` |
 | `items.*.slots.*.slot_id` | `nullable, integer` |
 | `items.*.slots.*.id` | `nullable, integer` |
 | `items.*.slots.*.menu_item_id` | `nullable, integer` |
@@ -818,6 +827,13 @@ Place a dine-in or takeaway order from the public QR menu.
             "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
             "selections.*.menu_item_ids.*": 1,
+            "package_selections": [],
+            "package_selections.*.slot_id": 1,
+            "package_selections.*.id": 1,
+            "package_selections.*.menu_item_id": 1,
+            "package_selections.*.menu_item_ids": [],
+            "package_selections.*.menu_item_ids.*": 1,
+            "package_selections.*.quantity": 1,
             "slots.*.slot_id": 1,
             "slots.*.id": 1,
             "slots.*.menu_item_id": 1,
@@ -838,6 +854,13 @@ Place a dine-in or takeaway order from the public QR menu.
             "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
             "selections.*.menu_item_ids.*": 1,
+            "package_selections": [],
+            "package_selections.*.slot_id": 1,
+            "package_selections.*.id": 1,
+            "package_selections.*.menu_item_id": 1,
+            "package_selections.*.menu_item_ids": [],
+            "package_selections.*.menu_item_ids.*": 1,
+            "package_selections.*.quantity": 1,
             "slots.*.slot_id": 1,
             "slots.*.id": 1,
             "slots.*.menu_item_id": 1,
@@ -1888,22 +1911,66 @@ POS or kitchen appends idempotent operations to the LAN event log. Kitchen displ
 | `operations.*.occurred_at` | `required, date` |
 | `operations.*.payload` | `required, array` |
 | `operations.*.payload.client_order_id` | `required, uuid` |
-| `operations.*.payload.client_item_id` | `nullable, uuid` |
+| `operations.*.payload.server_order_id` | `nullable, integer` |
+| `operations.*.payload.floor_table_id` | `nullable, integer` |
+| `operations.*.payload.channel` | `nullable, in:dine_in,qr,whatsapp,talabat,elmenus,own_delivery` |
+| `operations.*.payload.fulfillment_type` | `nullable, in:dine_in,takeaway,delivery` |
+| `operations.*.payload.notes` | `nullable, string` |
+| `operations.*.payload.delivery_address` | `nullable, string, max:500` |
+| `operations.*.payload.delivery_fee` | `nullable, numeric, min:0` |
+| `operations.*.payload.customer_id` | `nullable, integer` |
+| `operations.*.payload.customer_address_id` | `nullable, integer` |
+| `operations.*.payload.district_id` | `nullable, integer` |
+| `operations.*.payload.customer_name` | `nullable, string, max:100` |
+| `operations.*.payload.customer_phone` | `nullable, string, max:20` |
+| `operations.*.payload.coupon_code` | `nullable, string, max:50` |
 | `operations.*.payload.status` | `nullable, in:active,cooking,ready,completed,cancelled` |
+| `operations.*.payload.client_item_id` | `nullable, uuid` |
+| `operations.*.payload.client_payment_id` | `nullable, uuid` |
+| `operations.*.payload.method` | `nullable, in:cash` |
+| `operations.*.payload.amount` | `nullable, numeric, min:0` |
+| `operations.*.payload.cash_tendered` | `nullable, numeric, min:0` |
 | `operations.*.payload.quantity` | `nullable, integer, min:1` |
 | `operations.*.payload.unit_price` | `nullable, numeric, min:0` |
 | `operations.*.payload.menu_item_id` | `nullable, integer` |
 | `operations.*.payload.package_id` | `nullable, integer` |
-| `operations.*.payload.item_name_ar` | `nullable, string` |
-| `operations.*.payload.notes` | `nullable, string` |
+| `operations.*.payload.package_selections` | `nullable, array` |
+| `operations.*.payload.package_selections.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.package_selections.*.id` | `nullable, integer` |
+| `operations.*.payload.package_selections.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.package_selections.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.package_selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.package_selections.*.quantity` | `nullable, integer, min:1` |
 | `operations.*.payload.items` | `nullable, array, min:1` |
 | `operations.*.payload.items.*.client_item_id` | `nullable, uuid, distinct` |
 | `operations.*.payload.items.*.menu_item_id` | `nullable, integer` |
 | `operations.*.payload.items.*.package_id` | `nullable, integer` |
 | `operations.*.payload.items.*.quantity` | `required, integer, min:1` |
 | `operations.*.payload.items.*.unit_price` | `nullable, numeric, min:0` |
-| `operations.*.payload.items.*.item_name_ar` | `nullable, string` |
 | `operations.*.payload.items.*.notes` | `nullable, string` |
+| `operations.*.payload.items.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.slots` | `nullable, array` |
+| `operations.*.payload.items.*.selections` | `nullable, array` |
+| `operations.*.payload.items.*.selections.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.package_selections` | `nullable, array` |
+| `operations.*.payload.items.*.package_selections.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_selections.*.id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_selections.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_selections.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.package_selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.package_selections.*.quantity` | `nullable, integer, min:1` |
+| `operations.*.payload.items.*.slots.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.items.*.slots.*.id` | `nullable, integer` |
+| `operations.*.payload.items.*.slots.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.slots.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.slots.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.item_name_ar` | `nullable, string` |
+| `operations.*.payload.items.*.item_name_ar` | `nullable, string` |
 
 ```json
 {
@@ -3202,6 +3269,8 @@ Upload up to 100 queued offline operations. Supported types: order.created, orde
 | `operations.*.payload.customer_id` | `nullable, integer` |
 | `operations.*.payload.customer_address_id` | `nullable, integer` |
 | `operations.*.payload.district_id` | `nullable, integer` |
+| `operations.*.payload.customer_name` | `nullable, string, max:100` |
+| `operations.*.payload.customer_phone` | `nullable, string, max:20` |
 | `operations.*.payload.coupon_code` | `nullable, string, max:50` |
 | `operations.*.payload.status` | `nullable, in:active,cooking,ready,completed,cancelled` |
 | `operations.*.payload.client_item_id` | `nullable, uuid` |
@@ -3213,6 +3282,13 @@ Upload up to 100 queued offline operations. Supported types: order.created, orde
 | `operations.*.payload.unit_price` | `nullable, numeric, min:0` |
 | `operations.*.payload.menu_item_id` | `nullable, integer` |
 | `operations.*.payload.package_id` | `nullable, integer` |
+| `operations.*.payload.package_selections` | `nullable, array` |
+| `operations.*.payload.package_selections.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.package_selections.*.id` | `nullable, integer` |
+| `operations.*.payload.package_selections.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.package_selections.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.package_selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.package_selections.*.quantity` | `nullable, integer, min:1` |
 | `operations.*.payload.items` | `nullable, array, min:1` |
 | `operations.*.payload.items.*.client_item_id` | `nullable, uuid, distinct` |
 | `operations.*.payload.items.*.menu_item_id` | `required_without:operations.*.payload.items.*.package_id, nullable, integer` |
@@ -3229,6 +3305,13 @@ Upload up to 100 queued offline operations. Supported types: order.created, orde
 | `operations.*.payload.items.*.selections.*.menu_item_id` | `nullable, integer` |
 | `operations.*.payload.items.*.selections.*.menu_item_ids` | `nullable, array` |
 | `operations.*.payload.items.*.selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.package_selections` | `nullable, array` |
+| `operations.*.payload.items.*.package_selections.*.slot_id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_selections.*.id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_selections.*.menu_item_id` | `nullable, integer` |
+| `operations.*.payload.items.*.package_selections.*.menu_item_ids` | `nullable, array` |
+| `operations.*.payload.items.*.package_selections.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.items.*.package_selections.*.quantity` | `nullable, integer, min:1` |
 | `operations.*.payload.items.*.slots.*.slot_id` | `nullable, integer` |
 | `operations.*.payload.items.*.slots.*.id` | `nullable, integer` |
 | `operations.*.payload.items.*.slots.*.menu_item_id` | `nullable, integer` |
@@ -3325,6 +3408,13 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
 | `items.*.selections.*.menu_item_id` | `nullable, integer` |
 | `items.*.selections.*.menu_item_ids` | `nullable, array` |
 | `items.*.selections.*.menu_item_ids.*` | `integer` |
+| `items.*.package_selections` | `nullable, array` |
+| `items.*.package_selections.*.slot_id` | `nullable, integer` |
+| `items.*.package_selections.*.id` | `nullable, integer` |
+| `items.*.package_selections.*.menu_item_id` | `nullable, integer` |
+| `items.*.package_selections.*.menu_item_ids` | `nullable, array` |
+| `items.*.package_selections.*.menu_item_ids.*` | `integer` |
+| `items.*.package_selections.*.quantity` | `nullable, integer, min:1` |
 | `items.*.slots.*.slot_id` | `nullable, integer` |
 | `items.*.slots.*.id` | `nullable, integer` |
 | `items.*.slots.*.menu_item_id` | `nullable, integer` |
@@ -3359,6 +3449,13 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
             "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
             "selections.*.menu_item_ids.*": 1,
+            "package_selections": [],
+            "package_selections.*.slot_id": 1,
+            "package_selections.*.id": 1,
+            "package_selections.*.menu_item_id": 1,
+            "package_selections.*.menu_item_ids": [],
+            "package_selections.*.menu_item_ids.*": 1,
+            "package_selections.*.quantity": 1,
             "slots.*.slot_id": 1,
             "slots.*.id": 1,
             "slots.*.menu_item_id": 1,
@@ -3379,6 +3476,13 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
             "selections.*.menu_item_id": 1,
             "selections.*.menu_item_ids": [],
             "selections.*.menu_item_ids.*": 1,
+            "package_selections": [],
+            "package_selections.*.slot_id": 1,
+            "package_selections.*.id": 1,
+            "package_selections.*.menu_item_id": 1,
+            "package_selections.*.menu_item_ids": [],
+            "package_selections.*.menu_item_ids.*": 1,
+            "package_selections.*.quantity": 1,
             "slots.*.slot_id": 1,
             "slots.*.id": 1,
             "slots.*.menu_item_id": 1,
@@ -3510,6 +3614,13 @@ Store — orders/{order}/items
 | `selections.*.menu_item_id` | `nullable, integer` |
 | `selections.*.menu_item_ids` | `nullable, array` |
 | `selections.*.menu_item_ids.*` | `integer` |
+| `package_selections` | `nullable, array` |
+| `package_selections.*.slot_id` | `nullable, integer` |
+| `package_selections.*.id` | `nullable, integer` |
+| `package_selections.*.menu_item_id` | `nullable, integer` |
+| `package_selections.*.menu_item_ids` | `nullable, array` |
+| `package_selections.*.menu_item_ids.*` | `integer` |
+| `package_selections.*.quantity` | `nullable, integer, min:1` |
 | `slots.*.slot_id` | `nullable, integer` |
 | `slots.*.id` | `nullable, integer` |
 | `slots.*.menu_item_id` | `nullable, integer` |
@@ -3539,6 +3650,16 @@ Store — orders/{order}/items
             "menu_item_id": "{{menu_item_id}}",
             "menu_item_ids": [],
             "menu_item_ids.*": 1
+        }
+    ],
+    "package_selections": [
+        {
+            "slot_id": 1,
+            "id": 1,
+            "menu_item_id": "{{menu_item_id}}",
+            "menu_item_ids": [],
+            "menu_item_ids.*": 1,
+            "quantity": 2
         }
     ]
 }

@@ -82,6 +82,8 @@ Only one business day can be open per branch. Closing is blocked while shifts or
 
 Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and cash `payment.recorded`. Card payments and refunds are not offline. PIN device tokens last 7 days.
 
+Customers are not part of the snapshot. For offline delivery, collect `customer_phone`, `customer_name`, `delivery_address`, and optional `district_id` on `order.created`. Sync finds or creates the customer by phone. Address-only delivery is allowed (no customer record).
+
 ## Kitchen / POS on LAN
 
 1. Register the branch hub with `POST /offline/hubs` while online. Store the returned token as `POS_HUB_TOKEN` on the branch mini-PC; it is shown only once.

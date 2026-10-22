@@ -237,7 +237,11 @@ it('uploads pending LAN operations to the cloud', function (): void {
                 'occurred_at' => now()->toISOString(),
                 'payload' => [
                     'client_order_id' => $clientOrderId,
-                    'channel' => 'dine_in',
+                    'channel' => 'own_delivery',
+                    'fulfillment_type' => 'delivery',
+                    'customer_name' => 'أحمد محمود',
+                    'customer_phone' => '01012345678',
+                    'delivery_address' => 'شارع التحرير، الدقي',
                     'items' => [[
                         'client_item_id' => (string) Str::uuid(),
                         'menu_item_id' => $this->menuItem->id,
@@ -267,6 +271,11 @@ it('uploads pending LAN operations to the cloud', function (): void {
         ->postJson('/api/v1/hub/cloud-sync')
         ->assertOk()
         ->assertJsonPath('data.synced', 1);
+
+    Http::assertSent(fn ($request): bool => $request->url() === 'https://cloud.example/api/v1/offline/sync'
+        && ($request['operations'][0]['payload']['customer_phone'] ?? null) === '01012345678'
+        && ($request['operations'][0]['payload']['delivery_address'] ?? null) === 'شارع التحرير، الدقي'
+        && ($request['operations'][0]['payload']['channel'] ?? null) === 'own_delivery');
 
     $this->artisan('pos:hub:sync')
         ->assertSuccessful();

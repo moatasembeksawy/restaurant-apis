@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\POS\Offline\Services;
 
 use App\Models\User;
+use App\Modules\Delivery\Customers\Services\CustomerService;
 use App\Modules\Delivery\WhatsApp\Jobs\SendWhatsAppNotificationJob;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Billing\Services\PaymentSettlementService;
@@ -33,6 +34,7 @@ class OfflineOrderSyncService
         private readonly OrderPlacementService $orders,
         private readonly OrderLineService $lines,
         private readonly PaymentSettlementService $payments,
+        private readonly CustomerService $customers,
     ) {}
 
     /**
@@ -183,7 +185,7 @@ class OfflineOrderSyncService
             items: $payload['items'],
             floorTableId: isset($payload['floor_table_id']) ? (int) $payload['floor_table_id'] : null,
             waiterId: $user->id,
-            customerId: isset($payload['customer_id']) ? (int) $payload['customer_id'] : null,
+            customerId: $this->resolveCustomerId($payload),
             notes: $payload['notes'] ?? null,
             deliveryAddress: $payload['delivery_address'] ?? null,
             fulfillmentType: $payload['fulfillment_type'] ?? null,
@@ -200,6 +202,29 @@ class OfflineOrderSyncService
         return array_merge($this->orderResult($order, $clientOrderId), [
             'warnings' => $this->priceWarnings($payload['items']),
         ]);
+    }
+
+    /** @param  array<string, mixed>  $payload */
+    private function resolveCustomerId(array $payload): ?int
+    {
+        if (isset($payload['customer_id'])) {
+            return (int) $payload['customer_id'];
+        }
+
+        $phone = trim((string) ($payload['customer_phone'] ?? ''));
+
+        if ($phone === '') {
+            return null;
+        }
+
+        $name = trim((string) ($payload['customer_name'] ?? ''));
+        $address = trim((string) ($payload['delivery_address'] ?? ''));
+
+        return $this->customers->findOrCreate(
+            phone: $phone,
+            name: $name !== '' ? $name : null,
+            address: $address !== '' ? $address : null,
+        )->id;
     }
 
     /**

@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\User;
+use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Billing\Models\Payment;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
@@ -12,6 +13,7 @@ use App\Modules\POS\Orders\Events\OrderPlaced;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\POS\Tables\Models\FloorTable;
+use App\Modules\Tenant\Districts\Models\District;
 use App\Modules\Tenant\Models\Branch;
 use App\Modules\Tenant\Models\Tenant;
 use Illuminate\Support\Facades\Event;
@@ -366,6 +368,124 @@ it('synchronizes kitchen item-ready from the LAN hub', function (): void {
 
     expect($item->status)->toBe('ready')
         ->and($order->status)->toBe('ready');
+});
+
+it('creates a customer from phone and name on an offline delivery order', function (): void {
+    $district = District::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'delivery_fee' => 20,
+        'is_active' => true,
+    ]);
+    $clientOrderId = (string) Str::uuid();
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/offline/sync', [
+            'branch_id' => $this->branch->id,
+            'device_id' => (string) Str::uuid(),
+            'operations' => [[
+                'operation_id' => (string) Str::uuid(),
+                'type' => OfflineOperations::ORDER_CREATED,
+                'occurred_at' => now()->subMinute()->toISOString(),
+                'payload' => [
+                    'client_order_id' => $clientOrderId,
+                    'channel' => 'own_delivery',
+                    'fulfillment_type' => 'delivery',
+                    'customer_name' => 'أحمد محمود',
+                    'customer_phone' => '01012345678',
+                    'delivery_address' => 'شارع التحرير، الدقي',
+                    'district_id' => $district->id,
+                    'items' => [[
+                        'menu_item_id' => $this->menuItem->id,
+                        'quantity' => 1,
+                    ]],
+                ],
+            ]],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.results.0.disposition', 'applied');
+
+    $order = Order::query()->where('client_order_id', $clientOrderId)->firstOrFail();
+    $customer = Customer::query()->where('phone', '+201012345678')->firstOrFail();
+
+    expect($order->fulfillment_type)->toBe('delivery')
+        ->and($order->customer_id)->toBe($customer->id)
+        ->and($order->delivery_address)->toBe('شارع التحرير، الدقي')
+        ->and($order->district_id)->toBe($district->id)
+        ->and((float) $order->delivery_fee)->toBe(20.0)
+        ->and($customer->name)->toBe('أحمد محمود')
+        ->and($customer->default_address)->toBe('شارع التحرير، الدقي');
+});
+
+it('reuses an existing customer when the same phone is synced again', function (): void {
+    $existing = Customer::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'phone' => '+201055566677',
+        'name' => 'سارة',
+    ]);
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/offline/sync', [
+            'branch_id' => $this->branch->id,
+            'device_id' => (string) Str::uuid(),
+            'operations' => [[
+                'operation_id' => (string) Str::uuid(),
+                'type' => OfflineOperations::ORDER_CREATED,
+                'occurred_at' => now()->subMinute()->toISOString(),
+                'payload' => [
+                    'client_order_id' => (string) Str::uuid(),
+                    'channel' => 'own_delivery',
+                    'fulfillment_type' => 'delivery',
+                    'customer_phone' => '01055566677',
+                    'customer_name' => 'سارة علي',
+                    'delivery_address' => 'مدينة نصر',
+                    'items' => [[
+                        'menu_item_id' => $this->menuItem->id,
+                        'quantity' => 1,
+                    ]],
+                ],
+            ]],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.results.0.disposition', 'applied');
+
+    expect(Customer::query()->count())->toBe(1)
+        ->and(Order::query()->firstOrFail()->customer_id)->toBe($existing->id)
+        ->and($existing->fresh()->name)->toBe('سارة');
+});
+
+it('places an offline delivery order without a customer when only an address is given', function (): void {
+    $clientOrderId = (string) Str::uuid();
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/offline/sync', [
+            'branch_id' => $this->branch->id,
+            'device_id' => (string) Str::uuid(),
+            'operations' => [[
+                'operation_id' => (string) Str::uuid(),
+                'type' => OfflineOperations::ORDER_CREATED,
+                'occurred_at' => now()->subMinute()->toISOString(),
+                'payload' => [
+                    'client_order_id' => $clientOrderId,
+                    'channel' => 'own_delivery',
+                    'fulfillment_type' => 'delivery',
+                    'delivery_address' => 'Guest drop-off at hotel lobby',
+                    'items' => [[
+                        'menu_item_id' => $this->menuItem->id,
+                        'quantity' => 1,
+                    ]],
+                ],
+            ]],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.results.0.disposition', 'applied');
+
+    $order = Order::query()->where('client_order_id', $clientOrderId)->firstOrFail();
+
+    expect($order->customer_id)->toBeNull()
+        ->and($order->fulfillment_type)->toBe('delivery')
+        ->and($order->delivery_address)->toBe('Guest drop-off at hotel lobby')
+        ->and(Customer::query()->count())->toBe(0);
 });
 
 it('rejects an offline card payment', function (): void {
