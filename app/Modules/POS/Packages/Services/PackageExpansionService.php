@@ -164,6 +164,12 @@ class PackageExpansionService
             $selections = [];
         }
 
+        if (isset($line['package_selections']) && is_array($line['package_selections'])) {
+            foreach ($line['package_selections'] as $selection) {
+                $selections[] = $selection;
+            }
+        }
+
         foreach ($this->numericIds($line['menu_item_ids'] ?? null) as $id) {
             $selections[] = $id;
         }

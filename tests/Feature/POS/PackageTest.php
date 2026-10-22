@@ -167,6 +167,33 @@ it('places a choice package using the chosen menu_item_id without a selections a
         ->assertJsonPath('data.items.0.package_id', $package->id);
 });
 
+it('places a choice package when the client sends package_selections', function (): void {
+    $package = createChoicePackage($this, [$this->pizza->id, $this->cola->id]);
+    $choiceSlot = $package->slots->firstWhere('type', 'choice');
+
+    $line = [
+        'package_id' => $package->id,
+        'quantity' => 1,
+        'package_selections' => [
+            ['slot_id' => $choiceSlot->id, 'menu_item_id' => $this->cola->id, 'quantity' => 1],
+        ],
+    ];
+
+    $response = $this->withToken($this->token)
+        ->postJson('/api/v1/orders', [
+            'branch_id' => $this->branch->id,
+            'channel' => 'dine_in',
+            'fulfillment_type' => 'dine_in',
+            'items' => [$line, $line],
+        ])
+        ->assertCreated();
+
+    $components = collect($response->json('data.items'))->whereNotNull('parent_id');
+
+    expect($components)->toHaveCount(2);
+    expect($components->pluck('menu_item_id')->unique()->all())->toBe([$this->cola->id]);
+});
+
 it('places a choice package when selections use slot id and a single menu_item_id', function (): void {
     $package = createFamilyPackage($this);
     $choiceSlot = $package->slots->firstWhere('type', 'choice');
