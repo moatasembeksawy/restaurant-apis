@@ -59,6 +59,8 @@ The synchronization response is HTTP 200 when the batch is structurally valid. E
 
 Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and `payment.recorded` (cash only). Keep the sold `unit_price` on created/added items; the server preserves it and may return a `PRICE_CHANGED` warning. PIN device tokens last 7 days. Card payments and refunds are not offline.
 
+`menu_items` in the snapshot include `parts`. Replay the same `selections` the cashier used: `part_id` plus `menu_item_id` for choice/swap, or `part_id` plus `ingredient_id` and `quantity` (grams) for weight. On `order.item_added`, `selections` may sit on the payload or on each item. A plain item with no parts ignores `selections`.
+
 Customers are not part of the snapshot. For offline delivery, send `customer_phone`, `customer_name`, `delivery_address`, and optional `district_id` on `order.created`. The server finds or creates the customer by phone. Address-only delivery is allowed (no customer record).
 
 ---
@@ -181,6 +183,7 @@ Failure returns:
 | 422 | `HUB_VALIDATION_FAILED` | A LAN hub operation referenced a missing local order |
 | 422 | `HUB_CLOUD_NOT_CONFIGURED` | POS_HUB_CLOUD_URL or POS_HUB_CLOUD_TOKEN is missing |
 | 422 | `ITEM_COST_ALLOCATION_FAILED` | The item-cost period is invalid |
+| 422 | `MENU_ITEM_VALIDATION_FAILED` | Menu item parts are invalid or cannot be sold |
 | 502 | `HUB_CLOUD_SYNC_FAILED` | The LAN hub could not upload operations to the cloud |
 
 ---
@@ -753,7 +756,7 @@ List every active rider with all non-cancelled assigned orders, plus unpaid orde
 
 #### `GET` /api/v1/qr/{token}/menu
 
-Public QR menu for a table token. No authentication required.
+Public QR menu for a table token. No authentication required. Items include parts so the customer can pick a side, drink, or fish.
 
 - **Auth:** None
 - **Permissions:** _None_
@@ -764,7 +767,7 @@ Public QR menu for a table token. No authentication required.
 
 #### `POST` /api/v1/qr/{token}/orders
 
-Place a dine-in or takeaway order from the public QR menu.
+Place a dine-in or takeaway order from the public QR menu. Item selections use the same part_id payload as POS orders.
 
 - **Auth:** None
 - **Permissions:** _None_
@@ -802,6 +805,11 @@ Place a dine-in or takeaway order from the public QR menu.
 | `items.*.slots.*.menu_item_id` | `nullable, integer` |
 | `items.*.slots.*.menu_item_ids` | `nullable, array` |
 | `items.*.slots.*.menu_item_ids.*` | `integer` |
+| `items.*.selections.*.part_id` | `nullable, integer` |
+| `items.*.selections.*.ingredient_id` | `nullable, integer` |
+| `items.*.selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `items.*.selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `items.*.selections.*.grams` | `nullable, numeric, min:0.0001` |
 | `customer_name` | `nullable, string, max:100` |
 | `customer_phone` | `nullable, string, max:20` |
 | `notes` | `nullable, string, max:500` |
@@ -814,64 +822,37 @@ Place a dine-in or takeaway order from the public QR menu.
     "coupon_code": "مثال",
     "items": [
         {
-            "menu_item_id": 1,
-            "package_id": 1,
+            "menu_item_id": "{{menu_item_id}}",
             "quantity": 2,
             "notes": "كشري",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1,
-            "slots": [],
-            "selections": [],
-            "selections.*.slot_id": 1,
-            "selections.*.id": 1,
-            "selections.*.menu_item_id": 1,
-            "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1,
-            "package_selections": [],
-            "package_selections.*.slot_id": 1,
-            "package_selections.*.id": 1,
-            "package_selections.*.menu_item_id": 1,
-            "package_selections.*.menu_item_ids": [],
-            "package_selections.*.menu_item_ids.*": 1,
-            "package_selections.*.quantity": 1,
-            "slots.*.slot_id": 1,
-            "slots.*.id": 1,
-            "slots.*.menu_item_id": 1,
-            "slots.*.menu_item_ids": [],
-            "slots.*.menu_item_ids.*": 1
+            "selections": [
+                {
+                    "part_id": 1,
+                    "menu_item_id": "{{menu_item_id}}"
+                },
+                {
+                    "part_id": 2,
+                    "ingredient_id": "{{ingredient_id}}",
+                    "quantity": 610
+                }
+            ]
         },
         {
-            "menu_item_id": 2,
-            "package_id": 1,
+            "package_id": "{{package_id}}",
             "quantity": 1,
-            "notes": "فول",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1,
-            "slots": [],
-            "selections": [],
-            "selections.*.slot_id": 1,
-            "selections.*.id": 1,
-            "selections.*.menu_item_id": 1,
-            "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1,
-            "package_selections": [],
-            "package_selections.*.slot_id": 1,
-            "package_selections.*.id": 1,
-            "package_selections.*.menu_item_id": 1,
-            "package_selections.*.menu_item_ids": [],
-            "package_selections.*.menu_item_ids.*": 1,
-            "package_selections.*.quantity": 1,
-            "slots.*.slot_id": 1,
-            "slots.*.id": 1,
-            "slots.*.menu_item_id": 1,
-            "slots.*.menu_item_ids": [],
-            "slots.*.menu_item_ids.*": 1
+            "notes": "وجبة",
+            "selections": [
+                {
+                    "slot_id": 1,
+                    "menu_item_id": "{{menu_item_id}}"
+                }
+            ]
         }
     ],
-    "customer_name": "أحمد محمود",
-    "customer_phone": "+201012345678",
-    "notes": "بدون بصل",
-    "table_label": "طاولة ٥",
+    "customer_name": "أحمد",
+    "customer_phone": "01012345678",
+    "notes": "من المنيو",
+    "table_label": "طاولة 5",
     "fulfillment_type": "takeaway",
     "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة"
 }
@@ -1659,6 +1640,8 @@ Restaurant creates an issue voucher asking a warehouse or another branch for ing
 {
     "from_branch_id": "{{source_branch_id}}",
     "to_branch_id": "{{destination_branch_id}}",
+    "ingredient_id": "{{ingredient_id}}",
+    "quantity": 2,
     "items": [
         {
             "ingredient_id": "{{ingredient_id}}",
@@ -1892,7 +1875,7 @@ Poll new LAN events after a cursor. Kitchen uses this instead of Reverb when the
 
 #### `POST` /api/v1/hub/events
 
-POS or kitchen appends idempotent operations to the LAN event log. Kitchen displays poll GET /hub/events?after={id}.
+POS or kitchen appends idempotent operations to the LAN event log. Kitchen displays poll GET /hub/events?after={id}. Order lines use the same selections as POST /offline/sync.
 
 - **Auth:** X-Hub-Token
 - **Permissions:** _None_
@@ -1969,6 +1952,17 @@ POS or kitchen appends idempotent operations to the LAN event log. Kitchen displ
 | `operations.*.payload.items.*.slots.*.menu_item_id` | `nullable, integer` |
 | `operations.*.payload.items.*.slots.*.menu_item_ids` | `nullable, array` |
 | `operations.*.payload.items.*.slots.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.selections` | `nullable, array` |
+| `operations.*.payload.items.*.selections.*.part_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.ingredient_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.items.*.selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.items.*.selections.*.grams` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.selections.*.part_id` | `nullable, integer` |
+| `operations.*.payload.selections.*.ingredient_id` | `nullable, integer` |
+| `operations.*.payload.selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.selections.*.grams` | `nullable, numeric, min:0.0001` |
 | `operations.*.payload.item_name_ar` | `nullable, string` |
 | `operations.*.payload.items.*.item_name_ar` | `nullable, string` |
 
@@ -1989,7 +1983,18 @@ POS or kitchen appends idempotent operations to the LAN event log. Kitchen displ
                         "client_item_id": "{{offline_client_item_id}}",
                         "menu_item_id": "{{menu_item_id}}",
                         "quantity": 1,
-                        "item_name_ar": "كشري"
+                        "item_name_ar": "كشري",
+                        "selections": [
+                            {
+                                "part_id": 1,
+                                "menu_item_id": "{{menu_item_id}}"
+                            },
+                            {
+                                "part_id": 2,
+                                "ingredient_id": "{{ingredient_id}}",
+                                "quantity": 610
+                            }
+                        ]
                     }
                 ]
             }
@@ -2051,7 +2056,7 @@ Projected kitchen tickets from the local event log. Display local_number, never 
 
 #### `GET` /api/v1/hub/snapshot
 
-Read the catalog snapshot cached on the LAN hub so tablets can start a shift without the cloud.
+Read the catalog snapshot cached on the LAN hub so tablets can start a shift without the cloud. Menu items include parts from schema version 3.
 
 - **Auth:** X-Hub-Token
 - **Permissions:** _None_
@@ -2078,12 +2083,13 @@ POS uploads the latest GET /offline/bootstrap payload to the hub while internet 
 ```json
 {
     "snapshot": {
-        "schema_version": 2,
+        "schema_version": 3,
         "menu_items": [
             {
                 "id": "{{menu_item_id}}",
                 "name_ar": "كشري",
-                "price": 50
+                "price": 50,
+                "parts": []
             }
         ]
     }
@@ -2331,7 +2337,7 @@ Upload Photo — menu/categories/{category}/photo
 
 #### `GET` /api/v1/menu/items
 
-Index — menu/items
+List menu items with parts. Items without parts order the same way they always have.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `menu.view`
@@ -2349,7 +2355,7 @@ Index — menu/items
 
 #### `POST` /api/v1/menu/items
 
-Store — menu/items
+Create a menu item. Omit parts for a normal plate. Send parts only when the cashier can choose, swap, or weigh something inside the same priced item. Types: fixed (always included), choice (pick min–max dishes), swap (default dish, replace if available), weight (included grams of an ingredient; type the real weight and optionally another fish). Weight unit accepts g, kg, or Arabic aliases such as جم, جرام, كجم, and كيلو; they are stored as g or kg.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `menu.create`
@@ -2368,6 +2374,27 @@ Store — menu/items
 | `cost_price` | `nullable, numeric, min:0` |
 | `preparation_time` | `integer, min:1, max:120` |
 | `sort_order` | `integer, min:0` |
+| `parts` | `sometimes, array` |
+| `parts.*.type` | `required, in:fixed,choice,swap,weight` |
+| `parts.*.name_ar` | `nullable, string, max:150` |
+| `parts.*.name_en` | `nullable, string, max:150` |
+| `parts.*.menu_item_id` | `nullable, integer` |
+| `parts.*.default_menu_item_id` | `nullable, integer` |
+| `parts.*.ingredient_id` | `required_if:parts.*.type,weight, nullable, integer` |
+| `parts.*.quantity` | `nullable, integer, min:1` |
+| `parts.*.included_quantity` | `required_if:parts.*.type,weight, nullable, numeric, min:0.0001` |
+| `parts.*.unit` | `required_if:parts.*.type,weight, nullable, in:g,kg` |
+| `parts.*.price_per_unit` | `required_if:parts.*.type,weight, nullable, numeric, min:0` |
+| `parts.*.min_select` | `nullable, integer, min:0` |
+| `parts.*.max_select` | `nullable, integer, min:0` |
+| `parts.*.sort_order` | `nullable, integer, min:0` |
+| `parts.*.options` | `nullable, array` |
+| `parts.*.options.*.menu_item_id` | `nullable, integer` |
+| `parts.*.options.*.ingredient_id` | `nullable, integer` |
+| `parts.*.options.*.extra_price` | `nullable, numeric` |
+| `parts.*.options.*.price_per_unit` | `nullable, numeric, min:0` |
+| `parts.*.options.*.is_available` | `sometimes, boolean` |
+| `parts.*.options.*.sort_order` | `nullable, integer, min:0` |
 
 ```json
 {
@@ -2378,7 +2405,65 @@ Store — menu/items
     "price": 45,
     "cost_price": 45,
     "preparation_time": 15,
-    "sort_order": 1
+    "sort_order": 1,
+    "parts": [
+        {
+            "type": "fixed",
+            "name_ar": "الصنف",
+            "menu_item_id": "{{menu_item_id}}",
+            "quantity": 1
+        },
+        {
+            "type": "swap",
+            "name_ar": "الجانب",
+            "menu_item_id": "{{menu_item_id}}",
+            "options": [
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 5,
+                    "is_available": true
+                },
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 0,
+                    "is_available": true
+                }
+            ]
+        },
+        {
+            "type": "choice",
+            "name_ar": "المشروب",
+            "min_select": 1,
+            "max_select": 1,
+            "options": [
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 0,
+                    "is_available": true
+                },
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 5,
+                    "is_available": true
+                }
+            ]
+        },
+        {
+            "type": "weight",
+            "name_ar": "السمك",
+            "ingredient_id": "{{ingredient_id}}",
+            "included_quantity": 500,
+            "unit": "g",
+            "price_per_unit": 0.3,
+            "options": [
+                {
+                    "ingredient_id": "{{ingredient_id}}",
+                    "price_per_unit": 0.4,
+                    "is_available": true
+                }
+            ]
+        }
+    ]
 }
 ```
 
@@ -2397,7 +2482,7 @@ Destroy — menu/items/{item}
 
 #### `GET` /api/v1/menu/items/{item}
 
-Show — menu/items/{item}
+Show a menu item, including parts and is_sellable when parts are loaded.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `menu.view`
@@ -2408,7 +2493,7 @@ Show — menu/items/{item}
 
 #### `PATCH` /api/v1/menu/items/{item}
 
-Update — menu/items/{item}
+Update a menu item. Omit parts to leave them unchanged. Sending parts replaces the whole list; send [] to clear them.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `menu.update`
@@ -2428,6 +2513,27 @@ Update — menu/items/{item}
 | `preparation_time` | `sometimes, integer, min:1` |
 | `sort_order` | `sometimes, integer, min:0` |
 | `category_id` | `sometimes, integer` |
+| `parts` | `sometimes, array` |
+| `parts.*.type` | `required, in:fixed,choice,swap,weight` |
+| `parts.*.name_ar` | `nullable, string, max:150` |
+| `parts.*.name_en` | `nullable, string, max:150` |
+| `parts.*.menu_item_id` | `nullable, integer` |
+| `parts.*.default_menu_item_id` | `nullable, integer` |
+| `parts.*.ingredient_id` | `required_if:parts.*.type,weight, nullable, integer` |
+| `parts.*.quantity` | `nullable, integer, min:1` |
+| `parts.*.included_quantity` | `required_if:parts.*.type,weight, nullable, numeric, min:0.0001` |
+| `parts.*.unit` | `required_if:parts.*.type,weight, nullable, in:g,kg` |
+| `parts.*.price_per_unit` | `required_if:parts.*.type,weight, nullable, numeric, min:0` |
+| `parts.*.min_select` | `nullable, integer, min:0` |
+| `parts.*.max_select` | `nullable, integer, min:0` |
+| `parts.*.sort_order` | `nullable, integer, min:0` |
+| `parts.*.options` | `nullable, array` |
+| `parts.*.options.*.menu_item_id` | `nullable, integer` |
+| `parts.*.options.*.ingredient_id` | `nullable, integer` |
+| `parts.*.options.*.extra_price` | `nullable, numeric` |
+| `parts.*.options.*.price_per_unit` | `nullable, numeric, min:0` |
+| `parts.*.options.*.is_available` | `sometimes, boolean` |
+| `parts.*.options.*.sort_order` | `nullable, integer, min:0` |
 
 ```json
 {
@@ -2439,7 +2545,65 @@ Update — menu/items/{item}
     "is_available": true,
     "preparation_time": 15,
     "sort_order": 1,
-    "category_id": "{{category_id}}"
+    "category_id": "{{category_id}}",
+    "parts": [
+        {
+            "type": "fixed",
+            "name_ar": "الصنف",
+            "menu_item_id": "{{menu_item_id}}",
+            "quantity": 1
+        },
+        {
+            "type": "swap",
+            "name_ar": "الجانب",
+            "menu_item_id": "{{menu_item_id}}",
+            "options": [
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 5,
+                    "is_available": true
+                },
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 0,
+                    "is_available": true
+                }
+            ]
+        },
+        {
+            "type": "choice",
+            "name_ar": "المشروب",
+            "min_select": 1,
+            "max_select": 1,
+            "options": [
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 0,
+                    "is_available": true
+                },
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 5,
+                    "is_available": true
+                }
+            ]
+        },
+        {
+            "type": "weight",
+            "name_ar": "السمك",
+            "ingredient_id": "{{ingredient_id}}",
+            "included_quantity": 500,
+            "unit": "g",
+            "price_per_unit": 0.3,
+            "options": [
+                {
+                    "ingredient_id": "{{ingredient_id}}",
+                    "price_per_unit": 0.4,
+                    "is_available": true
+                }
+            ]
+        }
+    ]
 }
 ```
 
@@ -2447,7 +2611,7 @@ Update — menu/items/{item}
 
 #### `PUT` /api/v1/menu/items/{item}
 
-Update — menu/items/{item}
+Update a menu item. Omit parts to leave them unchanged. Sending parts replaces the whole list; send [] to clear them.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `menu.update`
@@ -2467,6 +2631,27 @@ Update — menu/items/{item}
 | `preparation_time` | `sometimes, integer, min:1` |
 | `sort_order` | `sometimes, integer, min:0` |
 | `category_id` | `sometimes, integer` |
+| `parts` | `sometimes, array` |
+| `parts.*.type` | `required, in:fixed,choice,swap,weight` |
+| `parts.*.name_ar` | `nullable, string, max:150` |
+| `parts.*.name_en` | `nullable, string, max:150` |
+| `parts.*.menu_item_id` | `nullable, integer` |
+| `parts.*.default_menu_item_id` | `nullable, integer` |
+| `parts.*.ingredient_id` | `required_if:parts.*.type,weight, nullable, integer` |
+| `parts.*.quantity` | `nullable, integer, min:1` |
+| `parts.*.included_quantity` | `required_if:parts.*.type,weight, nullable, numeric, min:0.0001` |
+| `parts.*.unit` | `required_if:parts.*.type,weight, nullable, in:g,kg` |
+| `parts.*.price_per_unit` | `required_if:parts.*.type,weight, nullable, numeric, min:0` |
+| `parts.*.min_select` | `nullable, integer, min:0` |
+| `parts.*.max_select` | `nullable, integer, min:0` |
+| `parts.*.sort_order` | `nullable, integer, min:0` |
+| `parts.*.options` | `nullable, array` |
+| `parts.*.options.*.menu_item_id` | `nullable, integer` |
+| `parts.*.options.*.ingredient_id` | `nullable, integer` |
+| `parts.*.options.*.extra_price` | `nullable, numeric` |
+| `parts.*.options.*.price_per_unit` | `nullable, numeric, min:0` |
+| `parts.*.options.*.is_available` | `sometimes, boolean` |
+| `parts.*.options.*.sort_order` | `nullable, integer, min:0` |
 
 ```json
 {
@@ -2478,7 +2663,65 @@ Update — menu/items/{item}
     "is_available": true,
     "preparation_time": 15,
     "sort_order": 1,
-    "category_id": "{{category_id}}"
+    "category_id": "{{category_id}}",
+    "parts": [
+        {
+            "type": "fixed",
+            "name_ar": "الصنف",
+            "menu_item_id": "{{menu_item_id}}",
+            "quantity": 1
+        },
+        {
+            "type": "swap",
+            "name_ar": "الجانب",
+            "menu_item_id": "{{menu_item_id}}",
+            "options": [
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 5,
+                    "is_available": true
+                },
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 0,
+                    "is_available": true
+                }
+            ]
+        },
+        {
+            "type": "choice",
+            "name_ar": "المشروب",
+            "min_select": 1,
+            "max_select": 1,
+            "options": [
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 0,
+                    "is_available": true
+                },
+                {
+                    "menu_item_id": "{{menu_item_id}}",
+                    "extra_price": 5,
+                    "is_available": true
+                }
+            ]
+        },
+        {
+            "type": "weight",
+            "name_ar": "السمك",
+            "ingredient_id": "{{ingredient_id}}",
+            "included_quantity": 500,
+            "unit": "g",
+            "price_per_unit": 0.3,
+            "options": [
+                {
+                    "ingredient_id": "{{ingredient_id}}",
+                    "price_per_unit": 0.4,
+                    "is_available": true
+                }
+            ]
+        }
+    ]
 }
 ```
 
@@ -3140,7 +3383,7 @@ _None_
 
 #### `GET` /api/v1/offline/bootstrap
 
-Download the branch snapshot required by an offline POS: pricing, menu, packages, offers, tables, districts, staff, printers, open orders, current shift, business day, and LAN hub discovery URLs. Store the returned cursor for later incremental downloads. The hub token is never included.
+Download the branch snapshot required by an offline POS: pricing, menu (including item parts), packages, offers, tables, districts, staff, printers, open orders, current shift, business day, and LAN hub discovery URLs. Store the returned cursor for later incremental downloads. The hub token is never included. Schema version 3 adds parts on menu_items.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `orders.create`
@@ -3240,7 +3483,7 @@ Advertise the hub LAN URL while online so POS and kitchen tablets can discover i
 
 #### `POST` /api/v1/offline/sync
 
-Upload up to 100 queued offline operations. Supported types: order.created, order.item_added, order.item_updated, order.item_removed, order.status_changed, order.item_ready, and payment.recorded (cash only). Reuse operation_id and client UUIDs when retrying. Business-rule failures return disposition rejected while remaining operations continue.
+Upload up to 100 queued offline operations. Supported types: order.created, order.item_added, order.item_updated, order.item_removed, order.status_changed, order.item_ready, and payment.recorded (cash only). Reuse operation_id and client UUIDs when retrying. Business-rule failures return disposition rejected while remaining operations continue. Item lines may send selections (part_id plus menu_item_id, or ingredient_id and grams) from the snapshot parts.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `orders.create`
@@ -3317,6 +3560,17 @@ Upload up to 100 queued offline operations. Supported types: order.created, orde
 | `operations.*.payload.items.*.slots.*.menu_item_id` | `nullable, integer` |
 | `operations.*.payload.items.*.slots.*.menu_item_ids` | `nullable, array` |
 | `operations.*.payload.items.*.slots.*.menu_item_ids.*` | `integer` |
+| `operations.*.payload.selections` | `nullable, array` |
+| `operations.*.payload.items.*.selections.*.part_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.ingredient_id` | `nullable, integer` |
+| `operations.*.payload.items.*.selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.items.*.selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.items.*.selections.*.grams` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.selections.*.part_id` | `nullable, integer` |
+| `operations.*.payload.selections.*.ingredient_id` | `nullable, integer` |
+| `operations.*.payload.selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `operations.*.payload.selections.*.grams` | `nullable, numeric, min:0.0001` |
 
 ```json
 {
@@ -3335,7 +3589,18 @@ Upload up to 100 queued offline operations. Supported types: order.created, orde
                     {
                         "menu_item_id": "{{menu_item_id}}",
                         "quantity": 2,
-                        "notes": "Created while offline"
+                        "notes": "Created while offline",
+                        "selections": [
+                            {
+                                "part_id": 1,
+                                "menu_item_id": "{{menu_item_id}}"
+                            },
+                            {
+                                "part_id": 2,
+                                "ingredient_id": "{{ingredient_id}}",
+                                "quantity": 610
+                            }
+                        ]
                     }
                 ]
             }
@@ -3372,7 +3637,7 @@ Index — orders
 
 #### `POST` /api/v1/orders
 
-Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.
+Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent. For an item with parts, send selections: part_id plus menu_item_id(s), or ingredient_id and quantity (grams) for a weight part. No selections uses the defaults.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `orders.create`
@@ -3420,6 +3685,11 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
 | `items.*.slots.*.menu_item_id` | `nullable, integer` |
 | `items.*.slots.*.menu_item_ids` | `nullable, array` |
 | `items.*.slots.*.menu_item_ids.*` | `integer` |
+| `items.*.selections.*.part_id` | `nullable, integer` |
+| `items.*.selections.*.ingredient_id` | `nullable, integer` |
+| `items.*.selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `items.*.selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `items.*.selections.*.grams` | `nullable, numeric, min:0.0001` |
 
 ```json
 {
@@ -3431,63 +3701,43 @@ Create a new order with line items (dine-in, delivery, aggregator, etc.). Sendin
     "delivery_address": "١٢ شارع التحرير، الدقي، الجيزة",
     "delivery_fee": 15.5,
     "customer_id": "{{customer_id}}",
-    "customer_address_id": 1,
-    "district_id": 1,
+    "customer_address_id": "{{customer_address_id}}",
+    "district_id": "{{district_id}}",
     "coupon_code": "مثال",
     "items": [
         {
-            "menu_item_id": 1,
-            "package_id": 1,
+            "menu_item_id": "{{menu_item_id}}",
             "quantity": 2,
             "notes": "كشري",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1,
-            "slots": [],
-            "selections": [],
-            "selections.*.slot_id": 1,
-            "selections.*.id": 1,
-            "selections.*.menu_item_id": 1,
-            "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1,
-            "package_selections": [],
-            "package_selections.*.slot_id": 1,
-            "package_selections.*.id": 1,
-            "package_selections.*.menu_item_id": 1,
-            "package_selections.*.menu_item_ids": [],
-            "package_selections.*.menu_item_ids.*": 1,
-            "package_selections.*.quantity": 1,
-            "slots.*.slot_id": 1,
-            "slots.*.id": 1,
-            "slots.*.menu_item_id": 1,
-            "slots.*.menu_item_ids": [],
-            "slots.*.menu_item_ids.*": 1
+            "selections": [
+                {
+                    "part_id": 1,
+                    "menu_item_id": "{{menu_item_id}}"
+                },
+                {
+                    "part_id": 2,
+                    "ingredient_id": "{{ingredient_id}}",
+                    "quantity": 610
+                }
+            ]
         },
         {
-            "menu_item_id": 2,
-            "package_id": 1,
+            "package_id": "{{package_id}}",
             "quantity": 1,
-            "notes": "فول",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1,
-            "slots": [],
-            "selections": [],
-            "selections.*.slot_id": 1,
-            "selections.*.id": 1,
-            "selections.*.menu_item_id": 1,
-            "selections.*.menu_item_ids": [],
-            "selections.*.menu_item_ids.*": 1,
-            "package_selections": [],
-            "package_selections.*.slot_id": 1,
-            "package_selections.*.id": 1,
-            "package_selections.*.menu_item_id": 1,
-            "package_selections.*.menu_item_ids": [],
-            "package_selections.*.menu_item_ids.*": 1,
-            "package_selections.*.quantity": 1,
-            "slots.*.slot_id": 1,
-            "slots.*.id": 1,
-            "slots.*.menu_item_id": 1,
-            "slots.*.menu_item_ids": [],
-            "slots.*.menu_item_ids.*": 1
+            "notes": "وجبة",
+            "selections": [
+                {
+                    "slot_id": 1,
+                    "menu_item_id": "{{menu_item_id}}"
+                }
+            ],
+            "package_selections": [
+                {
+                    "slot_id": 1,
+                    "menu_item_id": "{{menu_item_id}}",
+                    "quantity": 1
+                }
+            ]
         }
     ]
 }
@@ -3590,7 +3840,7 @@ Update — orders/{order}
 
 #### `POST` /api/v1/orders/{order}/items
 
-Store — orders/{order}/items
+Add a line to an open order. Same selections as order create: part_id + menu_item_id for choice/swap, or part_id + ingredient_id + quantity for weight.
 
 - **Auth:** Bearer token + tenant header
 - **Permissions:** `orders.update`
@@ -3626,40 +3876,49 @@ Store — orders/{order}/items
 | `slots.*.menu_item_id` | `nullable, integer` |
 | `slots.*.menu_item_ids` | `nullable, array` |
 | `slots.*.menu_item_ids.*` | `integer` |
+| `selections.*.part_id` | `nullable, integer` |
+| `selections.*.ingredient_id` | `nullable, integer` |
+| `selections.*.quantity` | `nullable, numeric, min:0.0001` |
+| `selections.*.weight` | `nullable, numeric, min:0.0001` |
+| `selections.*.grams` | `nullable, numeric, min:0.0001` |
 
 ```json
 {
     "menu_item_id": "{{menu_item_id}}",
-    "package_id": 1,
-    "quantity": 2,
-    "notes": "بدون بصل",
-    "menu_item_ids": [],
+    "package_id": "{{package_id}}",
+    "quantity": 1,
+    "notes": "كشري",
+    "menu_item_ids": [
+        "{{menu_item_id}}"
+    ],
     "slots": [
         {
             "slot_id": 1,
-            "id": 1,
-            "menu_item_id": "{{menu_item_id}}",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1
+            "menu_item_id": "{{menu_item_id}}"
         }
     ],
     "selections": [
         {
+            "part_id": 1,
+            "menu_item_id": "{{menu_item_id}}"
+        },
+        {
+            "part_id": 2,
+            "ingredient_id": "{{ingredient_id}}",
+            "quantity": 610
+        },
+        {
             "slot_id": 1,
-            "id": 1,
-            "menu_item_id": "{{menu_item_id}}",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1
+            "menu_item_ids": [
+                "{{menu_item_id}}"
+            ]
         }
     ],
     "package_selections": [
         {
             "slot_id": 1,
-            "id": 1,
             "menu_item_id": "{{menu_item_id}}",
-            "menu_item_ids": [],
-            "menu_item_ids.*": 1,
-            "quantity": 2
+            "quantity": 1
         }
     ]
 }
@@ -4946,6 +5205,18 @@ Send leftover kitchen stock back to main inventory. Pass items, or return_remain
 {
     "to_branch_id": "{{destination_branch_id}}",
     "return_remaining": true,
+    "items": [
+        {
+            "ingredient_id": 1,
+            "quantity": 5,
+            "unit_cost": 12.5
+        },
+        {
+            "ingredient_id": 2,
+            "quantity": 2,
+            "unit_cost": 8
+        }
+    ],
     "notes": "Return leftover kitchen stock"
 }
 ```

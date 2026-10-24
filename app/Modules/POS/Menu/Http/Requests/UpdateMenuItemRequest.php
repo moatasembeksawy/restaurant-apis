@@ -4,10 +4,13 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Menu\Http\Requests;
 
+use App\Modules\POS\Menu\Http\Requests\Concerns\CanonicalizesPartUnits;
 use App\Shared\Support\Http\Requests\ApiFormRequest;
 
 class UpdateMenuItemRequest extends ApiFormRequest
 {
+    use CanonicalizesPartUnits;
+
     /** @return array<string, mixed> */
     public function rules(): array
     {

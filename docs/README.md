@@ -74,13 +74,28 @@ Only one business day can be open per branch. Closing is blocked while shifts or
 ## Offline POS
 
 1. Download `GET /offline/bootstrap?branch_id={id}` while connected and store `cursor`.
-2. Persist menu, packages, offers, tables, districts, staff, printers, open orders, shift, and business day locally.
+2. Persist menu (including item `parts`), packages, offers, tables, districts, staff, printers, open orders, shift, and business day locally.
 3. Queue operations locally with stable device, operation, order, item, and payment UUIDs.
 4. Upload up to 100 operations with `POST /offline/sync`.
 5. Remove `applied` and `duplicate` operations from the outbox. Show `rejected` operations for correction.
 6. Pull later updates with `GET /offline/changes?branch_id={id}&cursor={cursor}`.
 
 Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and cash `payment.recorded`. Card payments and refunds are not offline. PIN device tokens last 7 days.
+
+`menu_items` in the snapshot include `parts`. Replay the same `selections` the cashier used:
+
+```json
+{
+  "menu_item_id": 21,
+  "quantity": 1,
+  "selections": [
+    { "part_id": 1, "menu_item_id": 12 },
+    { "part_id": 2, "ingredient_id": 2, "quantity": 610 }
+  ]
+}
+```
+
+On `order.item_added`, `selections` may sit on the payload or on each item. A plain item with no parts ignores `selections`.
 
 Customers are not part of the snapshot. For offline delivery, collect `customer_phone`, `customer_name`, `delivery_address`, and optional `district_id` on `order.created`. Sync finds or creates the customer by phone. Address-only delivery is allowed (no customer record).
 
@@ -92,7 +107,11 @@ Customers are not part of the snapshot. For offline delivery, collect `customer_
 4. Show staff `local_number` / `daily_number`, never client UUIDs.
 5. When internet returns, `POST /hub/cloud-sync` or `php artisan pos:hub:sync` uploads the same operations to `POST /offline/sync`.
 
-Hub routes are `/api/v1/hub/*`. They do not use Sanctum or tenant middleware. Send `X-Hub-Token`.
+Hub routes are `/api/v1/hub/*`. They do not use Sanctum or tenant middleware. Send `X-Hub-Token`. Hub `order.created` items use the same `selections` as cloud sync.
+
+## QR menu
+
+`GET /qr/{token}/menu` returns each item’s `parts`. The customer picks a side, drink, or fish the same way the cashier does. `POST /qr/{token}/orders` accepts the same `selections` (`part_id` + `menu_item_id`, or `part_id` + `ingredient_id` + grams). Omit `selections` to use the defaults. A tea with no parts orders as it always has.
 
 ## Delivery dispatch
 
@@ -121,6 +140,105 @@ Send and receive may omit `items` to use the full previous-step quantities, or s
 3. Submit it with `POST /inventory/purchase-orders/{purchaseOrder}/submit`; status becomes `ordered`.
 4. Check the delivered goods with `POST /inventory/purchase-orders/{purchaseOrder}/receive`, providing every line's actual quantity and unit cost. Status becomes `received`, but stock is unchanged.
 5. Complete it with `POST /inventory/purchase-orders/{purchaseOrder}/complete`; verified quantities are added to stock and status becomes `completed`.
+
+## Configurable menu item parts
+
+A normal menu item is still one plate at one price. Add `parts` only when the cashier can change something inside that same line.
+
+| Type | Target | What the cashier does |
+|------|--------|------------------------|
+| `fixed` | menu item | Always included. Kitchen sees a child line at price 0. |
+| `choice` | menu item | Pick between `min_select` and `max_select`. Each option may add `extra_price`. |
+| `swap` | menu item | A default is already in the price. Another option replaces it only while that option is available. |
+| `weight` | ingredient | A default ingredient and included grams are in the price. Type the real weight; switch ingredient only if that option is available. |
+
+Rice, salad, and tahini that never change stay on the recipe. They are not parts. Packages stay a separate product.
+
+**Chicken meal** — one line, sides and a drink inside it:
+
+```json
+{
+  "category_id": 1,
+  "name_ar": "وجبة فراخ",
+  "price": 180,
+  "parts": [
+    { "type": "fixed", "menu_item_id": 10 },
+    {
+      "type": "swap",
+      "name_ar": "الجانب",
+      "menu_item_id": 11,
+      "options": [
+        { "menu_item_id": 12, "extra_price": 5 },
+        { "menu_item_id": 13, "extra_price": 0 }
+      ]
+    },
+    {
+      "type": "choice",
+      "name_ar": "المشروب",
+      "min_select": 1,
+      "max_select": 1,
+      "options": [
+        { "menu_item_id": 14 },
+        { "menu_item_id": 15, "extra_price": 5 }
+      ]
+    }
+  ]
+}
+```
+
+Order it with `selections`. No selection keeps the swap default and auto-fills a choice that has exactly one available option.
+
+```json
+{
+  "menu_item_id": 20,
+  "quantity": 1,
+  "selections": [
+    { "part_id": 2, "menu_item_id": 12 },
+    { "part_id": 3, "menu_item_id": 15 }
+  ]
+}
+```
+
+**Fish meal** — still one plate. The fish inside it can change weight or species:
+
+```json
+{
+  "category_id": 1,
+  "name_ar": "وجبة سمك مشوي",
+  "price": 250,
+  "parts": [
+    {
+      "type": "weight",
+      "name_ar": "السمك",
+      "ingredient_id": 1,
+      "included_quantity": 500,
+      "unit": "g",
+      "price_per_unit": 0.30,
+      "options": [
+        { "ingredient_id": 2, "price_per_unit": 0.40 }
+      ]
+    }
+  ]
+}
+```
+
+Price is the plate with the included fish taken out and the real fish put back in:
+
+`250 − (500 × 0.30) + (grams × chosen price per gram)`
+
+So 610 g of the default fish is 283. 610 g of the other fish is 344. On pay, stock takes the recipe sides plus the real grams of the fish that was sold.
+
+```json
+{
+  "menu_item_id": 21,
+  "quantity": 1,
+  "selections": [
+    { "part_id": 1, "ingredient_id": 2, "quantity": 610 }
+  ]
+}
+```
+
+Omit `parts` on create, and omit them on update, to leave a plain item unchanged. Sending `parts` replaces the whole list.
 
 ## Item cost and overhead
 

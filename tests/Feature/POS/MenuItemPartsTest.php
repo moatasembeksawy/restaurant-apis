@@ -206,6 +206,47 @@ it('hides a sold-out swap option from the order', function (): void {
         ->assertJsonPath('errors.0.code', 'ORDER_VALIDATION_FAILED');
 });
 
+it('accepts arabic weight units and stores g or kg', function (): void {
+    $fish = Ingredient::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'name_ar' => 'سمك',
+        'unit' => 'kg',
+        'is_active' => true,
+    ]);
+
+    $created = $this->withToken($this->token)
+        ->postJson('/api/v1/menu/items', [
+            'category_id' => $this->category->id,
+            'name_ar' => 'سمك مشوي',
+            'price' => 250,
+            'parts' => [[
+                'type' => 'weight',
+                'name_ar' => 'السمك',
+                'ingredient_id' => $fish->id,
+                'included_quantity' => 500,
+                'unit' => 'جم',
+                'price_per_unit' => 0.30,
+            ]],
+        ])
+        ->assertCreated();
+
+    expect($created->json('data.parts.0.unit'))->toBe('g');
+
+    $this->withToken($this->token)
+        ->patchJson('/api/v1/menu/items/'.$created->json('data.id'), [
+            'parts' => [[
+                'type' => 'weight',
+                'name_ar' => 'السمك',
+                'ingredient_id' => $fish->id,
+                'included_quantity' => 0.5,
+                'unit' => 'كجم',
+                'price_per_unit' => 300,
+            ]],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.parts.0.unit', 'kg');
+});
+
 it('creates a fish meal priced by the real weight', function (): void {
     [$meal, $denise, $bouri] = createFishMeal($this);
     $fishPart = collect($meal['parts'])->firstWhere('type', 'weight');

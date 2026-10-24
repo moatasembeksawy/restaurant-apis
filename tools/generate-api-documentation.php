@@ -54,6 +54,7 @@ const ERROR_CODES = [
     ['422', 'HUB_VALIDATION_FAILED', 'A LAN hub operation referenced a missing local order'],
     ['422', 'HUB_CLOUD_NOT_CONFIGURED', 'POS_HUB_CLOUD_URL or POS_HUB_CLOUD_TOKEN is missing'],
     ['422', 'ITEM_COST_ALLOCATION_FAILED', 'The item-cost period is invalid'],
+    ['422', 'MENU_ITEM_VALIDATION_FAILED', 'Menu item parts are invalid or cannot be sold'],
     ['502', 'HUB_CLOUD_SYNC_FAILED', 'The LAN hub could not upload operations to the cloud'],
 ];
 
@@ -75,6 +76,10 @@ const REQUEST_BODY_OVERRIDES = [
                             'menu_item_id' => '{{menu_item_id}}',
                             'quantity' => 2,
                             'notes' => 'Created while offline',
+                            'selections' => [
+                                ['part_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+                                ['part_id' => 2, 'ingredient_id' => '{{ingredient_id}}', 'quantity' => 610],
+                            ],
                         ],
                     ],
                 ],
@@ -159,11 +164,189 @@ const ACTION_BODY_OVERRIDES = [
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@heartbeat' => [
         'lan_url' => 'http://192.168.1.20:7744',
     ],
+    'App\\Modules\\POS\\Menu\\Http\\Controllers\\MenuItemController@store' => [
+        'category_id' => '{{category_id}}',
+        'name_ar' => 'كشري',
+        'name_en' => 'Koshary',
+        'description_ar' => 'مثال',
+        'price' => 45,
+        'cost_price' => 45,
+        'preparation_time' => 15,
+        'sort_order' => 1,
+        'parts' => [
+            [
+                'type' => 'fixed',
+                'name_ar' => 'الصنف',
+                'menu_item_id' => '{{menu_item_id}}',
+                'quantity' => 1,
+            ],
+            [
+                'type' => 'swap',
+                'name_ar' => 'الجانب',
+                'menu_item_id' => '{{menu_item_id}}',
+                'options' => [
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 5, 'is_available' => true],
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 0, 'is_available' => true],
+                ],
+            ],
+            [
+                'type' => 'choice',
+                'name_ar' => 'المشروب',
+                'min_select' => 1,
+                'max_select' => 1,
+                'options' => [
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 0, 'is_available' => true],
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 5, 'is_available' => true],
+                ],
+            ],
+            [
+                'type' => 'weight',
+                'name_ar' => 'السمك',
+                'ingredient_id' => '{{ingredient_id}}',
+                'included_quantity' => 500,
+                'unit' => 'g',
+                'price_per_unit' => 0.30,
+                'options' => [
+                    ['ingredient_id' => '{{ingredient_id}}', 'price_per_unit' => 0.40, 'is_available' => true],
+                ],
+            ],
+        ],
+    ],
+    'App\\Modules\\POS\\Menu\\Http\\Controllers\\MenuItemController@update' => [
+        'category_id' => '{{category_id}}',
+        'name_ar' => 'كشري',
+        'name_en' => 'Koshary',
+        'description_ar' => 'مثال',
+        'price' => 45,
+        'cost_price' => 45,
+        'is_available' => true,
+        'preparation_time' => 15,
+        'sort_order' => 1,
+        'parts' => [
+            [
+                'type' => 'fixed',
+                'name_ar' => 'الصنف',
+                'menu_item_id' => '{{menu_item_id}}',
+                'quantity' => 1,
+            ],
+            [
+                'type' => 'swap',
+                'name_ar' => 'الجانب',
+                'menu_item_id' => '{{menu_item_id}}',
+                'options' => [
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 5, 'is_available' => true],
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 0, 'is_available' => true],
+                ],
+            ],
+            [
+                'type' => 'choice',
+                'name_ar' => 'المشروب',
+                'min_select' => 1,
+                'max_select' => 1,
+                'options' => [
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 0, 'is_available' => true],
+                    ['menu_item_id' => '{{menu_item_id}}', 'extra_price' => 5, 'is_available' => true],
+                ],
+            ],
+            [
+                'type' => 'weight',
+                'name_ar' => 'السمك',
+                'ingredient_id' => '{{ingredient_id}}',
+                'included_quantity' => 500,
+                'unit' => 'g',
+                'price_per_unit' => 0.30,
+                'options' => [
+                    ['ingredient_id' => '{{ingredient_id}}', 'price_per_unit' => 0.40, 'is_available' => true],
+                ],
+            ],
+        ],
+    ],
+    'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@store' => [
+        'branch_id' => '{{branch_id}}',
+        'floor_table_id' => '{{table_id}}',
+        'channel' => 'dine_in',
+        'fulfillment_type' => 'dine_in',
+        'notes' => 'بدون بصل',
+        'delivery_address' => '١٢ شارع التحرير، الدقي، الجيزة',
+        'delivery_fee' => 15.5,
+        'customer_id' => '{{customer_id}}',
+        'customer_address_id' => '{{customer_address_id}}',
+        'district_id' => '{{district_id}}',
+        'coupon_code' => 'مثال',
+        'items' => [
+            [
+                'menu_item_id' => '{{menu_item_id}}',
+                'quantity' => 2,
+                'notes' => 'كشري',
+                'selections' => [
+                    ['part_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+                    ['part_id' => 2, 'ingredient_id' => '{{ingredient_id}}', 'quantity' => 610],
+                ],
+            ],
+            [
+                'package_id' => '{{package_id}}',
+                'quantity' => 1,
+                'notes' => 'وجبة',
+                'selections' => [
+                    ['slot_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+                ],
+                'package_selections' => [
+                    ['slot_id' => 1, 'menu_item_id' => '{{menu_item_id}}', 'quantity' => 1],
+                ],
+            ],
+        ],
+    ],
+    'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderItemController@store' => [
+        'menu_item_id' => '{{menu_item_id}}',
+        'package_id' => '{{package_id}}',
+        'quantity' => 1,
+        'notes' => 'كشري',
+        'menu_item_ids' => ['{{menu_item_id}}'],
+        'slots' => [
+            ['slot_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+        ],
+        'selections' => [
+            ['part_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+            ['part_id' => 2, 'ingredient_id' => '{{ingredient_id}}', 'quantity' => 610],
+            ['slot_id' => 1, 'menu_item_ids' => ['{{menu_item_id}}']],
+        ],
+        'package_selections' => [
+            ['slot_id' => 1, 'menu_item_id' => '{{menu_item_id}}', 'quantity' => 1],
+        ],
+    ],
+    'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => [
+        'coupon_code' => 'مثال',
+        'items' => [
+            [
+                'menu_item_id' => '{{menu_item_id}}',
+                'quantity' => 2,
+                'notes' => 'كشري',
+                'selections' => [
+                    ['part_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+                    ['part_id' => 2, 'ingredient_id' => '{{ingredient_id}}', 'quantity' => 610],
+                ],
+            ],
+            [
+                'package_id' => '{{package_id}}',
+                'quantity' => 1,
+                'notes' => 'وجبة',
+                'selections' => [
+                    ['slot_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+                ],
+            ],
+        ],
+        'customer_name' => 'أحمد',
+        'customer_phone' => '01012345678',
+        'notes' => 'من المنيو',
+        'table_label' => 'طاولة 5',
+        'fulfillment_type' => 'takeaway',
+        'delivery_address' => '١٢ شارع التحرير، الدقي، الجيزة',
+    ],
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@storeSnapshot' => [
         'snapshot' => [
-            'schema_version' => 2,
+            'schema_version' => 3,
             'menu_items' => [
-                ['id' => '{{menu_item_id}}', 'name_ar' => 'كشري', 'price' => 50],
+                ['id' => '{{menu_item_id}}', 'name_ar' => 'كشري', 'price' => 50, 'parts' => []],
             ],
         ],
     ],
@@ -189,6 +372,10 @@ const ACTION_BODY_OVERRIDES = [
                             'menu_item_id' => '{{menu_item_id}}',
                             'quantity' => 1,
                             'item_name_ar' => 'كشري',
+                            'selections' => [
+                                ['part_id' => 1, 'menu_item_id' => '{{menu_item_id}}'],
+                                ['part_id' => 2, 'ingredient_id' => '{{ingredient_id}}', 'quantity' => 610],
+                            ],
                         ],
                     ],
                 ],
@@ -205,19 +392,24 @@ const DESCRIPTION_OVERRIDES = [
     'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@unassigned' => 'Dispatcher queue of delivery orders that are not yet assigned to a rider (pending, no rider_id). Optional branch_id filter.',
     'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@bulkAssign' => 'Atomically assign up to 100 pending delivery orders to one active rider. The rider and every order must belong to the same branch; if any order is unavailable, none are assigned.',
     'App\\Modules\\Delivery\\Riders\\Http\\Controllers\\RiderController@orderSummary' => 'List every active rider with all non-cancelled assigned orders, plus unpaid order count, unpaid amount, and unpaid order details. Unpaid excludes paid and refunded orders. Optional branch_id filter.',
-    'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@show' => 'Public QR menu for a table token. No authentication required.',
-    'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => 'Place a dine-in or takeaway order from the public QR menu.',
-    'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@store' => 'Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent.',
-    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@bootstrap' => 'Download the branch snapshot required by an offline POS: pricing, menu, packages, offers, tables, districts, staff, printers, open orders, current shift, business day, and LAN hub discovery URLs. Store the returned cursor for later incremental downloads. The hub token is never included.',
+    'App\\Modules\\POS\\Menu\\Http\\Controllers\\MenuItemController@store' => 'Create a menu item. Omit parts for a normal plate. Send parts only when the cashier can choose, swap, or weigh something inside the same priced item. Types: fixed (always included), choice (pick min–max dishes), swap (default dish, replace if available), weight (included grams of an ingredient; type the real weight and optionally another fish). Weight unit accepts g, kg, or Arabic aliases such as جم, جرام, كجم, and كيلو; they are stored as g or kg.',
+    'App\\Modules\\POS\\Menu\\Http\\Controllers\\MenuItemController@update' => 'Update a menu item. Omit parts to leave them unchanged. Sending parts replaces the whole list; send [] to clear them.',
+    'App\\Modules\\POS\\Menu\\Http\\Controllers\\MenuItemController@show' => 'Show a menu item, including parts and is_sellable when parts are loaded.',
+    'App\\Modules\\POS\\Menu\\Http\\Controllers\\MenuItemController@index' => 'List menu items with parts. Items without parts order the same way they always have.',
+    'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderController@store' => 'Create a new order with line items (dine-in, delivery, aggregator, etc.). Sending customer_address_id or district_id fills delivery_fee from the district unless delivery_fee is sent. For an item with parts, send selections: part_id plus menu_item_id(s), or ingredient_id and quantity (grams) for a weight part. No selections uses the defaults.',
+    'App\\Modules\\POS\\Orders\\Http\\Controllers\\OrderItemController@store' => 'Add a line to an open order. Same selections as order create: part_id + menu_item_id for choice/swap, or part_id + ingredient_id + quantity for weight.',
+    'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@show' => 'Public QR menu for a table token. No authentication required. Items include parts so the customer can pick a side, drink, or fish.',
+    'App\\Modules\\Delivery\\QRMenu\\Http\\Controllers\\QRMenuController@placeOrder' => 'Place a dine-in or takeaway order from the public QR menu. Item selections use the same part_id payload as POS orders.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@bootstrap' => 'Download the branch snapshot required by an offline POS: pricing, menu (including item parts), packages, offers, tables, districts, staff, printers, open orders, current shift, business day, and LAN hub discovery URLs. Store the returned cursor for later incremental downloads. The hub token is never included. Schema version 3 adds parts on menu_items.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@changes' => 'Download catalog and order records changed after the given cursor. Call this after a successful sync so the device picks up updates from other terminals.',
-    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@sync' => 'Upload up to 100 queued offline operations. Supported types: order.created, order.item_added, order.item_updated, order.item_removed, order.status_changed, order.item_ready, and payment.recorded (cash only). Reuse operation_id and client UUIDs when retrying. Business-rule failures return disposition rejected while remaining operations continue.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineSyncController@sync' => 'Upload up to 100 queued offline operations. Supported types: order.created, order.item_added, order.item_updated, order.item_removed, order.status_changed, order.item_ready, and payment.recorded (cash only). Reuse operation_id and client UUIDs when retrying. Business-rule failures return disposition rejected while remaining operations continue. Item lines may send selections (part_id plus menu_item_id, or ingredient_id and grams) from the snapshot parts.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@publish' => 'POS or kitchen appends idempotent operations to the LAN event log. Kitchen displays poll GET /hub/events?after={id}. Order lines use the same selections as POST /offline/sync.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@show' => 'Return the registered LAN hub for a branch, including the last advertised LAN URL. The plaintext token is never returned after create.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@store' => 'Register or rotate the branch LAN hub. The plaintext X-Hub-Token is returned only once; store it on the branch mini-PC as POS_HUB_TOKEN.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\OfflineHubController@heartbeat' => 'Advertise the hub LAN URL while online so POS and kitchen tablets can discover it from bootstrap.lan_hub.urls.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@health' => 'Unauthenticated discovery ping for POS and kitchen tablets on the restaurant LAN. No Sanctum token and no internet required.',
-    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@snapshot' => 'Read the catalog snapshot cached on the LAN hub so tablets can start a shift without the cloud.',
+    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@snapshot' => 'Read the catalog snapshot cached on the LAN hub so tablets can start a shift without the cloud. Menu items include parts from schema version 3.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@storeSnapshot' => 'POS uploads the latest GET /offline/bootstrap payload to the hub while internet is available.',
-    'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@publish' => 'POS or kitchen appends idempotent operations to the LAN event log. Kitchen displays poll GET /hub/events?after={id}.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@events' => 'Poll new LAN events after a cursor. Kitchen uses this instead of Reverb when the internet is down.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@kitchenQueue' => 'Projected kitchen tickets from the local event log. Display local_number, never client UUIDs, to staff.',
     'App\\Modules\\POS\\Offline\\Http\\Controllers\\LocalHubController@markItemReady' => 'Kitchen marks a line done. Writes order.item_ready onto the LAN log so POS updates immediately.',
@@ -840,9 +1032,18 @@ function jsonPretty(mixed $data): string
 
 function exampleBodyForEndpoint(array $endpoint, array $rules): mixed
 {
-    return ACTION_BODY_OVERRIDES[$endpoint['action_key']]
+    $generated = buildExamplePayload($rules);
+    $override = ACTION_BODY_OVERRIDES[$endpoint['action_key']]
         ?? REQUEST_BODY_OVERRIDES[$endpoint['uri']]
-        ?? buildExamplePayload($rules);
+        ?? null;
+
+    if (! is_array($override)) {
+        return $generated;
+    }
+
+    // Keep auto-generated top-level fields (cost_price, table, delivery, …)
+    // and let the override replace only the keys it sets (parts, items, selections).
+    return array_merge($generated, $override);
 }
 
 // ── Markdown generation ──────────────────────────────────────────────────────
@@ -911,6 +1112,8 @@ The frontend can cache a branch snapshot and replay POS operations after an inte
 The synchronization response is HTTP 200 when the batch is structurally valid. Each result has its own `disposition`: `applied`, `duplicate`, or `rejected`.
 
 Supported operations: `order.created`, `order.item_added`, `order.item_updated`, `order.item_removed`, `order.status_changed`, `order.item_ready`, and `payment.recorded` (cash only). Keep the sold `unit_price` on created/added items; the server preserves it and may return a `PRICE_CHANGED` warning. PIN device tokens last 7 days. Card payments and refunds are not offline.
+
+`menu_items` in the snapshot include `parts`. Replay the same `selections` the cashier used: `part_id` plus `menu_item_id` for choice/swap, or `part_id` plus `ingredient_id` and `quantity` (grams) for weight. On `order.item_added`, `selections` may sit on the payload or on each item. A plain item with no parts ignores `selections`.
 
 Customers are not part of the snapshot. For offline delivery, send `customer_phone`, `customer_name`, `delivery_address`, and optional `district_id` on `order.created`. The server finds or creates the customer by phone. Address-only delivery is allowed (no customer record).
 
