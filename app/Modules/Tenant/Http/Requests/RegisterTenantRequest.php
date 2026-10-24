@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Modules\Tenant\Http\Requests;
 
 use App\Shared\Support\Http\Requests\ApiFormRequest;
+use App\Shared\Support\Phone\UniqueUserPhone;
+use App\Shared\Support\Phone\ValidPhone;
 
 class RegisterTenantRequest extends ApiFormRequest
 {
@@ -19,7 +21,7 @@ class RegisterTenantRequest extends ApiFormRequest
             'owner_name' => ['required', 'string', 'max:100'],
             'owner_email' => ['required', 'email', 'max:255'],
             'owner_password' => ['required', 'string', 'min:8', 'max:100'],
-            'owner_phone' => ['nullable', 'string', 'max:20'],
+            'owner_phone' => ['nullable', 'string', 'max:20', new ValidPhone(mobileOnly: true), new UniqueUserPhone],
             'branch_name' => ['nullable', 'string', 'max:100'],
             'branch_name_ar' => ['nullable', 'string', 'max:100'],
             'branch_description' => ['nullable', 'string', 'max:1000'],

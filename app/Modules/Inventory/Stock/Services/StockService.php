@@ -55,7 +55,7 @@ class StockService
         }
 
         if (! isset(self::DIRECTION[$type])) {
-            throw new InvalidArgumentException("Invalid movement type: {$type}");
+            throw new InvalidArgumentException(__('Invalid movement type: :type', ['type' => $type]));
         }
 
         return DB::transaction(function () use ($stock, $type, $quantity, $user, $unitCost, $notes, $reference, $branchId, $adjustmentDirection, $businessDayId): StockMovement {
@@ -76,7 +76,7 @@ class StockService
             $newStock = (float) $stock->current_stock + $signedQty;
 
             if ($newStock < 0) {
-                throw new RuntimeException("Insufficient stock for {$stock->name_ar}.");
+                throw new RuntimeException(__('Insufficient stock for :ingredient.', ['ingredient' => $stock->name_ar]));
             }
 
             $movement = StockMovement::create([

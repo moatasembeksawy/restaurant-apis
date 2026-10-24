@@ -82,11 +82,13 @@ class DeliveryService
                     || $order->delivery_status !== 'pending'
                     || in_array($order->status, ['cancelled', 'completed', 'paid', 'refunded'], true)
                 ) {
-                    throw new InvalidArgumentException("Order {$order->id} is not available for assignment.");
+                    throw new InvalidArgumentException(__('Order :order_id is not available for assignment.', ['order_id' => $order->id]));
                 }
 
                 if ((int) $rider->branch_id !== (int) $order->branch_id) {
-                    throw new InvalidArgumentException("Rider and order {$order->id} must belong to the same branch.");
+                    throw new InvalidArgumentException(__('Rider and order :order_id must belong to the same branch.', [
+                        'order_id' => $order->id,
+                    ]));
                 }
             }
 
@@ -120,7 +122,10 @@ class DeliveryService
 
         if (! in_array($status, $allowed, true)) {
             throw new InvalidArgumentException(
-                "Cannot transition delivery from '{$order->delivery_status}' to '{$status}'.",
+                __('Cannot transition delivery from \':from\' to \':to\'.', [
+                    'from' => $order->delivery_status,
+                    'to' => $status,
+                ]),
             );
         }
 

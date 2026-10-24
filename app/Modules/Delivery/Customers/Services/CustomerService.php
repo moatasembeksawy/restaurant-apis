@@ -6,6 +6,7 @@ namespace App\Modules\Delivery\Customers\Services;
 
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Orders\Models\Order;
+use App\Shared\Support\Phone\PhoneNormalizer;
 
 class CustomerService
 {
@@ -58,16 +59,6 @@ class CustomerService
 
     public function normalizePhone(string $phone): string
     {
-        $cleaned = preg_replace('/[^0-9+]/', '', $phone) ?? $phone;
-
-        if (str_starts_with($cleaned, '01') && strlen($cleaned) === 11) {
-            return '+2'.$cleaned;
-        }
-
-        if (str_starts_with($cleaned, '201')) {
-            return '+'.$cleaned;
-        }
-
-        return $cleaned;
+        return (string) PhoneNormalizer::normalize($phone);
     }
 }

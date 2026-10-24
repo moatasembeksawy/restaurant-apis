@@ -43,6 +43,30 @@ return [
         'verify_token' => env('WHATSAPP_VERIFY_TOKEN'),
         'webhook_secret' => env('WHATSAPP_WEBHOOK_SECRET'),
         'api_version' => env('WHATSAPP_API_VERSION', 'v19.0'),
+        // Meta "authentication" category template with a copy-code button.
+        'otp_template' => env('WHATSAPP_OTP_TEMPLATE', 'verification_code'),
+    ],
+
+    // ── SMS providers (phone verification OTPs) ──────────────────────────────
+    'twilio' => [
+        'account_sid' => env('TWILIO_ACCOUNT_SID'),
+        'auth_token' => env('TWILIO_AUTH_TOKEN'),
+        'from' => env('TWILIO_FROM'),
+        'messaging_service_sid' => env('TWILIO_MESSAGING_SERVICE_SID'),
+    ],
+
+    'vonage' => [
+        'api_key' => env('VONAGE_API_KEY'),
+        'api_secret' => env('VONAGE_API_SECRET'),
+        'from' => env('VONAGE_SMS_FROM'),
+    ],
+
+    'smsmisr' => [
+        'username' => env('SMSMISR_USERNAME'),
+        'password' => env('SMSMISR_PASSWORD'),
+        'sender' => env('SMSMISR_SENDER'),
+        'environment' => (int) env('SMSMISR_ENVIRONMENT', 2), // 1 = live, 2 = test
+        'base_url' => env('SMSMISR_BASE_URL', 'https://smsmisr.com/api'),
     ],
 
     // ── Paymob ────────────────────────────────────────────────────────────────

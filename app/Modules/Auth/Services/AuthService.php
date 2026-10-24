@@ -7,6 +7,7 @@ namespace App\Modules\Auth\Services;
 use App\Models\User;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Authorization\SystemRoles;
+use App\Shared\Support\Phone\PhoneNormalizer;
 use App\Shared\Support\Scopes\TenantScope;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Support\Facades\Hash;
@@ -15,30 +16,60 @@ use Laravel\Sanctum\NewAccessToken;
 
 class AuthService
 {
+    private const MAX_LOGIN_CANDIDATES = 5;
+
+    private static ?string $dummyHash = null;
+
     /**
-     * Authenticate a manager/owner via email + password.
+     * Authenticate a manager/owner via email or phone + password.
      * Returns a scoped Sanctum token based on the user's role.
      *
      * @throws AuthenticationException
      */
-    public function loginWithPassword(string $email, string $password, string $deviceName): array
+    public function loginWithPassword(string $login, string $password, string $deviceName): array
     {
-        $user = User::query()
-            ->withoutGlobalScope(TenantScope::class)
-            ->where('email', $email)
-            ->where('is_active', true)
-            ->first();
+        $byEmail = str_contains($login, '@');
 
-        if (! $user || ! Hash::check($password, $user->password)) {
+        $query = User::query()
+            ->withoutGlobalScope(TenantScope::class)
+            ->where('is_active', true);
+
+        $byEmail
+            ? $query->where('email', $login)
+            : $query->where('phone', PhoneNormalizer::normalize($login));
+
+        // Phone numbers are not unique across tenants; only accept an unambiguous match.
+        $candidates = $query->limit(self::MAX_LOGIN_CANDIDATES)->get();
+
+        if ($candidates->isEmpty()) {
+            // Spend the same hashing time as a real check so response timing doesn't reveal unknown accounts.
+            Hash::check($password, self::dummyHash());
+
             throw new AuthenticationException('Invalid credentials.');
         }
+
+        $matches = $candidates->filter(
+            fn (User $u): bool => is_string($u->password) && Hash::check($password, $u->password),
+        );
+
+        if ($matches->count() !== 1) {
+            throw new AuthenticationException('Invalid credentials.');
+        }
+
+        /** @var User $user */
+        $user = $matches->first();
 
         $token = $user->createToken($deviceName, $user->tokenAbilities());
 
         app()->instance('tenant', $user->tenant);
-        AuditLogger::log('auth.login', $user, ['method' => 'password']);
+        AuditLogger::log('auth.login', $user, ['method' => 'password', 'identifier' => $byEmail ? 'email' : 'phone']);
 
         return $this->formatTokenResponse($user, $token);
+    }
+
+    private static function dummyHash(): string
+    {
+        return self::$dummyHash ??= Hash::make(bin2hex(random_bytes(16)));
     }
 
     /**

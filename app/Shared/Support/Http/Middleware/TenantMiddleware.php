@@ -8,6 +8,7 @@ use App\Modules\Tenant\Subscription\Services\SubscriptionService;
 use App\Shared\Support\Tenant\TenantResolver;
 use Closure;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\App;
 use Spatie\Permission\PermissionRegistrar;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -24,8 +25,12 @@ class TenantMiddleware
 
         if (! $tenant) {
             return response()->json([
-                'errors' => [['message' => 'Tenant not found.', 'code' => 'TENANT_NOT_FOUND']],
+                'errors' => [['message' => __('Tenant not found.'), 'code' => 'TENANT_NOT_FOUND']],
             ], Response::HTTP_NOT_FOUND);
+        }
+
+        if (! ResolveLocale::hasRequestedLocale($request)) {
+            App::setLocale($tenant->locale);
         }
 
         $tenant = $this->subscriptions->resolveBillingState($tenant);
@@ -33,7 +38,7 @@ class TenantMiddleware
         if ($tenant->status === 'suspended' && ! $this->allowsSuspendedAccess($request)) {
             return response()->json([
                 'errors' => [[
-                    'message' => 'Account suspended. Please renew your subscription.',
+                    'message' => __('Account suspended. Please renew your subscription.'),
                     'code' => 'ACCOUNT_SUSPENDED',
                     'upgrade_url' => url('/api/v1/subscription/upgrade'),
                 ]],

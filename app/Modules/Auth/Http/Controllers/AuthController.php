@@ -33,8 +33,9 @@ class AuthController extends Controller
     /**
      * Login (manager / owner)
      *
-     * Authenticate with email and password. Returns a Sanctum Bearer token
-     * scoped to the user's role abilities.
+     * Authenticate with email or phone (`login`) and password. Returns a Sanctum
+     * Bearer token scoped to the user's role abilities. The legacy `email` field
+     * is still accepted in place of `login`.
      *
      * @unauthenticated
      */
@@ -42,7 +43,7 @@ class AuthController extends Controller
     {
         try {
             $result = $this->authService->loginWithPassword(
-                email: $request->string('email')->toString(),
+                login: $request->string('login')->toString(),
                 password: $request->string('password')->toString(),
                 deviceName: $request->string('device_name', 'web')->toString(),
             );
@@ -114,6 +115,7 @@ class AuthController extends Controller
             'email' => $user->email,
             'email_verified_at' => $user->email_verified_at?->toISOString(),
             'phone' => $user->phone,
+            'phone_verified_at' => $user->phone_verified_at?->toISOString(),
             'role' => $user->role,
             'abilities' => $user->currentAccessToken()->abilities,
             'branch' => $user->branch ? [

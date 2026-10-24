@@ -36,7 +36,7 @@ class PackageExpansionService
         }
 
         if (! $package->isSellable()) {
-            throw new InvalidArgumentException("Package {$package->id} is unavailable.");
+            throw new InvalidArgumentException(__('Package :package_id is unavailable.', ['package_id' => $package->id]));
         }
 
         $quantity = max(1, (int) ($line['quantity'] ?? 1));
@@ -103,7 +103,7 @@ class PackageExpansionService
             if ($slot->isFixed()) {
                 $item = $slot->menuItem;
                 if (! $item instanceof MenuItem || ! $item->is_available) {
-                    throw new InvalidArgumentException("Package slot {$slot->id} is unavailable.");
+                    throw new InvalidArgumentException(__('Package slot :slot_id is unavailable.', ['slot_id' => $slot->id]));
                 }
 
                 $components[] = [
@@ -121,7 +121,11 @@ class PackageExpansionService
 
             if ($count < $min || $count > $max) {
                 throw new InvalidArgumentException(
-                    "Slot {$slot->id} requires between {$slot->min_select} and {$slot->max_select} selections.",
+                    __('Slot :slot_id requires between :min and :max selections.', [
+                        'slot_id' => $slot->id,
+                        'min' => $slot->min_select,
+                        'max' => $slot->max_select,
+                    ]),
                 );
             }
 
@@ -130,7 +134,10 @@ class PackageExpansionService
             foreach ($selectedIds as $menuItemId) {
                 $option = $options->get($menuItemId);
                 if (! $option instanceof MenuPackageSlotOption || ! $option->isSellable()) {
-                    throw new InvalidArgumentException("Menu item {$menuItemId} is not a valid option for slot {$slot->id}.");
+                    throw new InvalidArgumentException(__('Menu item :menu_item_id is not a valid option for slot :slot_id.', [
+                        'menu_item_id' => $menuItemId,
+                        'slot_id' => $slot->id,
+                    ]));
                 }
 
                 $extraPrice += (float) $option->extra_price;

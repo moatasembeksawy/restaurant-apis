@@ -87,7 +87,7 @@ class OrderController extends Controller
     public function update(UpdateOrderRequest $request, Order $order): JsonResponse
     {
         if (! $order->canEdit()) {
-            return ApiResponse::error('Cannot update an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+            return ApiResponse::error(__('Cannot update an order with status: :status', ['status' => $order->status]), 'ORDER_NOT_EDITABLE', 422);
         }
 
         try {
@@ -105,7 +105,10 @@ class OrderController extends Controller
 
         if (! $order->canTransitionTo($validated['status'])) {
             return ApiResponse::error(
-                "Cannot transition order from '{$order->status}' to '{$validated['status']}'.",
+                __('Cannot transition order from \':from\' to \':to\'.', [
+                    'from' => $order->status,
+                    'to' => $validated['status'],
+                ]),
                 'INVALID_STATUS_TRANSITION',
                 422,
             );

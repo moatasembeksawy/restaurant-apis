@@ -93,7 +93,7 @@ class LoyaltyService
         $minPoints = (int) config('intelligence.loyalty.min_redeem_points', 50);
 
         if ($points < $minPoints) {
-            throw new InvalidArgumentException("Minimum redemption is {$minPoints} points.");
+            throw new InvalidArgumentException(__('Minimum redemption is :min_points points.', ['min_points' => $minPoints]));
         }
 
         if ($points > $customer->loyalty_points) {

@@ -48,7 +48,7 @@ class PlanLimitService
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
-                "You have reached the maximum of {$max} users on your plan. Upgrade to add more.",
+                __('You have reached the maximum of :max users on your plan. Upgrade to add more.', ['max' => $max]),
                 'users',
                 $max,
             );
@@ -65,7 +65,7 @@ class PlanLimitService
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
-                "Your plan allows {$max} branch(es). Upgrade to add more branches.",
+                __('Your plan allows :max branch(es). Upgrade to add more branches.', ['max' => $max]),
                 'branches',
                 $max,
             );
@@ -88,7 +88,7 @@ class PlanLimitService
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
-                "You have reached {$max} orders this month. Upgrade your plan to continue.",
+                __('You have reached :max orders this month. Upgrade your plan to continue.', ['max' => $max]),
                 'orders',
                 $max,
             );
@@ -105,7 +105,7 @@ class PlanLimitService
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
-                "You have reached the maximum of {$max} packages on your plan. Upgrade to add more.",
+                __('You have reached the maximum of :max packages on your plan. Upgrade to add more.', ['max' => $max]),
                 'packages',
                 $max,
             );
@@ -122,7 +122,7 @@ class PlanLimitService
 
         if ($count >= $max) {
             throw new PlanLimitExceededException(
-                "You have reached the maximum of {$max} active offers on your plan. Upgrade to add more.",
+                __('You have reached the maximum of :max active offers on your plan. Upgrade to add more.', ['max' => $max]),
                 'active_offers',
                 $max,
             );

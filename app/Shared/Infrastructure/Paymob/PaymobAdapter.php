@@ -46,7 +46,7 @@ class PaymobAdapter
             ]);
 
         if ($orderResponse->failed()) {
-            throw new RuntimeException('Paymob order creation failed: '.$orderResponse->body());
+            throw new RuntimeException(__('Paymob order creation failed: :reason', ['reason' => $orderResponse->body()]));
         }
 
         $paymobOrderId = (int) $orderResponse->json('id');
@@ -77,7 +77,7 @@ class PaymobAdapter
             ]);
 
         if ($keyResponse->failed()) {
-            throw new RuntimeException('Paymob payment key creation failed: '.$keyResponse->body());
+            throw new RuntimeException(__('Paymob payment key creation failed: :reason', ['reason' => $keyResponse->body()]));
         }
 
         $paymentToken = (string) $keyResponse->json('token');
@@ -146,7 +146,7 @@ class PaymobAdapter
         $parts = explode('_', $merchant);
 
         if (count($parts) < 3 || $parts[0] !== 'tenant') {
-            throw new RuntimeException("Invalid Paymob merchant order ID: {$merchant}");
+            throw new RuntimeException(__('Invalid Paymob merchant order ID: :merchant', ['merchant' => $merchant]));
         }
 
         return [
@@ -165,7 +165,7 @@ class PaymobAdapter
             ]);
 
         if ($response->failed()) {
-            throw new RuntimeException('Paymob authentication failed: '.$response->body());
+            throw new RuntimeException(__('Paymob authentication failed: :reason', ['reason' => $response->body()]));
         }
 
         return (string) $response->json('token');

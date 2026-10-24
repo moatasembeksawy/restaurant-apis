@@ -345,7 +345,9 @@ class RoleService
         $missing = array_values(array_diff($names, $known));
 
         if ($missing !== []) {
-            throw new InvalidArgumentException('Unknown permissions: '.implode(', ', $missing));
+            throw new InvalidArgumentException(__('Unknown permissions: :permissions', [
+                'permissions' => implode(', ', $missing),
+            ]));
         }
     }
 

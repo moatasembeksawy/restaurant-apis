@@ -18,6 +18,8 @@ class ApiResponse
         int $status = 200,
         array $meta = [],
     ): JsonResponse {
+        $message = __($message);
+
         if ($data instanceof LengthAwarePaginator) {
             return response()->json([
                 'data' => self::resolve($data->items()),
@@ -46,6 +48,8 @@ class ApiResponse
         string $message = 'OK',
         array $meta = [],
     ): JsonResponse {
+        $message = __($message);
+
         return response()->json([
             'data' => $resourceClass::collection($paginator->items())->resolve(request()),
             'meta' => array_merge([
@@ -76,8 +80,13 @@ class ApiResponse
     ): JsonResponse {
         return response()->json([
             'errors' => array_merge(
-                [['message' => $message, 'code' => $code]],
-                $errors,
+                [['message' => __($message), 'code' => $code]],
+                array_map(
+                    fn (array $error): array => isset($error['message'])
+                        ? [...$error, 'message' => __($error['message'])]
+                        : $error,
+                    $errors,
+                ),
             ),
         ], $status);
     }

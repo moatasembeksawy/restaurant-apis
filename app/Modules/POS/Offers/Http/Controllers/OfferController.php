@@ -91,7 +91,7 @@ class OfferController extends Controller
 
         $state = $offer->is_active ? 'active' : 'inactive';
 
-        return ApiResponse::success(new OfferResource($offer), "Offer marked as {$state}.");
+        return ApiResponse::success(new OfferResource($offer), __('Offer marked as :state.', ['state' => $state]));
     }
 
     public function preview(PreviewOfferRequest $request): JsonResponse

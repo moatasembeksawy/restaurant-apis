@@ -28,7 +28,7 @@ class OrderItemController extends Controller
     public function store(StoreOrderItemRequest $request, Order $order): JsonResponse
     {
         if (! $order->canAddItems()) {
-            return ApiResponse::error('Cannot add items to an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+            return ApiResponse::error(__('Cannot add items to an order with status: :status', ['status' => $order->status]), 'ORDER_NOT_EDITABLE', 422);
         }
 
         try {
@@ -51,11 +51,11 @@ class OrderItemController extends Controller
     public function update(UpdateOrderItemRequest $request, Order $order, OrderItem $item): JsonResponse
     {
         if (! $order->canAddItems()) {
-            return ApiResponse::error('Cannot update items on an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+            return ApiResponse::error(__('Cannot update items on an order with status: :status', ['status' => $order->status]), 'ORDER_NOT_EDITABLE', 422);
         }
 
         if (! in_array($item->status, ['pending', 'ready'], true)) {
-            return ApiResponse::error('Cannot update an item that is already '.$item->status.'.', 'ITEM_NOT_EDITABLE', 422);
+            return ApiResponse::error(__('Cannot update an item that is already :status.', ['status' => $item->status]), 'ITEM_NOT_EDITABLE', 422);
         }
 
         $validated = $request->validated();
@@ -83,11 +83,11 @@ class OrderItemController extends Controller
     public function destroy(Order $order, OrderItem $item): JsonResponse|Response
     {
         if (! $order->canAddItems()) {
-            return ApiResponse::error('Cannot remove items from an order with status: '.$order->status, 'ORDER_NOT_EDITABLE', 422);
+            return ApiResponse::error(__('Cannot remove items from an order with status: :status', ['status' => $order->status]), 'ORDER_NOT_EDITABLE', 422);
         }
 
         if ($item->status !== 'pending' && ! $item->isPackageParent()) {
-            return ApiResponse::error('Cannot remove an item that is already '.$item->status.'.', 'ITEM_NOT_EDITABLE', 422);
+            return ApiResponse::error(__('Cannot remove an item that is already :status.', ['status' => $item->status]), 'ITEM_NOT_EDITABLE', 422);
         }
 
         if ($item->children()->where('status', '!=', 'pending')->exists()) {

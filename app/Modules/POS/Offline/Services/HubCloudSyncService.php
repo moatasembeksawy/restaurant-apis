@@ -50,7 +50,7 @@ class HubCloudSyncService
             ]);
 
         if (! $response->successful()) {
-            throw new RuntimeException('Cloud sync failed: '.$response->body(), 502);
+            throw new RuntimeException(__('Cloud sync failed: :reason', ['reason' => $response->body()]), 502);
         }
 
         $results = $response->json('data.results') ?? [];

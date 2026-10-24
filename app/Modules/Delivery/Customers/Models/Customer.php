@@ -5,7 +5,9 @@ declare(strict_types=1);
 namespace App\Modules\Delivery\Customers\Models;
 
 use App\Shared\Domain\Models\BaseModel;
+use App\Shared\Support\Phone\PhoneNormalizer;
 use Database\Factories\CustomerFactory;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -38,6 +40,14 @@ class Customer extends BaseModel
             'total_spent' => 'decimal:2',
             'last_order_at' => 'datetime',
         ];
+    }
+
+    /** @return Attribute<string|null, string|null> */
+    protected function phone(): Attribute
+    {
+        return Attribute::make(
+            set: fn (?string $value): ?string => PhoneNormalizer::normalize($value),
+        );
     }
 
     /** @return HasMany<CustomerAddress, $this> */

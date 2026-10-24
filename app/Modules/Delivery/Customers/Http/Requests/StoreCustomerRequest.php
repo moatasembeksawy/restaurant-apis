@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\Delivery\Customers\Http\Requests;
 
 use App\Shared\Support\Http\Requests\ApiFormRequest;
+use App\Shared\Support\Phone\ValidPhone;
 
 class StoreCustomerRequest extends ApiFormRequest
 {
@@ -12,7 +13,7 @@ class StoreCustomerRequest extends ApiFormRequest
     public function rules(): array
     {
         return [
-            'phone' => ['required', 'string', 'max:20'],
+            'phone' => ['required', 'string', 'max:20', new ValidPhone],
             'name' => ['nullable', 'string', 'max:100'],
             'default_address' => ['nullable', 'string', 'max:500'],
         ];

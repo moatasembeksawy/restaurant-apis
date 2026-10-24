@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Shared\Infrastructure\WhatsAppClient;
 
+use App\Shared\Support\Phone\PhoneNormalizer;
 use Illuminate\Support\Facades\Http;
 use RuntimeException;
 
@@ -66,15 +67,9 @@ class WhatsAppClient implements WhatsAppClientInterface
         return hash_equals($expected, $signature);
     }
 
+    /** Meta expects the international number without the leading "+". */
     private function normalizePhone(string $phone): string
     {
-        $cleaned = preg_replace('/[^0-9]/', '', $phone);
-
-        // Egyptian numbers: 01x → 201x
-        if (str_starts_with($cleaned, '01') && strlen($cleaned) === 11) {
-            return '2'.$cleaned;
-        }
-
-        return $cleaned;
+        return ltrim((string) PhoneNormalizer::normalize($phone), '+');
     }
 }

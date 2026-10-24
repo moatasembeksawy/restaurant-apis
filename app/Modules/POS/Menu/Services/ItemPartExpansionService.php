@@ -30,7 +30,7 @@ class ItemPartExpansionService
         $hasSoldPrice = array_key_exists('unit_price', $line) && $line['unit_price'] !== null;
 
         if (! $menuItem->isSellable() && ! $hasSoldPrice) {
-            throw new InvalidArgumentException("Menu item {$menuItem->id} is unavailable.");
+            throw new InvalidArgumentException(__('Menu item :menu_item_id is unavailable.', ['menu_item_id' => $menuItem->id]));
         }
 
         $quantity = max(1, (int) ($line['quantity'] ?? 1));
@@ -103,7 +103,7 @@ class ItemPartExpansionService
             if ($part->isFixed()) {
                 $item = $part->defaultMenuItem;
                 if (! $item instanceof MenuItem || ! $item->is_available) {
-                    throw new InvalidArgumentException("Item part {$part->id} is unavailable.");
+                    throw new InvalidArgumentException(__('Item part :part_id is unavailable.', ['part_id' => $part->id]));
                 }
 
                 $components[] = [
@@ -256,7 +256,11 @@ class ItemPartExpansionService
         $count = count($selectedIds);
         if ($count < (int) $part->min_select || $count > (int) $part->max_select) {
             throw new InvalidArgumentException(
-                "Part {$part->id} requires between {$part->min_select} and {$part->max_select} selections.",
+                __('Part :part_id requires between :min and :max selections.', [
+                    'part_id' => $part->id,
+                    'min' => $part->min_select,
+                    'max' => $part->max_select,
+                ]),
             );
         }
 
@@ -266,7 +270,10 @@ class ItemPartExpansionService
         foreach ($selectedIds as $menuItemId) {
             $option = $options->get($menuItemId);
             if (! $option instanceof MenuItemPartOption || ! $option->isSellable() || ! $option->menuItem instanceof MenuItem) {
-                throw new InvalidArgumentException("Menu item {$menuItemId} is not a valid option for part {$part->id}.");
+                throw new InvalidArgumentException(__('Menu item :menu_item_id is not a valid option for part :part_id.', [
+                    'menu_item_id' => $menuItemId,
+                    'part_id' => $part->id,
+                ]));
             }
 
             $extraPrice += (float) $option->extra_price;
@@ -326,14 +333,14 @@ class ItemPartExpansionService
         }
 
         if (count($selectedIds) !== 1) {
-            throw new InvalidArgumentException("Part {$part->id} requires one selection.");
+            throw new InvalidArgumentException(__('Part :part_id requires one selection.', ['part_id' => $part->id]));
         }
 
         $chosenId = $selectedIds[0];
 
         if ($chosenId === (int) $part->default_menu_item_id) {
             if (! $defaultAvailable) {
-                throw new InvalidArgumentException("Item part {$part->id} is unavailable.");
+                throw new InvalidArgumentException(__('Item part :part_id is unavailable.', ['part_id' => $part->id]));
             }
 
             return [
@@ -352,7 +359,10 @@ class ItemPartExpansionService
 
         $option = $options->get($chosenId);
         if (! $option instanceof MenuItemPartOption || ! $option->isSellable() || ! $option->menuItem instanceof MenuItem) {
-            throw new InvalidArgumentException("Menu item {$chosenId} is not a valid option for part {$part->id}.");
+            throw new InvalidArgumentException(__('Menu item :menu_item_id is not a valid option for part :part_id.', [
+                'menu_item_id' => $chosenId,
+                'part_id' => $part->id,
+            ]));
         }
 
         return [
@@ -377,7 +387,7 @@ class ItemPartExpansionService
     {
         $default = $part->ingredient;
         if (! $default instanceof Ingredient) {
-            throw new InvalidArgumentException("Item part {$part->id} is unavailable.");
+            throw new InvalidArgumentException(__('Item part :part_id is unavailable.', ['part_id' => $part->id]));
         }
 
         $ingredientId = $selection['ingredient_id'] ?? (int) $part->ingredient_id;
@@ -385,7 +395,7 @@ class ItemPartExpansionService
         $quantity = round((float) $quantity, 4);
 
         if ($quantity <= 0) {
-            throw new InvalidArgumentException("Part {$part->id} requires a weight greater than zero.");
+            throw new InvalidArgumentException(__('Part :part_id requires a weight greater than zero.', ['part_id' => $part->id]));
         }
 
         $rate = (float) $part->price_per_unit;
@@ -396,14 +406,17 @@ class ItemPartExpansionService
             );
 
             if (! $option instanceof MenuItemPartOption || ! $option->isSellable() || ! $option->ingredient instanceof Ingredient) {
-                throw new InvalidArgumentException("Ingredient {$ingredientId} is not a valid option for part {$part->id}.");
+                throw new InvalidArgumentException(__('Ingredient :ingredient_id is not a valid option for part :part_id.', [
+                    'ingredient_id' => $ingredientId,
+                    'part_id' => $part->id,
+                ]));
             }
 
             $ingredient = $option->ingredient;
             $rate = (float) $option->price_per_unit;
         } else {
             if ($default->is_active !== true) {
-                throw new InvalidArgumentException("Item part {$part->id} is unavailable.");
+                throw new InvalidArgumentException(__('Item part :part_id is unavailable.', ['part_id' => $part->id]));
             }
 
             $ingredient = $default;

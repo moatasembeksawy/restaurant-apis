@@ -63,6 +63,99 @@ it('rejects invalid credentials', function (): void {
         ->assertJsonPath('errors.0.code', 'INVALID_CREDENTIALS');
 });
 
+it('uses the requested language for API and validation messages', function (): void {
+    $this->withHeader('Accept-Language', 'ar-EG,ar;q=0.9,en;q=0.8')
+        ->postJson('/api/v1/auth/login', [
+            'email' => 'owner@test.eg',
+            'password' => 'wrong-password',
+        ])
+        ->assertUnauthorized()
+        ->assertJsonPath('errors.0.message', 'بيانات الدخول غير صحيحة.');
+
+    $this->withHeader('Accept-Language', 'ar')
+        ->postJson('/api/v1/auth/login', [])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.message', 'حقل البريد الإلكتروني أو رقم الهاتف مطلوب.');
+});
+
+it('allows login with email via the login field', function (): void {
+    $this->postJson('/api/v1/auth/login', [
+        'login' => 'owner@test.eg',
+        'password' => 'password',
+    ])->assertOk()
+        ->assertJsonPath('data.user.id', $this->owner->id);
+});
+
+it('allows login with phone in local or international format', function (string $input): void {
+    $this->owner->update(['phone' => '01001234567']);
+
+    $this->postJson('/api/v1/auth/login', [
+        'login' => $input,
+        'password' => 'password',
+    ])->assertOk()
+        ->assertJsonPath('data.user.id', $this->owner->id);
+})->with(['01001234567', '+201001234567', '201001234567', '010 0123 4567']);
+
+it('matches a phone stored in international format', function (): void {
+    $this->owner->update(['phone' => '+201001234567']);
+
+    $this->postJson('/api/v1/auth/login', [
+        'login' => '01001234567',
+        'password' => 'password',
+    ])->assertOk();
+});
+
+it('rejects phone login with the wrong password', function (): void {
+    $this->owner->update(['phone' => '01001234567']);
+
+    $this->postJson('/api/v1/auth/login', [
+        'login' => '01001234567',
+        'password' => 'wrong-password',
+    ])->assertUnauthorized()
+        ->assertJsonPath('errors.0.code', 'INVALID_CREDENTIALS');
+});
+
+it('normalizes phones when saving users', function (): void {
+    $this->owner->update(['phone' => '010 0123-4567']);
+
+    expect($this->owner->fresh()->phone)->toBe('+201001234567');
+});
+
+it('throttles repeated failed logins for the same identifier', function (): void {
+    foreach (range(1, 5) as $_) {
+        $this->postJson('/api/v1/auth/login', [
+            'login' => 'owner@test.eg',
+            'password' => 'wrong-password',
+        ])->assertUnauthorized();
+    }
+
+    $this->postJson('/api/v1/auth/login', [
+        'login' => 'OWNER@test.eg',
+        'password' => 'password',
+    ])->assertTooManyRequests()
+        ->assertHeader('Retry-After')
+        ->assertJsonPath('errors.0.code', 'TOO_MANY_ATTEMPTS');
+});
+
+it('checks a hash even when no account matches', function (): void {
+    $realHash = Hash::make('unused');
+    Hash::shouldReceive('make')->andReturn($realHash);
+    Hash::shouldReceive('check')->once()->andReturnFalse();
+
+    $this->postJson('/api/v1/auth/login', [
+        'login' => 'nobody@test.eg',
+        'password' => 'password',
+    ])->assertUnauthorized()
+        ->assertJsonPath('errors.0.code', 'INVALID_CREDENTIALS');
+});
+
+it('rejects a login value that is neither email nor phone', function (): void {
+    $this->postJson('/api/v1/auth/login', [
+        'login' => 'not-a-phone',
+        'password' => 'password',
+    ])->assertUnprocessable();
+});
+
 it('rejects login for inactive users', function (): void {
     $this->owner->update(['is_active' => false]);
 

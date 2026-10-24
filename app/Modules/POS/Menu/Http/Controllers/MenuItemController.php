@@ -95,6 +95,9 @@ class MenuItemController extends Controller
 
         $state = $item->is_available ? 'available' : 'unavailable';
 
-        return ApiResponse::success(new MenuItemResource($item->load($this->items->relations())), "Item marked as {$state}.");
+        return ApiResponse::success(
+            new MenuItemResource($item->load($this->items->relations())),
+            __('Item marked as :state.', ['state' => $state]),
+        );
     }
 }

@@ -71,7 +71,7 @@ class SubscriptionService
     public function initiateUpgrade(Tenant $tenant, string $plan, string $gateway, User $initiatedBy): array
     {
         if (! $this->pricing->isValidPlan($plan)) {
-            throw new InvalidArgumentException("Invalid plan: {$plan}");
+            throw new InvalidArgumentException(__('Invalid plan: :plan', ['plan' => $plan]));
         }
 
         $subscription = $tenant->subscription;
@@ -290,7 +290,7 @@ class SubscriptionService
         }
 
         if (! $this->pricing->isValidPlan($plan)) {
-            throw new InvalidArgumentException("Invalid plan: {$plan}");
+            throw new InvalidArgumentException(__('Invalid plan: :plan', ['plan' => $plan]));
         }
 
         if (! $this->pricing->isDowngrade($subscription->plan, $plan)) {

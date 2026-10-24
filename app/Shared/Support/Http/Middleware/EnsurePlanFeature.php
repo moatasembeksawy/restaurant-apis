@@ -17,7 +17,9 @@ class EnsurePlanFeature
         if (! $tenant || ! $tenant->hasFeature($feature)) {
             return response()->json([
                 'errors' => [[
-                    'message' => "Your plan does not include the '{$feature}' feature. Please upgrade.",
+                    'message' => __('Your plan does not include the \':feature\' feature. Please upgrade.', [
+                        'feature' => $feature,
+                    ]),
                     'code' => 'FEATURE_NOT_AVAILABLE',
                     'upgrade_url' => url('/api/v1/subscription/upgrade'),
                 ]],

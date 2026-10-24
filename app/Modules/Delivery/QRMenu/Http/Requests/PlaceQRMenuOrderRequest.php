@@ -6,6 +6,7 @@ namespace App\Modules\Delivery\QRMenu\Http\Requests;
 
 use App\Modules\POS\Orders\Support\OrderLineSelectionRules;
 use App\Shared\Support\Http\Requests\ApiFormRequest;
+use App\Shared\Support\Phone\ValidPhone;
 
 class PlaceQRMenuOrderRequest extends ApiFormRequest
 {
@@ -42,7 +43,7 @@ class PlaceQRMenuOrderRequest extends ApiFormRequest
             'items.*.slots.*.menu_item_ids.*' => ['integer'],
             ...OrderLineSelectionRules::fields('items.*.selections.*.'),
             'customer_name' => ['nullable', 'string', 'max:100'],
-            'customer_phone' => ['nullable', 'string', 'max:20'],
+            'customer_phone' => ['nullable', 'string', 'max:20', new ValidPhone],
             'notes' => ['nullable', 'string', 'max:500'],
             'table_label' => ['nullable', 'string', 'max:50'],
             'fulfillment_type' => ['nullable', 'in:takeaway,delivery'],

@@ -27,7 +27,9 @@ class TenantRateLimitMiddleware
 
             return response()->json([
                 'errors' => [[
-                    'message' => "Rate limit exceeded. Try again in {$retryAfter} seconds.",
+                    'message' => __('Rate limit exceeded. Try again in :retry_after seconds.', [
+                        'retry_after' => $retryAfter,
+                    ]),
                     'code' => 'RATE_LIMIT_EXCEEDED',
                     'retry_after' => $retryAfter,
                     'limit_per_minute' => $limit,

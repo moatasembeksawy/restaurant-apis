@@ -33,10 +33,10 @@ class CustomerController extends Controller
 
         $customers = Customer::query()
             ->with(['addresses.district'])
-            ->when($validated['phone'] ?? null, fn ($q, $phone) => $q->where('phone', 'like', "%{$phone}%"))
+            ->when($validated['phone'] ?? null, fn ($q, $phone) => $q->where('phone', 'like', '%'.$this->phoneSearchFragment($phone).'%'))
             ->when($validated['search'] ?? null, fn ($q, $search) => $q->where(function ($q2) use ($search): void {
                 $q2->where('name', 'like', "%{$search}%")
-                    ->orWhere('phone', 'like', "%{$search}%");
+                    ->orWhere('phone', 'like', '%'.$this->phoneSearchFragment($search).'%');
             }))
             ->orderByDesc('last_order_at')
             ->paginate((int) ($validated['per_page'] ?? 25));
@@ -73,6 +73,22 @@ class CustomerController extends Controller
         }
 
         return ApiResponse::success(new CustomerResource($customer->fresh('addresses.district') ?? $customer), 'Customer updated.');
+    }
+
+    /**
+     * Phones are stored as +20…; strip the local trunk "0" / country code so "0100…" still matches.
+     */
+    private function phoneSearchFragment(string $input): string
+    {
+        $digits = preg_replace('/\D/', '', $input) ?? '';
+
+        if ($digits === '') {
+            return $input;
+        }
+
+        $fragment = preg_replace('/^(?:0020|20|0)/', '', $digits) ?? $digits;
+
+        return $fragment !== '' ? $fragment : $digits;
     }
 
     public function orders(Customer $customer): JsonResponse

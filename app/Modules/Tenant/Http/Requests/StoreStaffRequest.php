@@ -6,6 +6,8 @@ namespace App\Modules\Tenant\Http\Requests;
 
 use App\Shared\Support\Authorization\AssignableRole;
 use App\Shared\Support\Http\Requests\ApiFormRequest;
+use App\Shared\Support\Phone\UniqueUserPhone;
+use App\Shared\Support\Phone\ValidPhone;
 
 class StoreStaffRequest extends ApiFormRequest
 {
@@ -15,7 +17,7 @@ class StoreStaffRequest extends ApiFormRequest
         return [
             'name' => ['required', 'string', 'max:100'],
             'email' => ['nullable', 'email', 'max:255'],
-            'phone' => ['nullable', 'string', 'max:20'],
+            'phone' => ['nullable', 'string', 'max:20', new ValidPhone(mobileOnly: true), new UniqueUserPhone],
             'role' => ['required', 'string', 'max:50', new AssignableRole],
             'branch_id' => ['required', 'integer'],
             'password' => ['nullable', 'string', 'min:8', 'max:100'],

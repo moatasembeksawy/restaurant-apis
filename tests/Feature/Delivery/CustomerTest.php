@@ -49,6 +49,36 @@ it('creates a customer by phone', function (): void {
     expect($response->json('data.addresses.0.is_default'))->toBeTrue();
 });
 
+it('rejects an invalid customer phone', function (): void {
+    $this->withToken($this->token)
+        ->postJson('/api/v1/customers', ['phone' => '123'])
+        ->assertUnprocessable()
+        ->assertJsonPath('errors.0.field', 'phone');
+});
+
+it('reuses the same customer when the phone is entered in another format', function (): void {
+    $first = $this->withToken($this->token)
+        ->postJson('/api/v1/customers', ['phone' => '01098765432'])
+        ->assertCreated();
+
+    $this->withToken($this->token)
+        ->postJson('/api/v1/customers', ['phone' => '+20 109 876 5432'])
+        ->assertCreated()
+        ->assertJsonPath('data.id', $first->json('data.id'));
+});
+
+it('finds customers by phone typed in local format', function (): void {
+    Customer::factory()->create(['tenant_id' => $this->tenant->id, 'phone' => '01098765432']);
+    Customer::factory()->create(['tenant_id' => $this->tenant->id, 'phone' => '01111111111']);
+
+    $response = $this->withToken($this->token)
+        ->getJson('/api/v1/customers?phone=010987')
+        ->assertOk();
+
+    expect($response->json('data'))->toHaveCount(1)
+        ->and($response->json('data.0.phone'))->toBe('+201098765432');
+});
+
 it('shows customer order history', function (): void {
     $customer = Customer::factory()->create(['tenant_id' => $this->tenant->id]);
 

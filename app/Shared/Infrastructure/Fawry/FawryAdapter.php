@@ -105,7 +105,7 @@ class FawryAdapter
 
         $parts = explode('_', $reference);
         if (count($parts) < 3 || $parts[0] !== 'tenant') {
-            throw new RuntimeException("Invalid Fawry merchant reference: {$reference}");
+            throw new RuntimeException(__('Invalid Fawry merchant reference: :reference', ['reference' => $reference]));
         }
 
         $amount = (float) ($payload['paymentAmount'] ?? $payload['orderAmount'] ?? 0);

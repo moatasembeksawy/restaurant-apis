@@ -35,6 +35,28 @@ it('shows tenant settings for owner', function (): void {
     expect($response->json('data.qr_menu_url'))->toEndWith("/api/v1/qr/{$this->branch->qr_menu_token}/menu");
 });
 
+it('uses the tenant locale when no supported language header is provided', function (): void {
+    $this->tenant->update(['locale' => 'ar']);
+
+    expect($this->owner->preferredLocale())->toBe('ar');
+
+    $this->withToken($this->token)
+        ->withServerVariables(['HTTP_ACCEPT_LANGUAGE' => ''])
+        ->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('meta.message', 'حسنًا');
+});
+
+it('lets the language header override the tenant locale', function (): void {
+    $this->tenant->update(['locale' => 'ar']);
+
+    $this->withToken($this->token)
+        ->withHeader('Accept-Language', 'en-US,en;q=0.9')
+        ->getJson('/api/v1/settings')
+        ->assertOk()
+        ->assertJsonPath('meta.message', 'OK');
+});
+
 it('shows tenant settings and logo for cashier', function (): void {
     $this->tenant->update(['logo_url' => 'https://cdn.example.com/logo.png']);
     $cashier = User::factory()->create([

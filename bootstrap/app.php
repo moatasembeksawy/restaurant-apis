@@ -11,12 +11,14 @@ use App\Shared\Support\Http\Middleware\EnsurePermission;
 use App\Shared\Support\Http\Middleware\EnsurePlanFeature;
 use App\Shared\Support\Http\Middleware\EnsurePlatformAdmin;
 use App\Shared\Support\Http\Middleware\EnsurePosHubEnabled;
+use App\Shared\Support\Http\Middleware\ResolveLocale;
 use App\Shared\Support\Http\Middleware\TenantMiddleware;
 use App\Shared\Support\Http\Middleware\TenantRateLimitMiddleware;
 use Illuminate\Auth\AuthenticationException;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Validation\ValidationException;
@@ -30,6 +32,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->prepend(ResolveLocale::class);
+
         $middleware->alias([
             'tenant' => TenantMiddleware::class,
             'feature' => EnsurePlanFeature::class,
@@ -62,7 +66,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
             return response()->json([
                 'errors' => [[
-                    'message' => $e->getMessage(),
+                    'message' => __($e->getMessage()),
                     'code' => 'PLAN_LIMIT_EXCEEDED',
                     'resource' => $e->resource,
                     'limit' => $e->limit,
@@ -78,7 +82,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json([
-                'errors' => [['message' => $e->getMessage(), 'code' => 'BRANCH_ACCESS_DENIED']],
+                'errors' => [['message' => __($e->getMessage()), 'code' => 'BRANCH_ACCESS_DENIED']],
             ], 403);
         });
 
@@ -89,8 +93,19 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json([
-                'errors' => [['message' => 'Unauthenticated.', 'code' => 'UNAUTHENTICATED']],
+                'errors' => [['message' => __('Unauthenticated.'), 'code' => 'UNAUTHENTICATED']],
             ], 401);
+        });
+
+        // 429 — Rate limit exceeded
+        $exceptions->render(function (ThrottleRequestsException $e, Request $request): mixed {
+            if (! $request->is('api/*')) {
+                return null;
+            }
+
+            return response()->json([
+                'errors' => [['message' => __('Too many attempts. Please try again later.'), 'code' => 'TOO_MANY_ATTEMPTS']],
+            ], 429, $e->getHeaders());
         });
 
         // 422 — Validation errors in consistent format
@@ -118,7 +133,7 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json([
-                'errors' => [['message' => 'Resource not found.', 'code' => 'NOT_FOUND']],
+                'errors' => [['message' => __('Resource not found.'), 'code' => 'NOT_FOUND']],
             ], 404);
         });
     })->create();

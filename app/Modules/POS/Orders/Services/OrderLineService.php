@@ -46,7 +46,7 @@ class OrderLineService
         $hasSoldPrice = array_key_exists('unit_price', $line) && $line['unit_price'] !== null;
 
         if (! $menuItem->is_available && ! $hasSoldPrice) {
-            throw new InvalidArgumentException("Menu item {$menuItem->id} is unavailable.");
+            throw new InvalidArgumentException(__('Menu item :menu_item_id is unavailable.', ['menu_item_id' => $menuItem->id]));
         }
 
         $quantity = max(1, (int) ($line['quantity'] ?? 1));

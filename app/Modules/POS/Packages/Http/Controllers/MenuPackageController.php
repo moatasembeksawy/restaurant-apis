@@ -104,7 +104,7 @@ class MenuPackageController extends Controller
 
         return ApiResponse::success(
             new MenuPackageResource($package->load(['slots.options.menuItem', 'category'])),
-            "Package marked as {$state}.",
+            __('Package marked as :state.', ['state' => $state]),
         );
     }
 }

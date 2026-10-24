@@ -92,7 +92,10 @@ class Ingredient extends BaseModel
         $toBase = self::UNIT_BASE[$toUnit] ?? null;
 
         if ($fromBase === null || $toBase === null || $fromBase[0] !== $toBase[0]) {
-            throw new InvalidArgumentException("Cannot convert {$fromUnit} to {$toUnit}.");
+            throw new InvalidArgumentException(__('Cannot convert :from_unit to :to_unit.', [
+                'from_unit' => $fromUnit,
+                'to_unit' => $toUnit,
+            ]));
         }
 
         return $quantity * $fromBase[1] / $toBase[1];

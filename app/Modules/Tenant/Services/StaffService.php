@@ -165,6 +165,7 @@ class StaffService
             'name' => $user->name,
             'email' => $user->email,
             'phone' => $user->phone,
+            'phone_verified_at' => $user->phone_verified_at?->toISOString(),
             'role' => $user->role,
             'branch_id' => $user->branch_id,
             'is_active' => $user->is_active,

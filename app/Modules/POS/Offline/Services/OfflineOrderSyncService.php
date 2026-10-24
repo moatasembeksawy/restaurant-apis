@@ -23,6 +23,7 @@ use App\Modules\POS\Tables\Models\FloorTable;
 use App\Modules\Tenant\Models\Tenant;
 use App\Shared\Support\Audit\AuditLogger;
 use App\Shared\Support\Broadcasting\SafeBroadcast;
+use App\Shared\Support\Phone\PhoneNormalizer;
 use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
@@ -134,7 +135,7 @@ class OfflineOrderSyncService
                 'disposition' => 'rejected',
                 'error' => [
                     'code' => $code,
-                    'message' => $exception->getMessage(),
+                    'message' => __($exception->getMessage()),
                 ],
             ];
         }
@@ -160,7 +161,7 @@ class OfflineOrderSyncService
             OfflineOperations::STATUS_CHANGED => $this->changeStatus($payload),
             OfflineOperations::ITEM_READY => $this->markItemReady($payload),
             OfflineOperations::PAYMENT_RECORDED => $this->recordPayment($user, $payload),
-            default => throw new InvalidArgumentException("Unsupported operation type: {$type}."),
+            default => throw new InvalidArgumentException(__('Unsupported operation type: :type.', ['type' => $type])),
         };
     }
 
@@ -213,7 +214,8 @@ class OfflineOrderSyncService
 
         $phone = trim((string) ($payload['customer_phone'] ?? ''));
 
-        if ($phone === '') {
+        // An order captured offline must still sync; a bad phone only drops the customer link.
+        if ($phone === '' || ! PhoneNormalizer::isValid($phone)) {
             return null;
         }
 
@@ -236,7 +238,7 @@ class OfflineOrderSyncService
         $order = $this->resolveOrder($payload);
 
         if (! $order->canAddItems()) {
-            throw new InvalidArgumentException('Cannot add items to an order with status: '.$order->status);
+            throw new InvalidArgumentException(__('Cannot add items to an order with status: :status', ['status' => $order->status]));
         }
 
         $clientItemId = (string) $payload['client_item_id'];
@@ -275,13 +277,13 @@ class OfflineOrderSyncService
         $order = $this->resolveOrder($payload);
 
         if (! $order->canAddItems()) {
-            throw new InvalidArgumentException('Cannot update items on an order with status: '.$order->status);
+            throw new InvalidArgumentException(__('Cannot update items on an order with status: :status', ['status' => $order->status]));
         }
 
         $item = $this->resolveItem($order, $payload);
 
         if (! in_array($item->status, ['pending', 'ready'], true)) {
-            throw new InvalidArgumentException('Cannot update an item that is already '.$item->status.'.');
+            throw new InvalidArgumentException(__('Cannot update an item that is already :status.', ['status' => $item->status]));
         }
 
         $previousQuantity = (int) $item->quantity;
@@ -307,7 +309,7 @@ class OfflineOrderSyncService
         $order = $this->resolveOrder($payload);
 
         if (! $order->canAddItems()) {
-            throw new InvalidArgumentException('Cannot remove items from an order with status: '.$order->status);
+            throw new InvalidArgumentException(__('Cannot remove items from an order with status: :status', ['status' => $order->status]));
         }
 
         $item = $order->items()
@@ -322,7 +324,7 @@ class OfflineOrderSyncService
         }
 
         if ($item->status !== 'pending' && ! $item->isPackageParent()) {
-            throw new InvalidArgumentException('Cannot remove an item that is already '.$item->status.'.');
+            throw new InvalidArgumentException(__('Cannot remove an item that is already :status.', ['status' => $item->status]));
         }
 
         if ($item->isPackageParent() && $item->children()->where('status', '!=', 'pending')->exists()) {
@@ -351,7 +353,10 @@ class OfflineOrderSyncService
         }
 
         if (! $order->canTransitionTo($status)) {
-            throw new InvalidArgumentException("Cannot transition order from '{$order->status}' to '{$status}'.");
+            throw new InvalidArgumentException(__('Cannot transition order from \':from\' to \':to\'.', [
+                'from' => $order->status,
+                'to' => $status,
+            ]));
         }
 
         $order->update(['status' => $status]);

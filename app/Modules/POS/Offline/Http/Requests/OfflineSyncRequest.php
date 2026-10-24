@@ -62,7 +62,10 @@ class OfflineSyncRequest extends ApiFormRequest
     {
         foreach ($fields as $field) {
             if (! array_key_exists($field, $payload) || $payload[$field] === null || $payload[$field] === []) {
-                $validator->errors()->add("{$prefix}.{$field}", "The {$field} field is required.");
+                $validator->errors()->add(
+                    "{$prefix}.{$field}",
+                    __('The :attribute field is required.', ['attribute' => $field]),
+                );
             }
         }
     }

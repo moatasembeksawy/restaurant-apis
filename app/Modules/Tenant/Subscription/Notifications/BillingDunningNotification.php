@@ -35,38 +35,41 @@ class BillingDunningNotification extends Notification implements ShouldQueue
 
         return match ($this->event) {
             'trial_expired' => (new MailMessage)
-                ->subject('Your RestoApp trial has ended')
-                ->greeting("Hello {$notifiable->name},")
-                ->line("Your trial for {$this->tenant->name} has ended.")
-                ->line('Your account is now in a grace period. Renew soon to avoid suspension.')
-                ->action('Renew Subscription', $upgradeUrl),
+                ->subject(__('Your RestoApp trial has ended'))
+                ->greeting(__('Hello :name,', ['name' => $notifiable->name]))
+                ->line(__('Your trial for :tenant has ended.', ['tenant' => $this->tenant->name]))
+                ->line(__('Your account is now in a grace period. Renew soon to avoid suspension.'))
+                ->action(__('Renew Subscription'), $upgradeUrl),
             'grace_expired' => (new MailMessage)
-                ->subject('Your RestoApp account has been suspended')
-                ->greeting("Hello {$notifiable->name},")
-                ->line("The grace period for {$this->tenant->name} has ended.")
-                ->line('POS access is disabled until payment is received.')
-                ->action('Renew Subscription', $upgradeUrl),
+                ->subject(__('Your RestoApp account has been suspended'))
+                ->greeting(__('Hello :name,', ['name' => $notifiable->name]))
+                ->line(__('The grace period for :tenant has ended.', ['tenant' => $this->tenant->name]))
+                ->line(__('POS access is disabled until payment is received.'))
+                ->action(__('Renew Subscription'), $upgradeUrl),
             'payment_failed' => (new MailMessage)
-                ->subject('Subscription payment failed')
-                ->greeting("Hello {$notifiable->name},")
-                ->line('We could not process your subscription payment.')
-                ->line('Gateway: '.($this->context['gateway'] ?? 'unknown'))
-                ->action('Try Again', $upgradeUrl),
+                ->subject(__('Subscription payment failed'))
+                ->greeting(__('Hello :name,', ['name' => $notifiable->name]))
+                ->line(__('We could not process your subscription payment.'))
+                ->line(__('Gateway: :gateway', ['gateway' => $this->context['gateway'] ?? __('unknown')]))
+                ->action(__('Try Again'), $upgradeUrl),
             'renewal_reminder' => (new MailMessage)
-                ->subject('Your RestoApp subscription renews soon')
-                ->greeting("Hello {$notifiable->name},")
-                ->line("Your {$this->tenant->name} subscription renews on ".($this->context['period_end'] ?? 'soon').'.')
-                ->line('Plan: '.($this->context['plan'] ?? $this->tenant->plan))
-                ->action('Renew Subscription', $upgradeUrl),
+                ->subject(__('Your RestoApp subscription renews soon'))
+                ->greeting(__('Hello :name,', ['name' => $notifiable->name]))
+                ->line(__('Your :tenant subscription renews on :date.', [
+                    'tenant' => $this->tenant->name,
+                    'date' => $this->context['period_end'] ?? __('soon'),
+                ]))
+                ->line(__('Plan: :plan', ['plan' => $this->context['plan'] ?? $this->tenant->plan]))
+                ->action(__('Renew Subscription'), $upgradeUrl),
             'subscription_expired' => (new MailMessage)
-                ->subject('Your RestoApp subscription has expired')
-                ->greeting("Hello {$notifiable->name},")
-                ->line("The paid period for {$this->tenant->name} has ended.")
-                ->line('Your account is now in a grace period. Renew to avoid suspension.')
-                ->action('Renew Subscription', $upgradeUrl),
+                ->subject(__('Your RestoApp subscription has expired'))
+                ->greeting(__('Hello :name,', ['name' => $notifiable->name]))
+                ->line(__('The paid period for :tenant has ended.', ['tenant' => $this->tenant->name]))
+                ->line(__('Your account is now in a grace period. Renew to avoid suspension.'))
+                ->action(__('Renew Subscription'), $upgradeUrl),
             default => (new MailMessage)
-                ->subject('Billing notice')
-                ->line('Please review your subscription status.'),
+                ->subject(__('Billing notice'))
+                ->line(__('Please review your subscription status.')),
         };
     }
 }

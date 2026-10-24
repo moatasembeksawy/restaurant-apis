@@ -291,7 +291,10 @@ class MenuItemService
         try {
             Ingredient::convertQuantity(1, $partUnit, $ingredientUnit);
         } catch (InvalidArgumentException) {
-            throw new InvalidArgumentException("Cannot convert {$partUnit} to {$ingredientUnit}.");
+            throw new InvalidArgumentException(__('Cannot convert :part_unit to :ingredient_unit.', [
+                'part_unit' => $partUnit,
+                'ingredient_unit' => $ingredientUnit,
+            ]));
         }
     }
 

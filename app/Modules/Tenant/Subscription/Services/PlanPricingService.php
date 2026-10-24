@@ -16,7 +16,7 @@ class PlanPricingService
         $config = config("billing.plans.{$plan}");
 
         if (! $config) {
-            throw new InvalidArgumentException("Unknown plan: {$plan}");
+            throw new InvalidArgumentException(__('Unknown plan: :plan', ['plan' => $plan]));
         }
 
         return $config;
@@ -42,7 +42,7 @@ class PlanPricingService
         $parts = explode('_', $reference);
 
         if (count($parts) < 3 || $parts[0] !== 'tenant') {
-            throw new InvalidArgumentException("Invalid merchant reference: {$reference}");
+            throw new InvalidArgumentException(__('Invalid merchant reference: :reference', ['reference' => $reference]));
         }
 
         return [

@@ -34,7 +34,7 @@ class OrderUpdateService
     public function update(Order $order, array $data): Order
     {
         if (! $order->canEdit()) {
-            throw new InvalidArgumentException('Cannot update an order with status: '.$order->status);
+            throw new InvalidArgumentException(__('Cannot update an order with status: :status', ['status' => $order->status]));
         }
 
         return DB::transaction(function () use ($order, $data): Order {
