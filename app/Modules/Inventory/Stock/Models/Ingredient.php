@@ -10,6 +10,7 @@ use Database\Factories\IngredientFactory;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use InvalidArgumentException;
 
 class Ingredient extends BaseModel
 {
@@ -59,11 +60,39 @@ class Ingredient extends BaseModel
         'حبات' => 'piece',
     ];
 
+    /** @var array<string, array{0: string, 1: float}> */
+    private const UNIT_BASE = [
+        'g' => ['mass', 1.0],
+        'kg' => ['mass', 1000.0],
+        'ml' => ['volume', 1.0],
+        'l' => ['volume', 1000.0],
+        'piece' => ['piece', 1.0],
+    ];
+
     public static function canonicalizeUnit(string $unit): string
     {
         $normalized = mb_strtolower(trim((string) preg_replace('/\s+/u', ' ', $unit)));
 
         return self::UNIT_ALIASES[$normalized] ?? $normalized;
+    }
+
+    public static function convertQuantity(float $quantity, string $from, string $to): float
+    {
+        $fromUnit = self::canonicalizeUnit($from);
+        $toUnit = self::canonicalizeUnit($to);
+
+        if ($fromUnit === $toUnit) {
+            return $quantity;
+        }
+
+        $fromBase = self::UNIT_BASE[$fromUnit] ?? null;
+        $toBase = self::UNIT_BASE[$toUnit] ?? null;
+
+        if ($fromBase === null || $toBase === null || $fromBase[0] !== $toBase[0]) {
+            throw new InvalidArgumentException("Cannot convert {$fromUnit} to {$toUnit}.");
+        }
+
+        return $quantity * $fromBase[1] / $toBase[1];
     }
 
     protected static function newFactory(): Factory

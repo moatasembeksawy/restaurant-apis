@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\POS\Orders\Services;
 
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Menu\Services\ItemPartExpansionService;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\POS\Packages\Services\PackageExpansionService;
@@ -12,7 +13,10 @@ use InvalidArgumentException;
 
 class OrderLineService
 {
-    public function __construct(private readonly PackageExpansionService $packages) {}
+    public function __construct(
+        private readonly PackageExpansionService $packages,
+        private readonly ItemPartExpansionService $parts,
+    ) {}
 
     /**
      * @param  array<string, mixed>  $line
@@ -24,10 +28,19 @@ class OrderLineService
         }
 
         $menuItemId = (int) ($line['menu_item_id'] ?? 0);
-        $menuItem = MenuItem::query()->find($menuItemId);
+        $menuItem = MenuItem::query()->with([
+            'parts.options.menuItem',
+            'parts.options.ingredient',
+            'parts.defaultMenuItem',
+            'parts.ingredient',
+        ])->find($menuItemId);
 
         if (! $menuItem instanceof MenuItem) {
             throw new InvalidArgumentException('Menu item not found.');
+        }
+
+        if ($menuItem->hasParts()) {
+            return $this->parts->addToOrder($order, $menuItem, $line);
         }
 
         $hasSoldPrice = array_key_exists('unit_price', $line) && $line['unit_price'] !== null;
@@ -68,7 +81,7 @@ class OrderLineService
 
         if ($item->isComponent()) {
             if (array_key_exists('quantity', $data) && (int) $data['quantity'] !== (int) $item->quantity) {
-                throw new InvalidArgumentException('Package components cannot change quantity independently.');
+                throw new InvalidArgumentException('Components cannot change quantity independently.');
             }
 
             if (array_key_exists('notes', $data)) {
@@ -97,7 +110,7 @@ class OrderLineService
 
         $item->update($attributes);
 
-        if ($item->isPackageParent() && $previousQuantity > 0 && $quantity !== $previousQuantity) {
+        if ($previousQuantity > 0 && $quantity !== $previousQuantity) {
             $item->load('children');
             foreach ($item->children as $child) {
                 $base = (int) $child->quantity / $previousQuantity;
@@ -115,13 +128,10 @@ class OrderLineService
         }
 
         if ($item->isComponent()) {
-            throw new InvalidArgumentException('Cannot remove a package component. Remove the package instead.');
+            throw new InvalidArgumentException('Cannot remove a component. Remove the parent item instead.');
         }
 
-        if ($item->isPackageParent()) {
-            $item->children()->delete();
-        }
-
+        $item->children()->delete();
         $item->delete();
     }
 }

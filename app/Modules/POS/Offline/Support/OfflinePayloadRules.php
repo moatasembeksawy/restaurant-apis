@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Offline\Support;
 
+use App\Modules\POS\Orders\Support\OrderLineSelectionRules;
+
 final class OfflinePayloadRules
 {
     /**
@@ -85,6 +87,9 @@ final class OfflinePayloadRules
             'operations.*.payload.items.*.slots.*.menu_item_id' => ['nullable', 'integer'],
             'operations.*.payload.items.*.slots.*.menu_item_ids' => ['nullable', 'array'],
             'operations.*.payload.items.*.slots.*.menu_item_ids.*' => ['integer'],
+            'operations.*.payload.selections' => ['nullable', 'array'],
+            ...OrderLineSelectionRules::fields('operations.*.payload.items.*.selections.*.'),
+            ...OrderLineSelectionRules::fields('operations.*.payload.selections.*.'),
         ];
 
         if ($withHubDisplayNames) {

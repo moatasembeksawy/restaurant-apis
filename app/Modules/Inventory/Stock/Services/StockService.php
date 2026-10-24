@@ -11,7 +11,9 @@ use App\Modules\Inventory\Stock\Models\InventoryStock;
 use App\Modules\Inventory\Stock\Models\StockMovement;
 use App\Modules\Inventory\Suppliers\Models\PurchaseOrder;
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Menu\Models\MenuItemPart;
 use App\Modules\POS\Orders\Models\Order;
+use App\Modules\POS\Orders\Models\OrderItem;
 use App\Modules\Tenant\BusinessDays\Models\BusinessDay;
 use App\Shared\Support\Audit\AuditLogger;
 use Illuminate\Database\Eloquent\Model;
@@ -132,42 +134,122 @@ class StockService
                 if (! $orderItem->menu_item_id) {
                     continue;
                 }
+
+                $skipIngredientIds = $this->deductWeightSelections($order, $orderItem);
+
                 $recipes = Recipe::query()
                     ->where('menu_item_id', $orderItem->menu_item_id)
                     ->with('ingredient')
                     ->get();
 
                 foreach ($recipes as $recipe) {
-                    $deductQty = (float) $recipe->quantity * (int) $orderItem->quantity;
-
-                    if ($deductQty <= 0) {
+                    if (isset($skipIngredientIds[(int) $recipe->ingredient_id])) {
                         continue;
                     }
 
-                    $stockRow = $this->ingredients->stockAtBranch(
+                    $this->deductSale(
+                        $order,
+                        $orderItem,
                         (int) $recipe->ingredient_id,
-                        $order->branch_id,
+                        (float) $recipe->quantity * (int) $orderItem->quantity,
                     );
-
-                    if (! $stockRow) {
-                        continue;
-                    }
-
-                    try {
-                        $this->recordMovement(
-                            stock: $stockRow,
-                            type: 'sale',
-                            quantity: $deductQty,
-                            reference: $order,
-                            branchId: $order->branch_id,
-                            notes: "Order #{$order->id} — {$orderItem->item_name_ar}",
-                        );
-                    } catch (RuntimeException $e) {
-                        throw new InvalidArgumentException($e->getMessage());
-                    }
                 }
             }
         });
+    }
+
+    /**
+     * @return array<int, true>
+     */
+    private function deductWeightSelections(Order $order, OrderItem $orderItem): array
+    {
+        $selections = $orderItem->selections;
+        if ($selections === null || $selections === []) {
+            return [];
+        }
+
+        $handled = [];
+
+        foreach ($selections as $selection) {
+            if (! is_array($selection) || ($selection['type'] ?? null) !== MenuItemPart::TYPE_WEIGHT) {
+                continue;
+            }
+
+            $ingredientId = (int) ($selection['ingredient_id'] ?? 0);
+            $quantity = (float) ($selection['quantity'] ?? 0);
+            $unit = (string) ($selection['unit'] ?? 'g');
+
+            if ($ingredientId < 1 || $quantity <= 0) {
+                continue;
+            }
+
+            $ingredient = Ingredient::query()->find($ingredientId);
+            if (! $ingredient instanceof Ingredient) {
+                continue;
+            }
+
+            $deductQty = Ingredient::convertQuantity($quantity, $unit, (string) $ingredient->unit)
+                * (int) $orderItem->quantity;
+
+            $this->deductSale($order, $orderItem, $ingredientId, $deductQty);
+            $handled[$ingredientId] = true;
+        }
+
+        if ($handled === []) {
+            return [];
+        }
+
+        $menuItem = MenuItem::query()
+            ->with(['parts.options'])
+            ->find($orderItem->menu_item_id);
+
+        if (! $menuItem instanceof MenuItem) {
+            return $handled;
+        }
+
+        foreach ($menuItem->parts as $part) {
+            if (! $part->isWeight()) {
+                continue;
+            }
+
+            if ($part->ingredient_id) {
+                $handled[(int) $part->ingredient_id] = true;
+            }
+
+            foreach ($part->options as $option) {
+                if ($option->ingredient_id) {
+                    $handled[(int) $option->ingredient_id] = true;
+                }
+            }
+        }
+
+        return $handled;
+    }
+
+    private function deductSale(Order $order, OrderItem $orderItem, int $ingredientId, float $quantity): void
+    {
+        if ($quantity <= 0) {
+            return;
+        }
+
+        $stockRow = $this->ingredients->stockAtBranch($ingredientId, $order->branch_id);
+
+        if (! $stockRow) {
+            return;
+        }
+
+        try {
+            $this->recordMovement(
+                stock: $stockRow,
+                type: 'sale',
+                quantity: $quantity,
+                reference: $order,
+                branchId: $order->branch_id,
+                notes: "Order #{$order->id} — {$orderItem->item_name_ar}",
+            );
+        } catch (RuntimeException $e) {
+            throw new InvalidArgumentException($e->getMessage());
+        }
     }
 
     public function recordRefundAsWaste(Order $order, ?User $user = null): void

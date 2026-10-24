@@ -7,6 +7,8 @@ namespace App\Modules\Delivery\QRMenu\Services;
 use App\Modules\Delivery\Customers\Services\CustomerService;
 use App\Modules\Delivery\QRMenu\QRMenuContext;
 use App\Modules\POS\Menu\Models\MenuCategory;
+use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Menu\Models\MenuItemPart;
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Services\OrderPlacementService;
 use App\Modules\POS\Orders\Support\OrderFulfillment;
@@ -86,7 +88,12 @@ class QRMenuService
             ->orderBy('sort_order')
             ->with([
                 'media',
-                'availableItems' => fn ($q) => $q->orderBy('sort_order'),
+                'availableItems' => fn ($q) => $q->orderBy('sort_order')->with([
+                    'parts.options.menuItem',
+                    'parts.options.ingredient',
+                    'parts.defaultMenuItem',
+                    'parts.ingredient',
+                ]),
                 'availablePackages.slots.options.menuItem',
                 'availablePackages.slots.menuItem',
             ])
@@ -106,7 +113,7 @@ class QRMenuService
                     'name_ar' => $cat->name_ar,
                     'name_en' => $cat->name_en,
                     'photo_url' => $cat->photoUrl(),
-                    'items' => $cat->availableItems->map(fn ($item) => [
+                    'items' => $cat->availableItems->map(fn (MenuItem $item): array => [
                         'id' => $item->id,
                         'name_ar' => $item->name_ar,
                         'name_en' => $item->name_en,
@@ -114,6 +121,7 @@ class QRMenuService
                         'price' => $item->price,
                         'photo_url' => $item->photo_url,
                         'preparation_time' => $item->preparation_time,
+                        'parts' => $this->serializeParts($item),
                     ])->values()->all(),
                     'packages' => $packages,
                 ];
@@ -236,6 +244,46 @@ class QRMenuService
         if (! $tenant->hasFeature('qr_menu')) {
             throw new RuntimeException('QR menu is not enabled for this restaurant.');
         }
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function serializeParts(MenuItem $item): array
+    {
+        return $item->parts->map(fn (MenuItemPart $part): array => [
+            'id' => $part->id,
+            'type' => $part->type,
+            'name_ar' => $part->name_ar,
+            'name_en' => $part->name_en,
+            'quantity' => $part->quantity,
+            'default_menu_item_id' => $part->default_menu_item_id,
+            'ingredient_id' => $part->ingredient_id,
+            'included_quantity' => $part->included_quantity !== null ? (float) $part->included_quantity : null,
+            'unit' => $part->unit,
+            'price_per_unit' => $part->price_per_unit !== null ? (float) $part->price_per_unit : null,
+            'min_select' => $part->min_select,
+            'max_select' => $part->max_select,
+            'default_menu_item' => $part->defaultMenuItem ? [
+                'id' => $part->defaultMenuItem->id,
+                'name_ar' => $part->defaultMenuItem->name_ar,
+            ] : null,
+            'ingredient' => $part->ingredient ? [
+                'id' => $part->ingredient->id,
+                'name_ar' => $part->ingredient->name_ar,
+            ] : null,
+            'options' => $part->options->map(fn ($option) => [
+                'id' => $option->id,
+                'menu_item_id' => $option->menu_item_id,
+                'ingredient_id' => $option->ingredient_id,
+                'name_ar' => $option->menu_item_id !== null
+                    ? $option->menuItem?->name_ar
+                    : $option->ingredient?->name_ar,
+                'extra_price' => $option->extra_price,
+                'price_per_unit' => $option->price_per_unit !== null ? (float) $option->price_per_unit : null,
+                'is_available' => $option->isSellable(),
+            ])->values()->all(),
+        ])->values()->all();
     }
 
     /** @return array<string, mixed> */

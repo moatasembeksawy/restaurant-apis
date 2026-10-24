@@ -25,56 +25,8 @@ parameters:
 			path: app/Modules/Delivery/Aggregators/Services/AggregatorOrderService.php
 
 		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$description_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$id\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_ar\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$name_en\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$photo_url\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$preparation_time\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Access to an undefined property Illuminate\\Database\\Eloquent\\Model\:\:\$price\.$#'
-			identifier: property.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
 			message: '#^Call to an undefined method Illuminate\\Database\\Eloquent\\Model\:\:hasFeature\(\)\.$#'
 			identifier: method.notFound
-			count: 1
-			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
-
-		-
-			message: '#^Parameter \#1 \$callback of method Illuminate\\Database\\Eloquent\\Collection\<int,Illuminate\\Database\\Eloquent\\Model\>\:\:map\(\) contains unresolvable type\.$#'
-			identifier: argument.unresolvableType
 			count: 1
 			path: app/Modules/Delivery/QRMenu/Services/QRMenuService.php
 

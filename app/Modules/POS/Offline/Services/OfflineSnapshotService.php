@@ -7,6 +7,7 @@ namespace App\Modules\POS\Offline\Services;
 use App\Models\User;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Menu\Models\MenuItemPart;
 use App\Modules\POS\Offers\Models\Offer;
 use App\Modules\POS\Offline\Models\OfflineHub;
 use App\Modules\POS\Offline\Support\OfflineOperations;
@@ -119,6 +120,7 @@ class OfflineSnapshotService
                 'updated_at' => $category->updated_at?->toISOString(),
             ])->values(),
             'menu_items' => MenuItem::query()
+                ->with(['parts.options', 'parts.defaultMenuItem', 'parts.ingredient'])
                 ->whereIn('category_id', $categoryIds)
                 ->when($since !== null, fn (Builder $query): Builder => $this->changedSince($query, $since))
                 ->orderBy('sort_order')
@@ -135,6 +137,7 @@ class OfflineSnapshotService
                     'preparation_time' => $item->preparation_time,
                     'sort_order' => $item->sort_order,
                     'updated_at' => $item->updated_at?->toISOString(),
+                    'parts' => $this->serializeParts($item),
                 ])
                 ->values(),
             'packages' => $tenant->hasFeature('menu_packages')
@@ -192,6 +195,36 @@ class OfflineSnapshotService
             'service_charge_rate' => (float) ($branch->service_charge_rate ?? $tenant->service_charge_rate ?? 0),
             'service_charge_applies_to' => $branch->service_charge_applies_to ?? $tenant->service_charge_applies_to ?? [],
         ];
+    }
+
+    /**
+     * @return list<array<string, mixed>>
+     */
+    private function serializeParts(MenuItem $item): array
+    {
+        return $item->parts->map(fn (MenuItemPart $part): array => [
+            'id' => $part->id,
+            'type' => $part->type,
+            'name_ar' => $part->name_ar,
+            'name_en' => $part->name_en,
+            'default_menu_item_id' => $part->default_menu_item_id,
+            'ingredient_id' => $part->ingredient_id,
+            'quantity' => $part->quantity,
+            'included_quantity' => $part->included_quantity !== null ? (float) $part->included_quantity : null,
+            'unit' => $part->unit,
+            'price_per_unit' => $part->price_per_unit !== null ? (float) $part->price_per_unit : null,
+            'min_select' => $part->min_select,
+            'max_select' => $part->max_select,
+            'sort_order' => $part->sort_order,
+            'options' => $part->options->map(fn ($option): array => [
+                'id' => $option->id,
+                'menu_item_id' => $option->menu_item_id,
+                'ingredient_id' => $option->ingredient_id,
+                'extra_price' => (float) $option->extra_price,
+                'price_per_unit' => $option->price_per_unit !== null ? (float) $option->price_per_unit : null,
+                'is_available' => $option->is_available,
+            ])->values()->all(),
+        ])->values()->all();
     }
 
     /**

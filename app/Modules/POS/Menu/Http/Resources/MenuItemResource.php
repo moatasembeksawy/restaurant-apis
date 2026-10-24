@@ -12,6 +12,11 @@ class MenuItemResource extends ModelResource
     /** @return array<string, mixed> */
     protected function extras(Request $request): array
     {
-        return ['photo_url' => $this->resource->photoUrl()];
+        $item = $this->resource;
+
+        return [
+            'photo_url' => $item->photoUrl(),
+            'is_sellable' => $item->relationLoaded('parts') ? $item->isSellable() : null,
+        ];
     }
 }

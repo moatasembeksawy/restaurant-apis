@@ -10,6 +10,9 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
+/**
+ * @property list<mixed>|null $selections
+ */
 class OrderItem extends Model
 {
     public const LINE_ITEM = 'item';
@@ -17,6 +20,8 @@ class OrderItem extends Model
     public const LINE_PACKAGE = 'package';
 
     public const LINE_COMPONENT = 'package_component';
+
+    public const LINE_ITEM_COMPONENT = 'item_component';
 
     protected $fillable = [
         'order_id',
@@ -52,7 +57,8 @@ class OrderItem extends Model
 
     public function isComponent(): bool
     {
-        return $this->line_type === self::LINE_COMPONENT;
+        return in_array($this->line_type, [self::LINE_COMPONENT, self::LINE_ITEM_COMPONENT], true)
+            || $this->parent_id !== null;
     }
 
     public function isKitchenLine(): bool

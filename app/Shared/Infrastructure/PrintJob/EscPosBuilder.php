@@ -106,6 +106,17 @@ class EscPosBuilder
             if ($item->notes) {
                 $this->text('  Note: '.$item->notes);
             }
+            if (is_array($item->selections)) {
+                foreach ($item->selections as $selection) {
+                    if (! is_array($selection)) {
+                        continue;
+                    }
+                    $label = $selection['label'] ?? null;
+                    if (is_string($label) && $label !== '' && ! str_contains((string) $item->notes, $label)) {
+                        $this->text('  '.$label);
+                    }
+                }
+            }
         }
 
         if ($order->notes) {

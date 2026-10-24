@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\POS\Orders\Http\Requests;
 
+use App\Modules\POS\Orders\Support\OrderLineSelectionRules;
 use App\Shared\Support\Http\Requests\ApiFormRequest;
 
 class StoreOrderRequest extends ApiFormRequest
@@ -49,6 +50,7 @@ class StoreOrderRequest extends ApiFormRequest
             'items.*.slots.*.menu_item_id' => ['nullable', 'integer'],
             'items.*.slots.*.menu_item_ids' => ['nullable', 'array'],
             'items.*.slots.*.menu_item_ids.*' => ['integer'],
+            ...OrderLineSelectionRules::fields('items.*.selections.*.'),
         ];
     }
 }

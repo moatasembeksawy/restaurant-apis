@@ -6,7 +6,7 @@ namespace App\Modules\POS\Offline\Support;
 
 final class OfflineOperations
 {
-    public const SCHEMA_VERSION = 2;
+    public const SCHEMA_VERSION = 3;
 
     public const ORDER_CREATED = 'order.created';
 

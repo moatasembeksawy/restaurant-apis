@@ -48,11 +48,13 @@ class MenuCategory extends BaseModel implements HasMedia
         return ['is_visible' => 'boolean'];
     }
 
+    /** @return HasMany<MenuItem, $this> */
     public function items(): HasMany
     {
         return $this->hasMany(MenuItem::class, 'category_id');
     }
 
+    /** @return HasMany<MenuItem, $this> */
     public function availableItems(): HasMany
     {
         return $this->items()->where('is_available', true);

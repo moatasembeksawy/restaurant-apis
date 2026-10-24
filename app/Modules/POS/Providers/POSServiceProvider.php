@@ -6,6 +6,8 @@ namespace App\Modules\POS\Providers;
 
 use App\Modules\POS\Billing\Services\ETAService;
 use App\Modules\POS\Billing\Services\PaymentSettlementService;
+use App\Modules\POS\Menu\Services\ItemPartExpansionService;
+use App\Modules\POS\Menu\Services\MenuItemService;
 use App\Modules\POS\Offers\Services\OfferEngine;
 use App\Modules\POS\Offers\Services\OfferService;
 use App\Modules\POS\Offline\Commands\PosHubServeCommand;
@@ -24,6 +26,8 @@ class POSServiceProvider extends ServiceProvider
     {
         $this->app->singleton(OrderPlacementService::class);
         $this->app->singleton(OrderLineService::class);
+        $this->app->singleton(MenuItemService::class);
+        $this->app->singleton(ItemPartExpansionService::class);
         $this->app->singleton(PackageService::class);
         $this->app->singleton(PackageExpansionService::class);
         $this->app->singleton(OfferEngine::class);

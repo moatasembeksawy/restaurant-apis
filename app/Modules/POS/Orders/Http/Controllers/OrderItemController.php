@@ -90,8 +90,8 @@ class OrderItemController extends Controller
             return ApiResponse::error('Cannot remove an item that is already '.$item->status.'.', 'ITEM_NOT_EDITABLE', 422);
         }
 
-        if ($item->isPackageParent() && $item->children()->where('status', '!=', 'pending')->exists()) {
-            return ApiResponse::error('Cannot remove a package after kitchen has started it.', 'ITEM_NOT_EDITABLE', 422);
+        if ($item->children()->where('status', '!=', 'pending')->exists()) {
+            return ApiResponse::error('Cannot remove an item after kitchen has started it.', 'ITEM_NOT_EDITABLE', 422);
         }
 
         try {

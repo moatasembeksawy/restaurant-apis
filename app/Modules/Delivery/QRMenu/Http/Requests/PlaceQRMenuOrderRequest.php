@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Modules\Delivery\QRMenu\Http\Requests;
 
+use App\Modules\POS\Orders\Support\OrderLineSelectionRules;
 use App\Shared\Support\Http\Requests\ApiFormRequest;
 
 class PlaceQRMenuOrderRequest extends ApiFormRequest
@@ -39,6 +40,7 @@ class PlaceQRMenuOrderRequest extends ApiFormRequest
             'items.*.slots.*.menu_item_id' => ['nullable', 'integer'],
             'items.*.slots.*.menu_item_ids' => ['nullable', 'array'],
             'items.*.slots.*.menu_item_ids.*' => ['integer'],
+            ...OrderLineSelectionRules::fields('items.*.selections.*.'),
             'customer_name' => ['nullable', 'string', 'max:100'],
             'customer_phone' => ['nullable', 'string', 'max:20'],
             'notes' => ['nullable', 'string', 'max:500'],
