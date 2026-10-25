@@ -117,6 +117,7 @@ class AuthController extends Controller
             'phone' => $user->phone,
             'phone_verified_at' => $user->phone_verified_at?->toISOString(),
             'role' => $user->role,
+            'permissions' => $user->permissionNames(),
             'abilities' => $user->currentAccessToken()->abilities,
             'branch' => $user->branch ? [
                 'id' => $user->branch->id,

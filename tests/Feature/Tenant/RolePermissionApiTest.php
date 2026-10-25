@@ -50,7 +50,13 @@ it('lists the permission catalog and the system roles', function (): void {
         ->json('data');
 
     expect(collect($roles)->pluck('name')->sort()->values()->all())
-        ->toBe(['cashier', 'cook', 'manager', 'owner', 'rider', 'waiter']);
+        ->toBe(['cashier', 'cook', 'manager', 'owner', 'rider', 'storekeeper', 'waiter']);
+
+    $storekeeper = collect($roles)->firstWhere('name', 'storekeeper');
+
+    expect($storekeeper['is_system'])->toBeTrue()
+        ->and($storekeeper['permissions'])->toContain('inventory.manage', 'suppliers.manage', 'branches.view')
+        ->and($storekeeper['permissions'])->not->toContain('payments.process', 'orders.create');
 });
 
 it('customizes a system role for one restaurant only', function (): void {

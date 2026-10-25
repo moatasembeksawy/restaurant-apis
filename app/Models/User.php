@@ -113,12 +113,13 @@ class User extends Authenticatable implements HasLocalePreference, MustVerifyEma
             'waiter' => ['tables:*', 'menu:read', 'orders:create', 'orders:update'],
             'cook' => ['kitchen:*', 'orders:read'],
             'rider' => ['deliveries:*'],
+            'storekeeper' => ['inventory:*', 'suppliers:manage', 'branches:read', 'shifts:*'],
             default => $this->tenant_id ? $this->permissionNames() : [],
         };
     }
 
     /** @return list<string> */
-    private function permissionNames(): array
+    public function permissionNames(): array
     {
         $registrar = app(PermissionRegistrar::class);
         $previous = $registrar->getPermissionsTeamId();

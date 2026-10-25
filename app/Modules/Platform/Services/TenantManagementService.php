@@ -288,6 +288,7 @@ class TenantManagementService
                 'name' => $owner->name,
                 'email' => $owner->email,
                 'role' => $owner->role,
+                'permissions' => $owner->permissionNames(),
                 'tenant_id' => $owner->tenant_id,
             ],
             'tenant' => [

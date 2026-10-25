@@ -21,6 +21,7 @@ class StaffService
     public function list(?int $branchId = null): Collection
     {
         return User::query()
+            ->with(['roles.permissions', 'permissions'])
             ->when($branchId, fn ($q, $id) => $q->where('branch_id', $id))
             ->orderBy('name')
             ->get()
@@ -167,6 +168,7 @@ class StaffService
             'phone' => $user->phone,
             'phone_verified_at' => $user->phone_verified_at?->toISOString(),
             'role' => $user->role,
+            'permissions' => $user->permissionNames(),
             'branch_id' => $user->branch_id,
             'is_active' => $user->is_active,
             'has_pin' => $user->pin !== null,

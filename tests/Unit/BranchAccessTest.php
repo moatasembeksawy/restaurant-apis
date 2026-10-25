@@ -5,7 +5,7 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Shared\Support\Authorization\BranchAccess;
 
-it('lets owners and managers access any branch', function (): void {
+it('lets owners, managers, and storekeepers access any branch', function (): void {
     $owner = new User(['role' => 'owner', 'branch_id' => 1]);
     $manager = new User(['role' => 'manager', 'branch_id' => 1]);
 
@@ -13,6 +13,10 @@ it('lets owners and managers access any branch', function (): void {
     expect(BranchAccess::canAccess($owner, 99))->toBeTrue();
     expect(BranchAccess::canAccessAllBranches($manager))->toBeTrue();
     expect(BranchAccess::canAccess($manager, 99))->toBeTrue();
+
+    $storekeeper = new User(['role' => 'storekeeper', 'branch_id' => 1]);
+    expect(BranchAccess::canAccessAllBranches($storekeeper))->toBeTrue();
+    expect(BranchAccess::canAccess($storekeeper, 99))->toBeTrue();
 });
 
 it('locks other staff to their assigned branch', function (): void {

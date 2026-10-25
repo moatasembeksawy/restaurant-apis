@@ -135,6 +135,14 @@ class RolesAndPermissionsSeeder extends Seeder
         Role::firstOrCreate(['name' => 'rider', 'guard_name' => 'web'])
             ->syncPermissions([]);
 
+        Role::firstOrCreate(['name' => 'storekeeper', 'guard_name' => 'web'])
+            ->syncPermissions([
+                'inventory.view', 'inventory.manage',
+                'suppliers.manage',
+                'branches.view',
+                'shifts.view', 'shifts.operate',
+            ]);
+
         $this->command->info('Roles and permissions seeded.');
     }
 }

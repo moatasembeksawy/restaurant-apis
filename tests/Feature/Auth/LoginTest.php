@@ -44,12 +44,13 @@ it('allows an owner to login with email and password', function (): void {
                 'token',
                 'token_type',
                 'abilities',
-                'user' => ['id', 'name', 'role', 'tenant_id'],
+                'user' => ['id', 'name', 'role', 'permissions', 'tenant_id'],
                 'tenant' => ['id', 'name', 'logo_url', 'plan', 'qr_menu_token', 'qr_menu_url'],
             ],
         ])
         ->assertJsonPath('data.token_type', 'Bearer')
         ->assertJsonPath('data.user.role', 'owner')
+        ->assertJsonPath('data.user.permissions', fn ($permissions) => is_array($permissions) && in_array('staff.manage', $permissions, true))
         ->assertJsonPath('data.tenant.logo_url', 'https://cdn.example.com/logo.png')
         ->assertJsonPath('data.tenant.qr_menu_token', $this->branch->fresh()->qr_menu_token);
 });
@@ -180,7 +181,7 @@ it('returns me endpoint with correct structure when authenticated', function ():
         ->getJson('/api/v1/auth/me')
         ->assertOk()
         ->assertJsonStructure([
-            'data' => ['id', 'name', 'email', 'role', 'abilities', 'tenant' => ['logo_url', 'qr_menu_token', 'qr_menu_url'], 'branch' => ['qr_menu_token', 'qr_menu_url']],
+            'data' => ['id', 'name', 'email', 'role', 'permissions', 'abilities', 'tenant' => ['logo_url', 'qr_menu_token', 'qr_menu_url'], 'branch' => ['qr_menu_token', 'qr_menu_url']],
         ])
         ->assertJsonPath('data.tenant.logo_url', 'https://cdn.example.com/logo.png')
         ->assertJsonPath('data.tenant.qr_menu_token', $this->branch->qr_menu_token)

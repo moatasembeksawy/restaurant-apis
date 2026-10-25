@@ -73,7 +73,7 @@ class AuthService
     }
 
     /**
-     * Authenticate a waiter/cashier via branch PIN.
+     * Authenticate branch staff via PIN.
      *
      * @throws AuthenticationException
      */
@@ -85,7 +85,7 @@ class AuthService
             ->where('tenant_id', $tenant->id)
             ->where('branch_id', $branchId)
             ->where(function ($query): void {
-                $query->whereIn('role', ['waiter', 'cashier', 'cook'])
+                $query->whereIn('role', ['waiter', 'cashier', 'cook', 'storekeeper'])
                     ->orWhereNotIn('role', SystemRoles::NAMES);
             })
             ->where('is_active', true)
@@ -178,6 +178,7 @@ class AuthService
                 'id' => $user->id,
                 'name' => $user->name,
                 'role' => $user->role,
+                'permissions' => $user->permissionNames(),
                 'tenant_id' => $user->tenant_id,
                 'branch_id' => $user->branch_id,
             ],

@@ -26,7 +26,7 @@ class AIReportController extends Controller
         $validated = $request->validated();
 
         $weekStart = isset($validated['week_start'])
-            ? Carbon::parse($validated['week_start'])->startOfWeek()
+            ? Carbon::parse($validated['week_start'])
             : null;
 
         $summary = $this->reports->weeklySummary(

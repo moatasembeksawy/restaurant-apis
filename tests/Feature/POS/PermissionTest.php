@@ -128,6 +128,33 @@ it('returns forbidden instead of crashing when a permission is missing', functio
         ->assertJsonPath('errors.0.code', 'FORBIDDEN');
 });
 
+it('lets a storekeeper manage inventory across branches but not take payments', function (): void {
+    $storekeeper = User::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'branch_id' => $this->branch->id,
+        'role' => 'storekeeper',
+        'is_active' => true,
+    ]);
+
+    $token = $storekeeper->createToken('test')->plainTextToken;
+
+    $this->withToken($token)
+        ->postJson('/api/v1/inventory/ingredients', [
+            'name_ar' => 'دقيق',
+            'unit' => 'kg',
+        ])
+        ->assertCreated();
+
+    $this->withToken($token)
+        ->getJson('/api/v1/branches')
+        ->assertOk();
+
+    $this->withToken($token)
+        ->getJson('/api/v1/reports/daily')
+        ->assertForbidden()
+        ->assertJsonPath('errors.0.code', 'FORBIDDEN');
+});
+
 it('blocks cashier from inventory ingredient management', function (): void {
     $cashier = User::factory()->create([
         'tenant_id' => $this->tenant->id,

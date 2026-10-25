@@ -6,6 +6,7 @@ namespace App\Modules\Intelligence\Reports\Services;
 
 use App\Modules\POS\Orders\Models\Order;
 use App\Modules\POS\Orders\Models\OrderItem;
+use App\Modules\Tenant\Models\Tenant;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
 
@@ -16,7 +17,7 @@ class AIReportService
      */
     public function weeklySummary(?int $branchId = null, ?Carbon $weekStart = null): array
     {
-        $weekStart = ($weekStart ?? now()->startOfWeek())->copy()->startOfDay();
+        $weekStart = ($weekStart ?? now())->copy()->locale($this->calendarLocale())->startOfWeek()->startOfDay();
         $weekEnd = $weekStart->copy()->endOfWeek()->endOfDay();
         $prevStart = $weekStart->copy()->subWeek();
         $prevEnd = $weekEnd->copy()->subWeek();
@@ -180,6 +181,21 @@ class AIReportService
         }
 
         return $insights;
+    }
+
+    private function calendarLocale(): string
+    {
+        if (! app()->bound('tenant')) {
+            return app()->getLocale();
+        }
+
+        $tenant = app('tenant');
+
+        if ($tenant instanceof Tenant && $tenant->locale !== '') {
+            return $tenant->locale;
+        }
+
+        return app()->getLocale();
     }
 
     private function percentChange(float $previous, float $current): ?float

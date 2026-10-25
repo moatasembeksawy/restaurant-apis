@@ -44,6 +44,7 @@ class OnboardingController extends Controller
                     'name' => $owner->name,
                     'email' => $owner->email,
                     'role' => $owner->role,
+                    'permissions' => $owner->permissionNames(),
                 ],
                 'tenant' => [
                     'id' => $tenant->id,

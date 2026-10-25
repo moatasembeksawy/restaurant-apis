@@ -36,6 +36,13 @@ it('lists staff for the tenant', function (): void {
         ->assertOk();
 
     expect($response->json('data'))->toHaveCount(2);
+
+    $waiter = collect($response->json('data'))->firstWhere('role', 'waiter');
+    $owner = collect($response->json('data'))->firstWhere('role', 'owner');
+
+    expect($waiter['permissions'])->toContain('orders.create')
+        ->and($waiter['permissions'])->not->toContain('staff.manage')
+        ->and($owner['permissions'])->toContain('staff.manage');
 });
 
 it('creates staff with a pin for tablet login', function (): void {

@@ -14,7 +14,7 @@ use Illuminate\Database\Eloquent\Model;
 final class BranchAccess
 {
     /** @var list<string> */
-    public const CROSS_BRANCH_ROLES = ['owner', 'manager'];
+    public const CROSS_BRANCH_ROLES = ['owner', 'manager', 'storekeeper'];
 
     public static function canAccessAllBranches(?User $user): bool
     {
