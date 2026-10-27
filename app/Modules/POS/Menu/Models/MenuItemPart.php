@@ -98,6 +98,20 @@ class MenuItemPart extends Model
         return $this->type === self::TYPE_WEIGHT;
     }
 
+    /** @return array<string, mixed> */
+    public function toArray(): array
+    {
+        $data = parent::toArray();
+
+        if ($this->default_menu_item_id !== null) {
+            $data['menu_item_id'] = (int) $this->default_menu_item_id;
+        } else {
+            unset($data['menu_item_id']);
+        }
+
+        return $data;
+    }
+
     public function isSatisfiable(): bool
     {
         if ($this->isFixed()) {

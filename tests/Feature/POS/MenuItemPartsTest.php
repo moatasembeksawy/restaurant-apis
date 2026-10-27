@@ -114,6 +114,54 @@ it('creates a meal with a swap and a choice part', function (): void {
     expect($response->json('data.parts'))->toHaveCount(3);
 });
 
+it('updates a swap when the client echoes the parent item as menu_item_id', function (): void {
+    $meal = createChickenMeal($this);
+    $swap = collect($meal['parts'])->firstWhere('type', 'swap');
+
+    $this->withToken($this->token)
+        ->patchJson('/api/v1/menu/items/'.$meal['id'], [
+            'parts' => [[
+                'type' => 'swap',
+                'name_ar' => 'السلطات',
+                'menu_item_id' => $meal['id'],
+                'options' => [
+                    ['menu_item_id' => $this->salad->id, 'extra_price' => 0, 'is_available' => true],
+                ],
+            ]],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.parts.0.type', 'swap')
+        ->assertJsonPath('data.parts.0.default_menu_item_id', null)
+        ->assertJsonPath('data.parts.0.options.0.menu_item_id', $this->salad->id)
+        ->assertJsonMissingPath('data.parts.0.menu_item_id');
+
+    expect($swap['default_menu_item_id'])->toBe($this->fries->id);
+    expect($meal['parts'][1]['menu_item_id'])->toBe($this->fries->id);
+    expect($meal['parts'][1]['menu_item_id'])->not->toBe($meal['id']);
+});
+
+it('keeps the stored swap default when the same part is saved with the parent id', function (): void {
+    $meal = createChickenMeal($this);
+    $swap = collect($meal['parts'])->firstWhere('type', 'swap');
+
+    $this->withToken($this->token)
+        ->patchJson('/api/v1/menu/items/'.$meal['id'], [
+            'parts' => [[
+                'id' => $swap['id'],
+                'type' => 'swap',
+                'name_ar' => $swap['name_ar'],
+                'menu_item_id' => $meal['id'],
+                'options' => [
+                    ['menu_item_id' => $this->rice->id, 'extra_price' => 5, 'is_available' => true],
+                    ['menu_item_id' => $this->salad->id, 'extra_price' => 0, 'is_available' => true],
+                ],
+            ]],
+        ])
+        ->assertOk()
+        ->assertJsonPath('data.parts.0.default_menu_item_id', $this->fries->id)
+        ->assertJsonPath('data.parts.0.menu_item_id', $this->fries->id);
+});
+
 it('rejects a choice part without options', function (): void {
     $this->withToken($this->token)
         ->postJson('/api/v1/menu/items', [

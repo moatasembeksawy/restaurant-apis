@@ -120,7 +120,12 @@ class OfflineSnapshotService
                 'updated_at' => $category->updated_at?->toISOString(),
             ])->values(),
             'menu_items' => MenuItem::query()
-                ->with(['parts.options', 'parts.defaultMenuItem', 'parts.ingredient'])
+                ->with([
+                    'parts.options.menuItem',
+                    'parts.options.ingredient',
+                    'parts.defaultMenuItem',
+                    'parts.ingredient',
+                ])
                 ->whereIn('category_id', $categoryIds)
                 ->when($since !== null, fn (Builder $query): Builder => $this->changedSince($query, $since))
                 ->orderBy('sort_order')
@@ -134,6 +139,7 @@ class OfflineSnapshotService
                     'price' => (float) $item->price,
                     'photo_url' => $item->photoUrl(),
                     'is_available' => $item->is_available,
+                    'is_sellable' => $item->isSellable(),
                     'preparation_time' => $item->preparation_time,
                     'sort_order' => $item->sort_order,
                     'updated_at' => $item->updated_at?->toISOString(),
@@ -202,29 +208,56 @@ class OfflineSnapshotService
      */
     private function serializeParts(MenuItem $item): array
     {
-        return $item->parts->map(fn (MenuItemPart $part): array => [
-            'id' => $part->id,
-            'type' => $part->type,
-            'name_ar' => $part->name_ar,
-            'name_en' => $part->name_en,
-            'default_menu_item_id' => $part->default_menu_item_id,
-            'ingredient_id' => $part->ingredient_id,
-            'quantity' => $part->quantity,
-            'included_quantity' => $part->included_quantity !== null ? (float) $part->included_quantity : null,
-            'unit' => $part->unit,
-            'price_per_unit' => $part->price_per_unit !== null ? (float) $part->price_per_unit : null,
-            'min_select' => $part->min_select,
-            'max_select' => $part->max_select,
-            'sort_order' => $part->sort_order,
-            'options' => $part->options->map(fn ($option): array => [
-                'id' => $option->id,
-                'menu_item_id' => $option->menu_item_id,
-                'ingredient_id' => $option->ingredient_id,
-                'extra_price' => (float) $option->extra_price,
-                'price_per_unit' => $option->price_per_unit !== null ? (float) $option->price_per_unit : null,
-                'is_available' => $option->is_available,
-            ])->values()->all(),
-        ])->values()->all();
+        return $item->parts->map(function (MenuItemPart $part): array {
+            $defaultItem = $part->defaultMenuItem;
+            $ingredient = $part->ingredient;
+
+            return [
+                'id' => $part->id,
+                'type' => $part->type,
+                'name_ar' => $part->name_ar ?? $defaultItem?->name_ar ?? $ingredient?->name_ar,
+                'name_en' => $part->name_en ?? $defaultItem?->name_en ?? $ingredient?->name_en,
+                'default_menu_item_id' => $part->default_menu_item_id,
+                'ingredient_id' => $part->ingredient_id,
+                'quantity' => $part->quantity !== null ? (int) $part->quantity : 1,
+                'included_quantity' => $part->included_quantity !== null ? (float) $part->included_quantity : null,
+                'unit' => $part->unit,
+                'price_per_unit' => $part->price_per_unit !== null ? (float) $part->price_per_unit : null,
+                'min_select' => $part->min_select !== null ? (int) $part->min_select : null,
+                'max_select' => $part->max_select !== null ? (int) $part->max_select : null,
+                'sort_order' => (int) $part->sort_order,
+                'default_menu_item' => $defaultItem ? [
+                    'id' => $defaultItem->id,
+                    'name_ar' => $defaultItem->name_ar,
+                    'name_en' => $defaultItem->name_en,
+                    'price' => (float) $defaultItem->price,
+                    'is_available' => $defaultItem->is_available,
+                ] : null,
+                'ingredient' => $ingredient ? [
+                    'id' => $ingredient->id,
+                    'name_ar' => $ingredient->name_ar,
+                    'name_en' => $ingredient->name_en,
+                    'unit' => $ingredient->unit,
+                    'is_active' => $ingredient->is_active,
+                ] : null,
+                'options' => $part->options->map(function ($option): array {
+                    $menuItem = $option->menuItem;
+                    $ingredient = $option->ingredient;
+
+                    return [
+                        'id' => $option->id,
+                        'menu_item_id' => $option->menu_item_id,
+                        'ingredient_id' => $option->ingredient_id,
+                        'name_ar' => $menuItem?->name_ar ?? $ingredient?->name_ar,
+                        'name_en' => $menuItem?->name_en ?? $ingredient?->name_en,
+                        'extra_price' => (float) $option->extra_price,
+                        'price_per_unit' => $option->price_per_unit !== null ? (float) $option->price_per_unit : null,
+                        'is_available' => $option->is_available,
+                        'is_sellable' => $option->isSellable(),
+                    ];
+                })->values()->all(),
+            ];
+        })->values()->all();
     }
 
     /**

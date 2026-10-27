@@ -5,8 +5,10 @@ declare(strict_types=1);
 use App\Models\User;
 use App\Modules\Delivery\Customers\Models\Customer;
 use App\Modules\POS\Billing\Models\Payment;
+use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\POS\Menu\Models\MenuCategory;
 use App\Modules\POS\Menu\Models\MenuItem;
+use App\Modules\POS\Menu\Models\MenuItemPart;
 use App\Modules\POS\Offline\Models\OfflineSyncOperation;
 use App\Modules\POS\Offline\Support\OfflineOperations;
 use App\Modules\POS\Orders\Events\OrderPlaced;
@@ -69,6 +71,97 @@ beforeEach(function (): void {
 
     Event::fake([OrderPlaced::class]);
     Queue::fake();
+});
+
+it('includes nested part names in the offline snapshot', function (): void {
+    $fries = MenuItem::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'category_id' => $this->category->id,
+        'name_ar' => 'بطاطس',
+        'name_en' => 'Fries',
+        'price' => 25,
+        'is_available' => true,
+    ]);
+    $rice = MenuItem::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'category_id' => $this->category->id,
+        'name_ar' => 'رز',
+        'name_en' => 'Rice',
+        'price' => 20,
+        'is_available' => true,
+    ]);
+    $denise = Ingredient::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'name_ar' => 'دينيس',
+        'name_en' => 'Denise',
+        'unit' => 'kg',
+        'is_active' => true,
+    ]);
+    $bouri = Ingredient::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'name_ar' => 'بوري',
+        'name_en' => 'Bouri',
+        'unit' => 'kg',
+        'is_active' => true,
+    ]);
+    $meal = MenuItem::factory()->create([
+        'tenant_id' => $this->tenant->id,
+        'category_id' => $this->category->id,
+        'name_ar' => 'وجبة سمك',
+        'price' => 250,
+        'is_available' => true,
+    ]);
+
+    $swap = $meal->parts()->create([
+        'type' => MenuItemPart::TYPE_SWAP,
+        'name_ar' => 'الجانب',
+        'default_menu_item_id' => $fries->id,
+        'quantity' => 1,
+        'min_select' => 0,
+        'max_select' => 1,
+        'sort_order' => 0,
+    ]);
+    $swap->options()->create([
+        'menu_item_id' => $rice->id,
+        'extra_price' => 5,
+        'is_available' => true,
+    ]);
+
+    $weight = $meal->parts()->create([
+        'type' => MenuItemPart::TYPE_WEIGHT,
+        'ingredient_id' => $denise->id,
+        'included_quantity' => 500,
+        'unit' => 'g',
+        'price_per_unit' => 0.30,
+        'quantity' => 1,
+        'min_select' => 1,
+        'max_select' => 1,
+        'sort_order' => 1,
+    ]);
+    $weight->options()->create([
+        'ingredient_id' => $bouri->id,
+        'price_per_unit' => 0.40,
+        'is_available' => true,
+    ]);
+
+    $parts = collect($this->withToken($this->token)
+        ->getJson("/api/v1/offline/bootstrap?branch_id={$this->branch->id}")
+        ->assertOk()
+        ->json('data.menu_items'))
+        ->firstWhere('id', $meal->id)['parts'];
+
+    expect($parts)->toHaveCount(2)
+        ->and($parts[0]['name_ar'])->toBe('الجانب')
+        ->and($parts[0]['default_menu_item']['name_ar'])->toBe('بطاطس')
+        ->and($parts[0]['options'][0]['name_ar'])->toBe('رز')
+        ->and($parts[0]['options'][0]['ingredient_id'])->toBeNull()
+        ->and($parts[1]['name_ar'])->toBe('دينيس')
+        ->and($parts[1]['ingredient']['name_ar'])->toBe('دينيس')
+        ->and($parts[1]['unit'])->toBe('g')
+        ->and($parts[1]['included_quantity'])->toEqual(500)
+        ->and($parts[1]['options'][0]['name_ar'])->toBe('بوري')
+        ->and($parts[1]['options'][0]['price_per_unit'])->toEqual(0.4)
+        ->and($parts[1]['options'][0]['is_sellable'])->toBeTrue();
 });
 
 it('returns a branch snapshot for offline storage', function (): void {

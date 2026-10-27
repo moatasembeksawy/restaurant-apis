@@ -7,6 +7,7 @@ namespace App\Modules\POS\Menu\Services;
 use App\Modules\Inventory\Stock\Models\Ingredient;
 use App\Modules\POS\Menu\Models\MenuItem;
 use App\Modules\POS\Menu\Models\MenuItemPart;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\DB;
 use InvalidArgumentException;
 
@@ -42,7 +43,10 @@ class MenuItemService
             $item->update($data);
 
             if (is_array($parts)) {
-                foreach ($item->parts()->with('options')->get() as $part) {
+                $existing = $item->parts()->with('options')->get();
+                $parts = $this->fillEchoedPartDefaults($item->id, $parts, $existing);
+
+                foreach ($existing as $part) {
                     $part->options()->delete();
                     $part->delete();
                 }
@@ -79,7 +83,7 @@ class MenuItemService
      */
     private function createFixedPart(MenuItem $item, array $partData, int $index): void
     {
-        $menuItemId = $this->defaultMenuItemId($partData);
+        $menuItemId = $this->defaultMenuItemId($partData, $item->id) ?? 0;
         $this->assertMenuItem($menuItemId, $item->id);
 
         $item->parts()->create([
@@ -135,8 +139,11 @@ class MenuItemService
      */
     private function createSwapPart(MenuItem $item, array $partData, int $index): void
     {
-        $menuItemId = $this->defaultMenuItemId($partData);
-        $this->assertMenuItem($menuItemId, $item->id);
+        $menuItemId = $this->defaultMenuItemId($partData, $item->id);
+
+        if ($menuItemId !== null) {
+            $this->assertMenuItem($menuItemId, $item->id);
+        }
 
         /** @var list<array<string, mixed>> $options */
         $options = $partData['options'] ?? [];
@@ -247,17 +254,96 @@ class MenuItemService
     }
 
     /**
+     * The part row's menu_item_id is the parent item. Clients send that value
+     * back on update, so it is not the default dish unless it points elsewhere.
+     *
      * @param  array<string, mixed>  $partData
      */
-    private function defaultMenuItemId(array $partData): int
+    private function defaultMenuItemId(array $partData, int $parentId): ?int
     {
-        foreach (['default_menu_item_id', 'menu_item_id'] as $key) {
-            if (isset($partData[$key]) && is_numeric($partData[$key])) {
-                return (int) $partData[$key];
+        if (isset($partData['default_menu_item_id']) && is_numeric($partData['default_menu_item_id'])) {
+            return (int) $partData['default_menu_item_id'];
+        }
+
+        $nested = $partData['default_menu_item']['id'] ?? null;
+
+        if (is_numeric($nested)) {
+            return (int) $nested;
+        }
+
+        if (isset($partData['menu_item_id']) && is_numeric($partData['menu_item_id'])) {
+            $id = (int) $partData['menu_item_id'];
+
+            if ($id !== $parentId) {
+                return $id;
             }
         }
 
-        return 0;
+        return null;
+    }
+
+    /**
+     * @param  list<array<string, mixed>>  $parts
+     * @param  Collection<int, MenuItemPart>  $existing
+     * @return list<array<string, mixed>>
+     */
+    private function fillEchoedPartDefaults(int $parentId, array $parts, Collection $existing): array
+    {
+        foreach ($parts as $index => $partData) {
+            $type = (string) ($partData['type'] ?? '');
+
+            if (! in_array($type, [MenuItemPart::TYPE_FIXED, MenuItemPart::TYPE_SWAP], true)) {
+                continue;
+            }
+
+            if ($this->defaultMenuItemId($partData, $parentId) !== null) {
+                continue;
+            }
+
+            $remembered = $this->rememberedDefaultId($partData, $existing);
+
+            if ($remembered !== null) {
+                $parts[$index]['default_menu_item_id'] = $remembered;
+            }
+        }
+
+        return $parts;
+    }
+
+    /**
+     * @param  array<string, mixed>  $partData
+     * @param  Collection<int, MenuItemPart>  $existing
+     */
+    private function rememberedDefaultId(array $partData, Collection $existing): ?int
+    {
+        $partId = isset($partData['id']) && is_numeric($partData['id']) ? (int) $partData['id'] : 0;
+
+        if ($partId > 0) {
+            $match = $existing->firstWhere('id', $partId);
+
+            if ($match instanceof MenuItemPart && $match->default_menu_item_id !== null) {
+                return (int) $match->default_menu_item_id;
+            }
+        }
+
+        $type = (string) ($partData['type'] ?? '');
+        $name = isset($partData['name_ar']) ? (string) $partData['name_ar'] : '';
+
+        if ($name === '') {
+            return null;
+        }
+
+        $named = $existing->filter(
+            fn (MenuItemPart $part): bool => $part->type === $type
+                && $part->name_ar === $name
+                && $part->default_menu_item_id !== null,
+        );
+
+        if ($named->count() !== 1) {
+            return null;
+        }
+
+        return (int) $named->first()->default_menu_item_id;
     }
 
     private function assertMenuItem(int $menuItemId, int $parentId): void
